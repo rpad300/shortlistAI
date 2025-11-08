@@ -66,6 +66,7 @@ OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 KIMI_API_KEY=
 MINIMAX_API_KEY=
+MINIMAX_GROUP_ID=
 
 # ========================================
 # EMAIL SERVICE (Resend)

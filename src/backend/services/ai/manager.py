@@ -5,9 +5,13 @@ Handles provider selection, routing, fallback, and logging.
 """
 
 from typing import Dict, Optional, Any
-from .base import AIProvider, AIRequest, AIResponse, PromptType
+from .base import AIProvider, AIRequest, AIResponse
 from .gemini_provider import GeminiProvider
-import os
+from .openai_provider import OpenAIProvider
+from .claude_provider import ClaudeProvider
+from .kimi_provider import KimiProvider
+from .minimax_provider import MiniMaxProvider
+from ...config import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,31 +41,49 @@ class AIManager:
         Initialize AI providers based on available API keys.
         """
         # Gemini
-        gemini_key = os.getenv("GEMINI_API_KEY")
-        if gemini_key:
-            from .gemini_provider import GeminiProvider
-            self.providers["gemini"] = GeminiProvider(gemini_key)
+        if settings.gemini_api_key:
+            self.providers["gemini"] = GeminiProvider(settings.gemini_api_key)
             if not self.default_provider:
                 self.default_provider = "gemini"
             logger.info("Gemini provider initialized")
         
         # OpenAI
-        openai_key = os.getenv("OPENAI_API_KEY")
-        if openai_key:
-            from .openai_provider import OpenAIProvider
-            self.providers["openai"] = OpenAIProvider(openai_key)
+        if settings.openai_api_key:
+            self.providers["openai"] = OpenAIProvider(settings.openai_api_key)
             if not self.default_provider:
                 self.default_provider = "openai"
             logger.info("OpenAI provider initialized")
         
         # Claude
-        claude_key = os.getenv("ANTHROPIC_API_KEY")
-        if claude_key:
-            from .claude_provider import ClaudeProvider
-            self.providers["claude"] = ClaudeProvider(claude_key)
+        if settings.anthropic_api_key:
+            self.providers["claude"] = ClaudeProvider(settings.anthropic_api_key)
             if not self.default_provider:
                 self.default_provider = "claude"
             logger.info("Claude provider initialized")
+
+        # Kimi K2
+        if settings.kimi_api_key:
+            self.providers["kimi"] = KimiProvider(settings.kimi_api_key)
+            if not self.default_provider:
+                self.default_provider = "kimi"
+            logger.info("Kimi provider initialized")
+
+        # MiniMax
+        if settings.minimax_api_key:
+            try:
+                minimax_config = {
+                    "group_id": settings.minimax_group_id,
+                }
+                self.providers["minimax"] = MiniMaxProvider(
+                    settings.minimax_api_key,
+                    config=minimax_config,
+                )
+                if not self.default_provider:
+                    self.default_provider = "minimax"
+                logger.info("MiniMax provider initialized")
+            except ValueError as exc:
+                logger.error("MiniMax provider misconfiguration: %s", exc)
+                # Leave provider unregistered so that misconfigured setups are obvious.
         
         if not self.providers:
             logger.warning("No AI providers configured. Check API keys in environment.")

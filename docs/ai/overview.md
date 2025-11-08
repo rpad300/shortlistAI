@@ -13,11 +13,11 @@ The AI system is the core of the CV Analysis Platform. It powers:
 
 The platform supports multiple AI providers for flexibility, cost optimization, and redundancy:
 
-1. **Google Gemini** - Fast, cost-effective for most tasks
-2. **OpenAI (GPT-4, GPT-3.5)** - High quality, good for complex analysis
-3. **Anthropic Claude** - Excellent for long-form text and reasoning
-4. **Kimi** - Alternative provider
-5. **Minimax** - Alternative provider
+1. **Google Gemini** – `google-generativeai` SDK (official)
+2. **OpenAI (GPT-4, GPT-3.5)** – `openai` SDK (official)
+3. **Anthropic Claude** – `anthropic` SDK (official)
+4. **Kimi K2** – OpenAI-compatible endpoint via official `openai` SDK (`base_url=https://kimi-k2.ai/api/v1`)
+5. **MiniMax** – Official REST endpoint with `httpx` client (Bearer auth + `X-Group-ID`)
 
 ### Provider Selection
 
@@ -25,6 +25,14 @@ The platform supports multiple AI providers for flexibility, cost optimization, 
 - Default provider can be set globally
 - Switching providers does not change functional behavior
 - Provider selection is stored with each analysis for traceability
+
+### Provider configuration quick-reference
+
+- **Gemini**: requires `GEMINI_API_KEY` (see [Gemini quickstart](https://ai.google.dev/gemini-api/docs?hl=pt-br#python))
+- **OpenAI**: requires `OPENAI_API_KEY` (see [OpenAI quickstart](https://platform.openai.com/docs/quickstart))
+- **Claude**: requires `ANTHROPIC_API_KEY` (see [Claude get started](https://docs.claude.com/en/docs/get-started))
+- **Kimi K2**: requires `KIMI_API_KEY`, uses the OpenAI SDK with `base_url=https://kimi-k2.ai/api/v1` (see [Kimi API docs](https://kimi-k2.ai/api-docs))
+- **MiniMax**: requires `MINIMAX_API_KEY` and `MINIMAX_GROUP_ID` headers (see [MiniMax model guide](https://platform.minimax.io/docs/guides/models-intro))
 
 ## AI Responsibilities
 

@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     anthropic_api_key: Optional[str] = Field(default=None, env="ANTHROPIC_API_KEY")
     kimi_api_key: Optional[str] = Field(default=None, env="KIMI_API_KEY")
     minimax_api_key: Optional[str] = Field(default=None, env="MINIMAX_API_KEY")
+    minimax_group_id: Optional[str] = Field(default=None, env="MINIMAX_GROUP_ID")
     
     # Email Service
     resend_api_key: Optional[str] = Field(default=None, env="RESEND_API_KEY")

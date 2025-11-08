@@ -23,7 +23,30 @@ OPENAI_API_KEY=<TUA_CHAVE_AQUI>
 **Obter em**: https://platform.openai.com/api-keys
 - Opcional (alternativa ao Gemini)
 
-### 3. EMAIL_USER e EMAIL_PASSWORD (Já existem)
+### 3. ANTHROPIC_API_KEY (Já existe)
+```env
+ANTHROPIC_API_KEY=<TUA_CHAVE_AQUI>
+```
+**Obter em**: https://console.anthropic.com/
+- Necessário para usar Claude
+
+### 4. KIMI_API_KEY (Já existe)
+```env
+KIMI_API_KEY=<TUA_CHAVE_AQUI>
+```
+**Obter em**: https://kimi-k2.ai/
+- Usa o mesmo formato do OpenAI (SDK oficial com `base_url=https://kimi-k2.ai/api/v1`)
+
+### 5. MINIMAX_API_KEY (Já existe)
+```env
+MINIMAX_API_KEY=<TUA_CHAVE_AQUI>
+MINIMAX_GROUP_ID=<TEU_GROUP_ID>
+```
+**Obter em**: https://platform.minimax.io/
+- A API exige **identificador de grupo** no cabeçalho `X-Group-ID`
+- Necessário para chamadas ao endpoint `https://api.minimax.chat/v1/text/chatcompletion`
+
+### 6. EMAIL_USER e EMAIL_PASSWORD (Já existem)
 ```env
 EMAIL_USER=teu.email@gmail.com
 EMAIL_PASSWORD=<APP_SPECIFIC_PASSWORD>
@@ -139,6 +162,10 @@ O código do projeto usa estas variáveis (de `config.py`):
 | `DATABASE_URL` | (adicionar) | ➕ Nova |
 | `GEMINI_API_KEY` | `GEMINI_API_KEY` | ✅ Já existe |
 | `OPENAI_API_KEY` | `OPENAI_API_KEY` | ✅ Já existe |
+| `ANTHROPIC_API_KEY` | `ANTHROPIC_API_KEY` | ✅ Já existe |
+| `KIMI_API_KEY` | `KIMI_API_KEY` | ✅ Já existe |
+| `MINIMAX_API_KEY` | `MINIMAX_API_KEY` | ✅ Já existe |
+| `MINIMAX_GROUP_ID` | `MINIMAX_GROUP_ID` | ✅ Já existe |
 | `RESEND_API_KEY` | (adicionar) | ➕ Nova |
 | `FROM_EMAIL` | (adicionar) | ➕ Nova |
 

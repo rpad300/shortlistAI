@@ -8,6 +8,8 @@ from .base import AIProvider, AIRequest, AIResponse, PromptType
 from .gemini_provider import GeminiProvider
 from .openai_provider import OpenAIProvider
 from .claude_provider import ClaudeProvider
+from .kimi_provider import KimiProvider
+from .minimax_provider import MiniMaxProvider
 from .manager import AIManager
 
 __all__ = [
@@ -18,6 +20,8 @@ __all__ = [
     "GeminiProvider",
     "OpenAIProvider",
     "ClaudeProvider",
+    "KimiProvider",
+    "MiniMaxProvider",
     "AIManager",
 ]
 

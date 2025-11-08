@@ -369,3 +369,20 @@ Frontend Step 1 is functional. Remaining frontend pages are scaffolded.
 
 Next phase: Complete frontend implementation for Steps 2-8, or deploy backend as-is.
 
+---
+
+## 2025-11-08 - AI Providers Aligned with Official SDKs
+
+### What was done:
+- Added dedicated provider implementations for **Kimi K2** (OpenAI-compatible SDK) and **MiniMax** (official REST API with `httpx`)
+- Updated the AI manager to auto-register Kimi and MiniMax alongside Gemini, OpenAI, and Claude using environment-driven configuration
+- Extended backend settings to include `MINIMAX_GROUP_ID`
+- Documented provider requirements and official references in `docs/ai/overview.md`, new `docs/ai/providers.md`, and refreshed `.env` guidance (`SETUP.md`, `UPDATE_ENV.md`)
+
+### Next steps:
+- Configure production API keys and group identifiers for the newly supported providers
+- Add automated tests that mock each provider to validate routing and fallback behaviour
+- Wire provider selection controls into the Admin backoffice configuration UI once available
+
+---
+
