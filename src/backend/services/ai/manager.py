@@ -68,23 +68,25 @@ class AIManager:
                 self.default_provider = "kimi"
             logger.info("Kimi provider initialized")
 
-        # MiniMax
-        if settings.minimax_api_key:
+        # MiniMax - Only initialize if available
+        # Note: Only used as fallback if Gemini/OpenAI/Claude fail
+        minimax_key = os.getenv("MINIMAX_API_KEY")
+        if minimax_key:
             try:
-                minimax_config = {
-                    "group_id": settings.minimax_group_id,
-                }
                 from .minimax_provider import MinimaxProvider
+                minimax_config = {
+                    "group_id": os.getenv("MINIMAX_GROUP_ID", ""),
+                }
                 self.providers["minimax"] = MinimaxProvider(
-                    settings.minimax_api_key,
+                    minimax_key,
                     config=minimax_config,
                 )
                 if not self.default_provider:
                     self.default_provider = "minimax"
-                logger.info("MiniMax provider initialized")
-            except ValueError as exc:
-                logger.error("MiniMax provider misconfiguration: %s", exc)
-                # Leave provider unregistered so that misconfigured setups are obvious.
+                logger.info("✅ Minimax provider initialized (Fallback 4)")
+            except Exception as exc:
+                logger.warning(f"Minimax provider failed to initialize: {exc}")
+                # Continue without Minimax
         
         if not self.providers:
             logger.warning("No AI providers configured. Check API keys in environment.")
