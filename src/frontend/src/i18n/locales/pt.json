@@ -1,0 +1,89 @@
+{
+  "welcome": "Bem-vindo à Plataforma de Análise de CVs",
+  "description": "Análise de CVs com IA para entrevistadores e candidatos. Escolha o seu fluxo abaixo.",
+  "interviewer_flow": "Fluxo do Entrevistador",
+  "candidate_flow": "Fluxo do Candidato",
+  "admin_login": "Login do Administrador",
+  
+  "common": {
+    "loading": "A carregar...",
+    "error": "Ocorreu um erro",
+    "success": "Sucesso",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "next": "Seguinte",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "upload": "Carregar",
+    "download": "Descarregar"
+  },
+  
+  "languages": {
+    "en": "English",
+    "pt": "Português",
+    "fr": "Français",
+    "es": "Español"
+  },
+  
+  "interviewer": {
+    "title": "Fluxo do Entrevistador",
+    "subtitle": "Analise múltiplos CVs face à sua oferta de emprego",
+    "step1_title": "Identificação e Consentimento",
+    "step2_title": "Oferta de Emprego",
+    "step3_title": "Pontos-Chave",
+    "step4_title": "Ponderação e Bloqueadores",
+    "step5_title": "Carregar CVs",
+    "step6_title": "Análise",
+    "step7_title": "Resultados"
+  },
+  
+  "candidate": {
+    "title": "Fluxo do Candidato",
+    "subtitle": "Prepare-se para a sua entrevista com insights de IA",
+    "step1_title": "Identificação e Consentimento",
+    "step2_title": "Oferta de Emprego",
+    "step3_title": "Carregar CV",
+    "step4_title": "Análise",
+    "step5_title": "Resultados"
+  },
+  
+  "admin": {
+    "title": "Painel de Administração",
+    "login": "Entrar",
+    "logout": "Sair",
+    "candidates": "Candidatos",
+    "companies": "Empresas",
+    "job_postings": "Ofertas de Emprego",
+    "analyses": "Análises",
+    "ai_management": "Gestão de IA",
+    "prompts": "Prompts",
+    "providers": "Fornecedores",
+    "translations": "Traduções",
+    "quality_review": "Revisão de Qualidade",
+    "golden_cases": "Casos de Referência"
+  },
+  
+  "forms": {
+    "name": "Nome",
+    "email": "Email",
+    "phone": "Telefone",
+    "country": "País",
+    "company": "Empresa (opcional)",
+    "required_field": "Este campo é obrigatório",
+    "invalid_email": "Endereço de email inválido",
+    "consent_store_data": "Consinto que os meus dados pessoais sejam armazenados",
+    "consent_future_contact": "Consinto ser contactado para futuras oportunidades",
+    "accept_terms": "Aceito os Termos e Condições",
+    "accept_privacy": "Aceito a Política de Privacidade"
+  },
+  
+  "legal": {
+    "terms": "Termos e Condições",
+    "privacy": "Política de Privacidade",
+    "base_language_notice": "Inglês é a versão legal oficial. Outras línguas são traduções para conveniência."
+  }
+}
+

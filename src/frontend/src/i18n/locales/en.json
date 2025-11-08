@@ -1,0 +1,89 @@
+{
+  "welcome": "Welcome to CV Analysis Platform",
+  "description": "AI-powered CV analysis for interviewers and candidates. Choose your flow below.",
+  "interviewer_flow": "Interviewer Flow",
+  "candidate_flow": "Candidate Flow",
+  "admin_login": "Admin Login",
+  
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "upload": "Upload",
+    "download": "Download"
+  },
+  
+  "languages": {
+    "en": "English",
+    "pt": "Português",
+    "fr": "Français",
+    "es": "Español"
+  },
+  
+  "interviewer": {
+    "title": "Interviewer Flow",
+    "subtitle": "Analyze multiple CVs against your job posting",
+    "step1_title": "Identification & Consent",
+    "step2_title": "Job Posting",
+    "step3_title": "Key Points",
+    "step4_title": "Weighting & Blockers",
+    "step5_title": "Upload CVs",
+    "step6_title": "Analysis",
+    "step7_title": "Results"
+  },
+  
+  "candidate": {
+    "title": "Candidate Flow",
+    "subtitle": "Prepare for your interview with AI-powered insights",
+    "step1_title": "Identification & Consent",
+    "step2_title": "Job Posting",
+    "step3_title": "Upload CV",
+    "step4_title": "Analysis",
+    "step5_title": "Results"
+  },
+  
+  "admin": {
+    "title": "Admin Dashboard",
+    "login": "Login",
+    "logout": "Logout",
+    "candidates": "Candidates",
+    "companies": "Companies",
+    "job_postings": "Job Postings",
+    "analyses": "Analyses",
+    "ai_management": "AI Management",
+    "prompts": "Prompts",
+    "providers": "Providers",
+    "translations": "Translations",
+    "quality_review": "Quality Review",
+    "golden_cases": "Golden Cases"
+  },
+  
+  "forms": {
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "country": "Country",
+    "company": "Company (optional)",
+    "required_field": "This field is required",
+    "invalid_email": "Invalid email address",
+    "consent_store_data": "I consent to store my personal data",
+    "consent_future_contact": "I consent to be contacted for future opportunities",
+    "accept_terms": "I accept the Terms and Conditions",
+    "accept_privacy": "I accept the Privacy Policy"
+  },
+  
+  "legal": {
+    "terms": "Terms and Conditions",
+    "privacy": "Privacy Policy",
+    "base_language_notice": "English is the official legal version. Other languages are translations for convenience."
+  }
+}
+

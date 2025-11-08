@@ -1,0 +1,89 @@
+{
+  "welcome": "Bienvenido a la Plataforma de Análisis de CVs",
+  "description": "Análisis de CVs con IA para entrevistadores y candidatos. Elija su flujo abajo.",
+  "interviewer_flow": "Flujo del Entrevistador",
+  "candidate_flow": "Flujo del Candidato",
+  "admin_login": "Inicio de Sesión Admin",
+  
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "upload": "Subir",
+    "download": "Descargar"
+  },
+  
+  "languages": {
+    "en": "English",
+    "pt": "Português",
+    "fr": "Français",
+    "es": "Español"
+  },
+  
+  "interviewer": {
+    "title": "Flujo del Entrevistador",
+    "subtitle": "Analice múltiples CVs contra su oferta de trabajo",
+    "step1_title": "Identificación y Consentimiento",
+    "step2_title": "Oferta de Trabajo",
+    "step3_title": "Puntos Clave",
+    "step4_title": "Ponderación y Bloqueadores",
+    "step5_title": "Subir CVs",
+    "step6_title": "Análisis",
+    "step7_title": "Resultados"
+  },
+  
+  "candidate": {
+    "title": "Flujo del Candidato",
+    "subtitle": "Prepárese para su entrevista con insights de IA",
+    "step1_title": "Identificación y Consentimiento",
+    "step2_title": "Oferta de Trabajo",
+    "step3_title": "Subir CV",
+    "step4_title": "Análisis",
+    "step5_title": "Resultados"
+  },
+  
+  "admin": {
+    "title": "Panel de Administración",
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "candidates": "Candidatos",
+    "companies": "Empresas",
+    "job_postings": "Ofertas de Trabajo",
+    "analyses": "Análisis",
+    "ai_management": "Gestión de IA",
+    "prompts": "Prompts",
+    "providers": "Proveedores",
+    "translations": "Traducciones",
+    "quality_review": "Revisión de Calidad",
+    "golden_cases": "Casos de Referencia"
+  },
+  
+  "forms": {
+    "name": "Nombre",
+    "email": "Email",
+    "phone": "Teléfono",
+    "country": "País",
+    "company": "Empresa (opcional)",
+    "required_field": "Este campo es obligatorio",
+    "invalid_email": "Dirección de email inválida",
+    "consent_store_data": "Consiento que se almacenen mis datos personales",
+    "consent_future_contact": "Consiento ser contactado para futuras oportunidades",
+    "accept_terms": "Acepto los Términos y Condiciones",
+    "accept_privacy": "Acepto la Política de Privacidad"
+  },
+  
+  "legal": {
+    "terms": "Términos y Condiciones",
+    "privacy": "Política de Privacidad",
+    "base_language_notice": "El inglés es la versión legal oficial. Otros idiomas son traducciones para conveniencia."
+  }
+}
+

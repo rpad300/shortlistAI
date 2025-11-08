@@ -1,0 +1,89 @@
+{
+  "welcome": "Bienvenue sur la Plateforme d'Analyse de CV",
+  "description": "Analyse de CV par IA pour recruteurs et candidats. Choisissez votre parcours ci-dessous.",
+  "interviewer_flow": "Parcours Recruteur",
+  "candidate_flow": "Parcours Candidat",
+  "admin_login": "Connexion Admin",
+  
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "submit": "Soumettre",
+    "upload": "Télécharger",
+    "download": "Télécharger"
+  },
+  
+  "languages": {
+    "en": "English",
+    "pt": "Português",
+    "fr": "Français",
+    "es": "Español"
+  },
+  
+  "interviewer": {
+    "title": "Parcours Recruteur",
+    "subtitle": "Analysez plusieurs CV par rapport à votre offre d'emploi",
+    "step1_title": "Identification et Consentement",
+    "step2_title": "Offre d'Emploi",
+    "step3_title": "Points Clés",
+    "step4_title": "Pondération et Bloqueurs",
+    "step5_title": "Télécharger les CV",
+    "step6_title": "Analyse",
+    "step7_title": "Résultats"
+  },
+  
+  "candidate": {
+    "title": "Parcours Candidat",
+    "subtitle": "Préparez votre entretien avec des insights IA",
+    "step1_title": "Identification et Consentement",
+    "step2_title": "Offre d'Emploi",
+    "step3_title": "Télécharger le CV",
+    "step4_title": "Analyse",
+    "step5_title": "Résultats"
+  },
+  
+  "admin": {
+    "title": "Tableau de Bord Admin",
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "candidates": "Candidats",
+    "companies": "Entreprises",
+    "job_postings": "Offres d'Emploi",
+    "analyses": "Analyses",
+    "ai_management": "Gestion IA",
+    "prompts": "Prompts",
+    "providers": "Fournisseurs",
+    "translations": "Traductions",
+    "quality_review": "Révision Qualité",
+    "golden_cases": "Cas de Référence"
+  },
+  
+  "forms": {
+    "name": "Nom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "country": "Pays",
+    "company": "Entreprise (optionnel)",
+    "required_field": "Ce champ est obligatoire",
+    "invalid_email": "Adresse email invalide",
+    "consent_store_data": "Je consens au stockage de mes données personnelles",
+    "consent_future_contact": "Je consens à être contacté pour de futures opportunités",
+    "accept_terms": "J'accepte les Termes et Conditions",
+    "accept_privacy": "J'accepte la Politique de Confidentialité"
+  },
+  
+  "legal": {
+    "terms": "Termes et Conditions",
+    "privacy": "Politique de Confidentialité",
+    "base_language_notice": "L'anglais est la version légale officielle. Les autres langues sont des traductions pour la commodité."
+  }
+}
+
