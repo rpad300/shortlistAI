@@ -11,7 +11,7 @@ import Input from '@components/Input';
 import Checkbox from '@components/Checkbox';
 import Button from '@components/Button';
 import { candidateAPI } from '@services/api';
-import '../pages/InterviewerStep1.css'; // Reuse same styles
+import './InterviewerStep1.css'; // Reuse same styles
 
 const CandidateStep1: React.FC = () => {
   const { t } = useTranslation();
