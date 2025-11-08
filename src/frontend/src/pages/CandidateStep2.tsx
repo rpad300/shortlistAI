@@ -39,18 +39,34 @@ const CandidateStep2: React.FC = () => {
     setError('');
     
     try {
-      const formData = new FormData();
-      formData.append('session_id', sessionId);
-      formData.append('language', i18n.language);
-      
-      if (files.length > 0) {
+      // Se usar file upload
+      if (useFile && files.length > 0) {
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+        formData.append('language', i18n.language);
         formData.append('file', files[0]);
-      } else {
-        formData.append('raw_text', jobText);
+        
+        await candidateAPI.step2(formData);
+        navigate('/candidate/step3');
+        return;
       }
       
-      await candidateAPI.step2(formData);
-      navigate('/candidate/step3');
+      // Se usar texto
+      if (!useFile && jobText.trim()) {
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+        formData.append('language', i18n.language);
+        formData.append('raw_text', jobText);
+        
+        await candidateAPI.step2(formData);
+        navigate('/candidate/step3');
+        return;
+      }
+      
+      // Se nenhum dos dois
+      setError('Por favor, forneça o job posting como texto ou upload de ficheiro.');
+      setLoading(false);
+      return;
       
     } catch (error: any) {
       console.error('Error in step 2:', error);

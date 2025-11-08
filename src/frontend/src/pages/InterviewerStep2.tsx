@@ -41,20 +41,34 @@ const InterviewerStep2: React.FC = () => {
     setError('');
     
     try {
-      const formData = new FormData();
-      formData.append('session_id', sessionId);
-      formData.append('language', i18n.language);
-      
-      if (files.length > 0) {
+      // Se usar file upload
+      if (useFile && files.length > 0) {
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+        formData.append('language', i18n.language);
         formData.append('file', files[0]);
-      } else {
-        formData.append('raw_text', jobText);
+        
+        const response = await interviewerAPI.step2(formData);
+        navigate('/interviewer/step3');
+        return;
       }
       
-      const response = await interviewerAPI.step2(formData);
+      // Se usar texto
+      if (!useFile && jobText.trim()) {
+        const formData = new FormData();
+        formData.append('session_id', sessionId);
+        formData.append('language', i18n.language);
+        formData.append('raw_text', jobText);
+        
+        const response = await interviewerAPI.step2(formData);
+        navigate('/interviewer/step3');
+        return;
+      }
       
-      navigate('/interviewer/step3');
-      
+      // Se nenhum dos dois
+      setError('Por favor, forneça o job posting como texto ou upload de ficheiro.');
+      setLoading(false);
+      return;
     } catch (error: any) {
       console.error('Error in step 2:', error);
       const errorDetail = error.response?.data?.detail;
