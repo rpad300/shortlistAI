@@ -12,6 +12,10 @@ import InterviewerStep3 from '@pages/InterviewerStep3';
 import InterviewerStep4 from '@pages/InterviewerStep4';
 import InterviewerStep5 from '@pages/InterviewerStep5';
 import CandidateStep1 from '@pages/CandidateStep1';
+import CandidateStep2 from '@pages/CandidateStep2';
+import CandidateStep3 from '@pages/CandidateStep3';
+import CandidateStep4 from '@pages/CandidateStep4';
+import CandidateStep5 from '@pages/CandidateStep5';
 import LegalTerms from '@pages/LegalTerms';
 import LegalPrivacy from '@pages/LegalPrivacy';
 import './App.css';
@@ -30,11 +34,11 @@ function App() {
         <Route path="/interviewer/step7" element={<PlaceholderPage step="7 - Results" flow="interviewer" />} />
         <Route path="/interviewer/step8" element={<PlaceholderPage step="8 - Email & Report" flow="interviewer" />} />
         <Route path="/candidate/step1" element={<CandidateStep1 />} />
-        <Route path="/candidate/step2" element={<PlaceholderPage step="2" flow="candidate" />} />
-        <Route path="/candidate/step3" element={<PlaceholderPage step="3" flow="candidate" />} />
-        <Route path="/candidate/step4" element={<PlaceholderPage step="4" flow="candidate" />} />
-        <Route path="/candidate/step5" element={<PlaceholderPage step="5" flow="candidate" />} />
-        <Route path="/candidate/step6" element={<PlaceholderPage step="6" flow="candidate" />} />
+        <Route path="/candidate/step2" element={<CandidateStep2 />} />
+        <Route path="/candidate/step3" element={<CandidateStep3 />} />
+        <Route path="/candidate/step4" element={<CandidateStep4 />} />
+        <Route path="/candidate/step5" element={<CandidateStep5 />} />
+        <Route path="/candidate/step6" element={<PlaceholderPage step="6 - Email Sent!" flow="candidate" />} />
         <Route path="/legal/terms" element={<LegalTerms />} />
         <Route path="/legal/privacy" element={<LegalPrivacy />} />
         <Route path="/admin/login" element={<PlaceholderPage step="Admin Login" flow="admin" />} />
