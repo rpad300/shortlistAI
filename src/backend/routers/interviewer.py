@@ -706,40 +706,129 @@ async def step7_results(session_id: UUID):
     
     Returns ranked list of candidates with scores and details.
     """
-    # TODO:
-    # 1. Fetch all analyses for session
-    # 2. Sort by global score
-    # 3. Format results
-    # 4. Return
+    from services.database import get_session_service, get_analysis_service
     
-    logger.info(f"Results requested for session: {session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "results": [],
-        "message": "Placeholder results. Implementation in progress."
-    })
+    try:
+        session_service = get_session_service()
+        analysis_service = get_analysis_service()
+        
+        # Validate session
+        session = session_service.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Check if analysis is complete
+        if not session["data"].get("analysis_complete"):
+            raise HTTPException(
+                status_code=400,
+                detail="Analysis not complete. Run step 6 first."
+            )
+        
+        # Get all analyses for this job posting
+        job_posting_id = session["data"].get("job_posting_id")
+        analyses = await analysis_service.get_by_job_posting(UUID(job_posting_id))
+        
+        # Format results
+        results = []
+        for analysis in analyses:
+            results.append({
+                "analysis_id": analysis["id"],
+                "candidate_id": analysis["candidate_id"],
+                "global_score": analysis["global_score"],
+                "categories": analysis["categories"],
+                "strengths": analysis.get("strengths", {}).get("items", []),
+                "risks": analysis.get("risks", {}).get("items", []),
+                "questions": analysis.get("questions", {}).get("items", []),
+                "hard_blocker_flags": analysis.get("hard_blocker_flags", {}).get("flags", [])
+            })
+        
+        logger.info(f"Results retrieved: {len(results)} candidates for session: {session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "total_candidates": len(results),
+            "results": results,
+            "message": f"Analysis complete for {len(results)} candidates."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step7_results: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error retrieving results"
+        )
 
 
 @router.post("/step8/email")
-async def step8_send_email(session_id: UUID, recipient_email: EmailStr):
+async def step8_send_email(
+    session_id: str,
+    recipient_email: EmailStr
+):
     """
     Step 8: Send email summary.
     
     Sends analysis summary to interviewer's email.
     """
-    # TODO:
-    # 1. Fetch results
-    # 2. Generate email content
-    # 3. Send via Resend
-    # 4. Log email sent
+    from services.database import get_session_service, get_analysis_service
+    from services.email import get_email_service
+    from uuid import UUID
     
-    logger.info(f"Email requested for session: {session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": f"Summary email sent to {recipient_email}"
-    })
+    try:
+        session_service = get_session_service()
+        analysis_service = get_analysis_service()
+        email_service = get_email_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Get analyses
+        job_posting_id = session["data"].get("job_posting_id")
+        analyses = await analysis_service.get_by_job_posting(UUID(job_posting_id))
+        
+        # Prepare top candidates for email
+        top_candidates = [
+            {
+                "name": f"Candidate {idx+1}",
+                "score": analysis.get("global_score", 0)
+            }
+            for idx, analysis in enumerate(analyses[:5])
+        ]
+        
+        # Send email
+        success = await email_service.send_interviewer_summary(
+            to_email=recipient_email,
+            interviewer_name=session["data"].get("interviewer_name", "Interviewer"),
+            job_title="Position",  # TODO: Extract from job posting
+            candidate_count=len(analyses),
+            top_candidates=top_candidates,
+            language=session["data"].get("language", "en")
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to send email"
+            )
+        
+        logger.info(f"Email sent to {recipient_email} for session: {session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": f"Summary email sent to {recipient_email}"
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending email: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error sending email"
+        )
 
 
 @router.get("/step8/report/{session_id}")

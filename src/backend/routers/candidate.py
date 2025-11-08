@@ -392,18 +392,106 @@ async def step4_analysis(session_id: str):
     Runs AI analysis of candidate's fit for the job posting.
     Returns preparation guidance.
     """
-    # TODO:
-    # 1. Fetch job posting and CV from session
-    # 2. Call AI service (candidate mode)
-    # 3. Store analysis
-    # 4. Return results
+    from services.database import (
+        get_session_service,
+        get_job_posting_service,
+        get_cv_service,
+        get_analysis_service
+    )
+    from uuid import UUID
     
-    logger.info(f"Analysis triggered for candidate session: {session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "Analysis complete. View results in step 5."
-    })
+    try:
+        session_service = get_session_service()
+        job_posting_service = get_job_posting_service()
+        cv_service = get_cv_service()
+        analysis_service = get_analysis_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Get job posting and CV
+        job_posting_id = session["data"].get("job_posting_id")
+        cv_id = session["data"].get("cv_id")
+        candidate_id = session["data"].get("candidate_id")
+        
+        if not all([job_posting_id, cv_id, candidate_id]):
+            raise HTTPException(
+                status_code=400,
+                detail="Missing required data. Complete steps 2 and 3 first."
+            )
+        
+        # Placeholder analysis (TODO: Use actual AI)
+        categories = {
+            "technical_skills": 4,
+            "experience": 3,
+            "soft_skills": 5,
+            "languages": 5,
+            "education": 4
+        }
+        
+        global_score = sum(categories.values()) / len(categories)
+        
+        # Create analysis record
+        analysis = await analysis_service.create(
+            mode="candidate",
+            job_posting_id=UUID(job_posting_id),
+            cv_id=UUID(cv_id),
+            candidate_id=UUID(candidate_id),
+            provider="placeholder",
+            categories=categories,
+            global_score=round(global_score, 2),
+            strengths=[
+                "Strong technical background",
+                "Excellent communication skills",
+                "Relevant experience"
+            ],
+            risks=[
+                "Limited experience with cloud platforms",
+                "No formal certifications"
+            ],
+            questions=[
+                "Tell me about your experience with Python",
+                "How do you handle team conflicts?",
+                "What are your career goals?"
+            ],
+            intro_pitch="I'm a passionate developer with 5 years of experience...",
+            language=session["data"].get("language", "en")
+        )
+        
+        if not analysis:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create analysis"
+            )
+        
+        # Update session
+        session_service.update_session(
+            UUID(session_id),
+            {
+                "analysis_id": analysis["id"],
+                "analysis_complete": True
+            },
+            step=4
+        )
+        
+        logger.info(f"Candidate analysis complete: {analysis['id']}")
+        
+        return JSONResponse({
+            "status": "success",
+            "analysis_id": analysis["id"],
+            "message": "Analysis complete. View results in step 5."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step4_analysis: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during analysis"
+        )
 
 
 @router.get("/step5/{session_id}", response_model=CandidateAnalysisResponse)
@@ -418,65 +506,119 @@ async def step5_results(session_id: UUID):
     - Suggested answer structures
     - Intro pitch
     """
-    # TODO:
-    # 1. Fetch analysis from database
-    # 2. Format results
-    # 3. Return
+    from services.database import get_session_service, get_analysis_service
     
-    logger.info(f"Results requested for candidate session: {session_id}")
-    
-    # Placeholder response
-    return CandidateAnalysisResponse(
-        session_id=session_id,
-        categories={
-            "technical_skills": 4,
-            "experience": 3,
-            "soft_skills": 4,
-            "languages": 5
-        },
-        strengths=[
-            "Strong technical background in Python and React",
-            "Excellent communication skills",
-            "Fluent in multiple languages"
-        ],
-        gaps=[
-            "Limited experience with cloud platforms",
-            "No formal project management certification"
-        ],
-        questions=[
-            "Tell me about your experience with Python and FastAPI",
-            "How do you handle disagreements in a team?",
-            "What cloud platforms have you worked with?"
-        ],
-        suggested_answers=[
-            "Mention specific projects and quantify achievements",
-            "Use STAR method: Situation, Task, Action, Result",
-            "Be honest about gaps and show willingness to learn"
-        ],
-        intro_pitch="I'm a full-stack developer with 5 years of experience in Python and React...",
-        language="en"
-    )
+    try:
+        session_service = get_session_service()
+        analysis_service = get_analysis_service()
+        
+        # Validate session
+        session = session_service.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Get analysis ID
+        analysis_id = session["data"].get("analysis_id")
+        if not analysis_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Analysis not found. Complete step 4 first."
+            )
+        
+        # Fetch analysis
+        analysis = await analysis_service.get_by_id(UUID(analysis_id))
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        # Format response
+        return CandidateAnalysisResponse(
+            session_id=session_id,
+            categories=analysis["categories"],
+            strengths=analysis.get("strengths", {}).get("items", []),
+            gaps=analysis.get("risks", {}).get("items", []),
+            questions=analysis.get("questions", {}).get("items", []),
+            suggested_answers=[
+                "Use STAR method: Situation, Task, Action, Result",
+                "Quantify your achievements with specific metrics",
+                "Be honest about gaps and show willingness to learn",
+                "Prepare specific examples from your experience"
+            ],
+            intro_pitch=analysis.get("intro_pitch", ""),
+            language=analysis["language"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step5_results: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error retrieving results"
+        )
 
 
 @router.post("/step6/email")
-async def step6_send_email(session_id: UUID, recipient_email: EmailStr):
+async def step6_send_email(
+    session_id: str,
+    recipient_email: EmailStr
+):
     """
     Step 6: Send email summary.
     
     Sends preparation guide to candidate's email.
     """
-    # TODO:
-    # 1. Fetch results
-    # 2. Generate email content in candidate's language
-    # 3. Send via Resend
-    # 4. Log email sent
+    from services.database import get_session_service, get_analysis_service
+    from services.email import get_email_service
+    from uuid import UUID
     
-    logger.info(f"Email requested for candidate session: {session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": f"Preparation guide sent to {recipient_email}"
-    })
+    try:
+        session_service = get_session_service()
+        analysis_service = get_analysis_service()
+        email_service = get_email_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Get analysis
+        analysis_id = session["data"].get("analysis_id")
+        if not analysis_id:
+            raise HTTPException(status_code=400, detail="Analysis not found")
+        
+        analysis = await analysis_service.get_by_id(UUID(analysis_id))
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        # Send email
+        success = await email_service.send_candidate_preparation(
+            to_email=recipient_email,
+            candidate_name=session["data"].get("candidate_name", "Candidate"),
+            job_title="Position",
+            scores=analysis["categories"],
+            questions=analysis.get("questions", {}).get("items", []),
+            intro_pitch=analysis.get("intro_pitch", ""),
+            language=analysis["language"]
+        )
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to send email")
+        
+        logger.info(f"Preparation email sent to {recipient_email}")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": f"Preparation guide sent to {recipient_email}"
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending email: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error sending email"
+        )
 
 
 @router.get("/step6/report/{session_id}")
