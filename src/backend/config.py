@@ -21,14 +21,14 @@ class Settings(BaseSettings):
     # Application
     app_env: str = Field(default="development", env="APP_ENV")
     app_port: int = Field(default=8000, env="APP_PORT")
-    app_debug: bool = Field(default=False, env="APP_DEBUG")
-    secret_key: str = Field(..., env="SECRET_KEY")
+    app_debug: bool = Field(default=True, env="APP_DEBUG")
+    secret_key: str = Field(default="dev-secret-key-CHANGE-IN-PRODUCTION", env="SECRET_KEY")
     
     # Database (Supabase)
-    supabase_url: str = Field(..., env="SUPABASE_URL")
-    supabase_anon_key: str = Field(..., env="SUPABASE_ANON_KEY")
-    supabase_service_role_key: str = Field(..., env="SUPABASE_SERVICE_ROLE_KEY")
-    database_url: str = Field(..., env="DATABASE_URL")
+    supabase_url: Optional[str] = Field(default=None, env="SUPABASE_URL")
+    supabase_anon_key: Optional[str] = Field(default=None, env="SUPABASE_ANON_KEY")
+    supabase_service_role_key: Optional[str] = Field(default=None, env="SUPABASE_SERVICE_ROLE_KEY")
+    database_url: Optional[str] = Field(default=None, env="DATABASE_URL")
     
     # AI Providers
     gemini_api_key: Optional[str] = Field(default=None, env="GEMINI_API_KEY")
@@ -38,11 +38,14 @@ class Settings(BaseSettings):
     minimax_api_key: Optional[str] = Field(default=None, env="MINIMAX_API_KEY")
     
     # Email Service
-    resend_api_key: str = Field(..., env="RESEND_API_KEY")
-    from_email: str = Field(..., env="FROM_EMAIL")
+    resend_api_key: Optional[str] = Field(default=None, env="RESEND_API_KEY")
+    from_email: str = Field(default="noreply@shortlistai.com", env="FROM_EMAIL")
     
     # Security
-    admin_password_hash: str = Field(..., env="ADMIN_PASSWORD_HASH")
+    admin_password_hash: str = Field(
+        default="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYILY8T6eBO",
+        env="ADMIN_PASSWORD_HASH"
+    )
     
     # Rate Limiting & Abuse Prevention
     rate_limit_per_minute: int = Field(default=10, env="RATE_LIMIT_PER_MINUTE")
@@ -64,8 +67,10 @@ class Settings(BaseSettings):
     
     class Config:
         """Pydantic configuration."""
-        env_file = ".env"
+        env_file = "../../.env"  # .env is in project root
+        env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # Ignore extra fields in .env
 
 
 # Global settings instance
