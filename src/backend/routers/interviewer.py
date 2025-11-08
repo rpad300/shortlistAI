@@ -451,26 +451,140 @@ async def step5_upload_cvs(
     
     Accepts multiple CV files for analysis.
     """
+    from services.database import (
+        get_session_service,
+        get_cv_service,
+        get_candidate_service
+    )
+    from services.storage import get_storage_service
+    from utils import FileProcessor
+    from uuid import UUID
+    
     if len(files) == 0:
         raise HTTPException(
             status_code=400,
             detail="At least one CV file must be uploaded"
         )
     
-    # TODO: For each file:
-    # 1. Validate file type and size
-    # 2. Upload to Supabase storage
-    # 3. Extract text using AI
-    # 4. Detect or create candidate (deduplication by email)
-    # 5. Store CV record linked to candidate
-    
-    logger.info(f"Uploaded {len(files)} CVs for session: {session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "files_processed": len(files),
-        "message": f"Uploaded {len(files)} CVs. Proceed to step 6 for analysis."
-    })
+    try:
+        session_service = get_session_service()
+        cv_service = get_cv_service()
+        candidate_service = get_candidate_service()
+        storage_service = get_storage_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        processed_cvs = []
+        errors = []
+        
+        # Process each CV file
+        for idx, file in enumerate(files):
+            try:
+                # Validate file
+                is_valid, error = FileProcessor.validate_file_type(file.filename)
+                if not is_valid:
+                    errors.append(f"{file.filename}: {error}")
+                    continue
+                
+                # Read file
+                file_content = await file.read()
+                
+                # Validate size
+                is_valid, error = FileProcessor.validate_file_size(len(file_content))
+                if not is_valid:
+                    errors.append(f"{file.filename}: {error}")
+                    continue
+                
+                # Extract text to try to find email for deduplication
+                success, extracted_text, error = FileProcessor.extract_text(
+                    file_content,
+                    file.filename
+                )
+                
+                if not success or not extracted_text:
+                    extracted_text = ""
+                
+                # For now, create anonymous candidate for each CV
+                # In production, we'd use AI to extract email from CV text
+                candidate = await candidate_service.create(
+                    email=f"candidate_{idx+1}@temp.com",  # TODO: Extract from CV with AI
+                    name=f"Candidate {idx+1}",  # TODO: Extract from CV with AI
+                    consent_given=False  # Consent from interviewer, not candidate
+                )
+                
+                if not candidate:
+                    errors.append(f"{file.filename}: Failed to create candidate")
+                    continue
+                
+                # Upload CV file
+                success, file_url, error = await storage_service.upload_cv(
+                    file_content,
+                    file.filename,
+                    candidate["id"]
+                )
+                
+                if not success:
+                    errors.append(f"{file.filename}: {error}")
+                    continue
+                
+                # Create CV record
+                cv = await cv_service.create(
+                    candidate_id=UUID(candidate["id"]),
+                    file_url=file_url,
+                    uploaded_by_flow="interviewer",
+                    extracted_text=extracted_text
+                )
+                
+                if cv:
+                    processed_cvs.append({
+                        "cv_id": cv["id"],
+                        "candidate_id": candidate["id"],
+                        "filename": file.filename
+                    })
+                    logger.info(f"CV processed: {file.filename} -> {cv['id']}")
+                
+            except Exception as e:
+                errors.append(f"{file.filename}: {str(e)}")
+                logger.error(f"Error processing CV {file.filename}: {e}")
+        
+        if len(processed_cvs) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No CVs could be processed. Errors: {errors}"
+            )
+        
+        # Update session with CV IDs
+        session_service.update_session(
+            UUID(session_id),
+            {
+                "cv_ids": [cv["cv_id"] for cv in processed_cvs],
+                "cv_count": len(processed_cvs)
+            },
+            step=5
+        )
+        
+        logger.info(f"Uploaded {len(processed_cvs)} CVs for session: {session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "files_processed": len(processed_cvs),
+            "files_failed": len(errors),
+            "cvs": processed_cvs,
+            "errors": errors if errors else None,
+            "message": f"Uploaded {len(processed_cvs)} CVs. Proceed to step 6 for AI analysis."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step5_upload_cvs: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error uploading CVs"
+        )
 
 
 @router.post("/step6")
