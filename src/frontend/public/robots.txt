@@ -1,0 +1,16 @@
+# robots.txt for ShortlistAI
+
+User-agent: *
+Allow: /
+Allow: /interviewer/step1
+Allow: /candidate/step1
+Allow: /legal/terms
+Allow: /legal/privacy
+
+# Disallow private areas
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://shortlistai.com/sitemap.xml
+

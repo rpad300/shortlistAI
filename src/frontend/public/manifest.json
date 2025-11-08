@@ -1,0 +1,59 @@
+{
+  "name": "ShortlistAI - CV Analysis Platform",
+  "short_name": "ShortlistAI",
+  "description": "AI-powered CV analysis for interviewers and candidates",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "education"],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Interviewer Flow",
+      "short_name": "Interviewer",
+      "description": "Analyze CVs for your job posting",
+      "url": "/interviewer/step1",
+      "icons": [{ "src": "/icons/interviewer.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Candidate Flow",
+      "short_name": "Candidate",
+      "description": "Prepare for your interview",
+      "url": "/candidate/step1",
+      "icons": [{ "src": "/icons/candidate.png", "sizes": "96x96" }]
+    }
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}
+
