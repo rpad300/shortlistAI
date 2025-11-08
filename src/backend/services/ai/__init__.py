@@ -9,7 +9,7 @@ from .gemini_provider import GeminiProvider
 from .openai_provider import OpenAIProvider
 from .claude_provider import ClaudeProvider
 from .kimi_provider import KimiProvider
-from .minimax_provider import MiniMaxProvider
+from .minimax_provider import MinimaxProvider
 from .manager import AIManager
 
 __all__ = [
@@ -21,7 +21,7 @@ __all__ = [
     "OpenAIProvider",
     "ClaudeProvider",
     "KimiProvider",
-    "MiniMaxProvider",
+    "MinimaxProvider",
     "AIManager",
 ]
 
