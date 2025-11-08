@@ -5,7 +5,7 @@ This module initializes the FastAPI app with all necessary middleware,
 routers, and configuration for the CV analysis platform.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
@@ -36,6 +36,20 @@ app.add_middleware(
 
 # Gzip compression for responses
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Rate limiting middleware
+from middleware.rate_limit import get_rate_limiter
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Apply rate limiting to requests."""
+    # Apply rate limiting only to public endpoints
+    if request.url.path.startswith("/api/interviewer") or request.url.path.startswith("/api/candidate"):
+        rate_limiter = get_rate_limiter()
+        await rate_limiter.check_rate_limit(request)
+    
+    response = await call_next(request)
+    return response
 
 
 @app.get("/")
