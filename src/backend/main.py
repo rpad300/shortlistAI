@@ -72,15 +72,14 @@ async def health_check():
 
 
 # Import routers
-from routers import interviewer, candidate
+from routers import interviewer, candidate, admin
 
 # Register routers
 app.include_router(interviewer.router, prefix="/api")
 app.include_router(candidate.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 # TODO: Add additional routers:
-# - Admin authentication
-# - Admin backoffice (candidates, companies, job postings, analyses)
 # - Admin AI management (prompts, providers, testing)
 # - Admin translation management
 

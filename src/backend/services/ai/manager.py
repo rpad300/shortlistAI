@@ -39,21 +39,29 @@ class AIManager:
         # Gemini
         gemini_key = os.getenv("GEMINI_API_KEY")
         if gemini_key:
+            from .gemini_provider import GeminiProvider
             self.providers["gemini"] = GeminiProvider(gemini_key)
             if not self.default_provider:
                 self.default_provider = "gemini"
             logger.info("Gemini provider initialized")
         
-        # TODO: Add other providers
         # OpenAI
-        # openai_key = os.getenv("OPENAI_API_KEY")
-        # if openai_key:
-        #     self.providers["openai"] = OpenAIProvider(openai_key)
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            from .openai_provider import OpenAIProvider
+            self.providers["openai"] = OpenAIProvider(openai_key)
+            if not self.default_provider:
+                self.default_provider = "openai"
+            logger.info("OpenAI provider initialized")
         
         # Claude
-        # claude_key = os.getenv("ANTHROPIC_API_KEY")
-        # if claude_key:
-        #     self.providers["claude"] = ClaudeProvider(claude_key)
+        claude_key = os.getenv("ANTHROPIC_API_KEY")
+        if claude_key:
+            from .claude_provider import ClaudeProvider
+            self.providers["claude"] = ClaudeProvider(claude_key)
+            if not self.default_provider:
+                self.default_provider = "claude"
+            logger.info("Claude provider initialized")
         
         if not self.providers:
             logger.warning("No AI providers configured. Check API keys in environment.")
