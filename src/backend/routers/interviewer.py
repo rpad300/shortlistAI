@@ -268,39 +268,45 @@ async def step2_job_posting(
                 detail="Failed to create job posting record"
             )
         
-        # Use AI to extract key points from job posting (optional, best effort)
+        # ALWAYS use AI to extract key points from job posting
+        # Gemini is default, others are fallbacks
         suggested_key_points = None
-        try:
-            from services.ai_analysis import get_ai_analysis_service
-            ai_service = get_ai_analysis_service()
+        from services.ai_analysis import get_ai_analysis_service
+        
+        ai_service = get_ai_analysis_service()
+        
+        # Normalize job posting to extract structured requirements with AI
+        logger.info(f"Using AI to analyze job posting (provider: {ai_service.ai_manager.default_provider})")
+        normalized = await ai_service.normalize_job_posting(final_text, language)
+        
+        if normalized:
+            # Build suggested key points from AI analysis
+            key_points_parts = []
             
-            # Normalize job posting to extract structured requirements
-            normalized = await ai_service.normalize_job_posting(final_text, language)
+            if normalized.get("required_skills"):
+                skills = ", ".join(normalized["required_skills"][:5])
+                key_points_parts.append(f"• Required skills: {skills}")
             
-            if normalized:
-                # Build suggested key points from AI analysis
-                key_points_parts = []
-                
-                if normalized.get("required_skills"):
-                    skills = ", ".join(normalized["required_skills"][:5])
-                    key_points_parts.append(f"Required skills: {skills}")
-                
-                if normalized.get("experience_level"):
-                    key_points_parts.append(f"Experience: {normalized['experience_level']}")
-                
-                if normalized.get("languages"):
-                    langs = ", ".join(normalized["languages"])
-                    key_points_parts.append(f"Languages: {langs}")
-                
-                if normalized.get("qualifications"):
-                    quals = "; ".join(normalized["qualifications"][:3])
-                    key_points_parts.append(f"Qualifications: {quals}")
-                
-                suggested_key_points = "\n\n".join(key_points_parts)
-                logger.info("AI-generated suggested key points")
-        except Exception as e:
-            logger.warning(f"Could not generate suggested key points with AI: {e}")
-            # Continue without suggestions
+            if normalized.get("experience_level"):
+                key_points_parts.append(f"• Experience level: {normalized['experience_level']}")
+            
+            if normalized.get("languages"):
+                langs = ", ".join(normalized["languages"])
+                key_points_parts.append(f"• Languages: {langs}")
+            
+            if normalized.get("qualifications"):
+                quals = "\n  - ".join(normalized["qualifications"][:3])
+                key_points_parts.append(f"• Key qualifications:\n  - {quals}")
+            
+            if normalized.get("preferred_skills"):
+                prefs = ", ".join(normalized["preferred_skills"][:3])
+                key_points_parts.append(f"• Nice to have: {prefs}")
+            
+            suggested_key_points = "\n\n".join(key_points_parts)
+            logger.info(f"AI-generated suggested key points ({len(suggested_key_points)} chars)")
+        else:
+            logger.warning("AI returned no normalized data")
+            suggested_key_points = "• Could not extract key points with AI. Please write them manually."
         
         # Update session with job posting ID and suggested key points
         session_service.update_session(
