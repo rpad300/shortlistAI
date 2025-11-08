@@ -99,8 +99,14 @@ const InterviewerStep1: React.FC = () => {
       
     } catch (error: any) {
       console.error('Error in step 1:', error);
+      const errorDetail = error.response?.data?.detail;
+      const errorMessage = Array.isArray(errorDetail) 
+        ? errorDetail.map((e: any) => e.msg || e).join(', ')
+        : typeof errorDetail === 'string' 
+          ? errorDetail 
+          : 'An error occurred. Please try again.';
       setErrors({
-        submit: error.response?.data?.detail || 'An error occurred. Please try again.'
+        submit: errorMessage
       });
     } finally {
       setLoading(false);
