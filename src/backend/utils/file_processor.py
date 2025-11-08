@@ -4,7 +4,7 @@ File processing utilities for extracting text from documents.
 Supports PDF and DOCX formats for CVs and job postings.
 """
 
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 import PyPDF2
 from docx import Document
 import io
