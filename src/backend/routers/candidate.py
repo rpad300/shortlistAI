@@ -76,6 +76,8 @@ async def step1_identification(data: CandidateIdentification):
     Creates or finds existing candidate and creates a new session.
     Validates that all required consents are given.
     """
+    from services.database import get_candidate_service, get_session_service
+    
     # Validate all consents are true
     if not all([
         data.consent_terms,
@@ -88,20 +90,63 @@ async def step1_identification(data: CandidateIdentification):
             detail="All consents must be accepted to proceed"
         )
     
-    # TODO: Implement database logic:
-    # 1. Find or create candidate (deduplication by email)
-    # 2. Create session for multi-step flow
-    # 3. Log audit event
-    
-    logger.info(f"Candidate identification: {data.email}")
-    
-    # Placeholder response
-    import uuid
-    return CandidateIdentificationResponse(
-        candidate_id=uuid.uuid4(),
-        session_id=uuid.uuid4(),
-        message="Candidate identified successfully. Proceed to step 2."
-    )
+    try:
+        # Get services
+        candidate_service = get_candidate_service()
+        session_service = get_session_service()
+        
+        # 1. Find or create candidate (deduplication by email)
+        candidate = await candidate_service.find_or_create(
+            email=data.email,
+            name=data.name,
+            phone=data.phone,
+            country=data.country,
+            consent_given=True
+        )
+        
+        if not candidate:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create candidate record"
+            )
+        
+        candidate_id = candidate["id"]
+        logger.info(f"Candidate created/found: {data.email} -> {candidate_id}")
+        
+        # 2. Create session for multi-step flow
+        session_id = session_service.create_session(
+            flow_type="candidate",
+            user_id=candidate_id,
+            initial_data={
+                "candidate_id": candidate_id,
+                "language": data.language,
+                "consents": {
+                    "terms": data.consent_terms,
+                    "privacy": data.consent_privacy,
+                    "store_data": data.consent_store_data,
+                    "future_contact": data.consent_future_contact
+                }
+            }
+        )
+        
+        logger.info(f"Session created: {session_id} for candidate {candidate_id}")
+        
+        # 3. TODO: Log audit event (future implementation)
+        
+        return CandidateIdentificationResponse(
+            candidate_id=candidate_id,
+            session_id=session_id,
+            message=f"Welcome {data.name}! Proceed to step 2 to add the job posting."
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step1_identification: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during identification"
+        )
 
 
 @router.post("/step2")

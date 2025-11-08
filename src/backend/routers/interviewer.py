@@ -82,6 +82,12 @@ async def step1_identification(data: InterviewerIdentification):
     Creates or finds existing interviewer, company, and creates a new session.
     Validates that all required consents are given.
     """
+    from services.database import (
+        get_company_service,
+        get_interviewer_service,
+        get_session_service
+    )
+    
     # Validate all consents are true
     if not all([
         data.consent_terms,
@@ -94,21 +100,74 @@ async def step1_identification(data: InterviewerIdentification):
             detail="All consents must be accepted to proceed"
         )
     
-    # TODO: Implement database logic:
-    # 1. Find or create company (if company_name provided)
-    # 2. Find or create interviewer
-    # 3. Create session (temporary storage for multi-step flow)
-    # 4. Log audit event
-    
-    logger.info(f"Interviewer identification: {data.email}")
-    
-    # Placeholder response
-    import uuid
-    return InterviewerIdentificationResponse(
-        interviewer_id=uuid.uuid4(),
-        session_id=uuid.uuid4(),
-        message="Interviewer identified successfully. Proceed to step 2."
-    )
+    try:
+        # Get services
+        company_service = get_company_service()
+        interviewer_service = get_interviewer_service()
+        session_service = get_session_service()
+        
+        # 1. Find or create company (if provided)
+        company_id = None
+        if data.company_name:
+            company = await company_service.find_or_create(data.company_name)
+            if company:
+                company_id = company["id"]
+                logger.info(f"Company: {data.company_name} -> {company_id}")
+        
+        # 2. Find or create interviewer
+        interviewer = await interviewer_service.find_or_create(
+            email=data.email,
+            name=data.name,
+            company_id=company_id,
+            phone=data.phone,
+            country=data.country,
+            consent_given=True
+        )
+        
+        if not interviewer:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create interviewer record"
+            )
+        
+        interviewer_id = interviewer["id"]
+        logger.info(f"Interviewer created/found: {data.email} -> {interviewer_id}")
+        
+        # 3. Create session for multi-step flow
+        session_id = session_service.create_session(
+            flow_type="interviewer",
+            user_id=interviewer_id,
+            initial_data={
+                "interviewer_id": interviewer_id,
+                "company_id": company_id,
+                "language": data.language,
+                "consents": {
+                    "terms": data.consent_terms,
+                    "privacy": data.consent_privacy,
+                    "store_data": data.consent_store_data,
+                    "future_contact": data.consent_future_contact
+                }
+            }
+        )
+        
+        logger.info(f"Session created: {session_id} for interviewer {interviewer_id}")
+        
+        # 4. TODO: Log audit event (future implementation)
+        
+        return InterviewerIdentificationResponse(
+            interviewer_id=interviewer_id,
+            session_id=session_id,
+            message=f"Welcome {data.name}! Proceed to step 2 to add your job posting."
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step1_identification: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during identification"
+        )
 
 
 @router.post("/step2")
