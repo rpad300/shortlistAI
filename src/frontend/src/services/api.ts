@@ -55,7 +55,9 @@ export default api;
  */
 export const interviewerAPI = {
   step1: (data: any) => api.post('/api/interviewer/step1', data),
-  step2: (data: any) => api.post('/api/interviewer/step2', data),
+  step2: (data: FormData) => api.post('/api/interviewer/step2', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   step3: (data: any) => api.post('/api/interviewer/step3', data),
   step4: (data: any) => api.post('/api/interviewer/step4', data),
   step5: (data: FormData) => api.post('/api/interviewer/step5', data, {
@@ -73,7 +75,9 @@ export const interviewerAPI = {
  */
 export const candidateAPI = {
   step1: (data: any) => api.post('/api/candidate/step1', data),
-  step2: (data: any) => api.post('/api/candidate/step2', data),
+  step2: (data: FormData) => api.post('/api/candidate/step2', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   step3: (data: FormData) => api.post('/api/candidate/step3', data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
