@@ -74,7 +74,8 @@ class AIManager:
                 minimax_config = {
                     "group_id": settings.minimax_group_id,
                 }
-                self.providers["minimax"] = MiniMaxProvider(
+                from .minimax_provider import MinimaxProvider
+                self.providers["minimax"] = MinimaxProvider(
                     settings.minimax_api_key,
                     config=minimax_config,
                 )
