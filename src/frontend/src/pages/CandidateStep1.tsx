@@ -80,7 +80,7 @@ const CandidateStep1: React.FC = () => {
     setLoading(true);
     setErrors({});
     
-    try:
+    try {
       const response = await candidateAPI.step1({
         ...formData,
         ...consents,
