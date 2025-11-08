@@ -10,7 +10,7 @@ Handles all steps of the candidate flow:
 6. Email and report generation
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field

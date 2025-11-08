@@ -5,7 +5,7 @@ Implements rate limiting on public endpoints.
 """
 
 from fastapi import Request, HTTPException
-from typing import Dict
+from typing import Dict, Optional
 from datetime import datetime, timedelta
 import logging
 
