@@ -4,33 +4,28 @@
  * Sets up routing, theme management, and global layout structure.
  */
 
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-
-// Pages (TODO: Create these components)
-// import HomePage from '@pages/HomePage';
-// import InterviewerFlow from '@pages/InterviewerFlow';
-// import CandidateFlow from '@pages/CandidateFlow';
-// import AdminLogin from '@pages/AdminLogin';
-// import AdminDashboard from '@pages/AdminDashboard';
+import InterviewerStep1 from '@pages/InterviewerStep1';
+import CandidateStep1 from '@pages/CandidateStep1';
+import './App.css';
 
 function App() {
-  const { t } = useTranslation();
-
   return (
     <div className="app">
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/interviewer/*" element={<div>{t('Interviewer Flow - Coming Soon')}</div>} />
-        <Route path="/candidate/*" element={<div>{t('Candidate Flow - Coming Soon')}</div>} />
-        <Route path="/admin/login" element={<div>{t('Admin Login - Coming Soon')}</div>} />
-        <Route path="/admin/*" element={<div>{t('Admin Dashboard - Coming Soon')}</div>} />
+        <Route path="/interviewer/step1" element={<InterviewerStep1 />} />
+        <Route path="/interviewer/step2" element={<PlaceholderPage step="2" flow="interviewer" />} />
+        <Route path="/candidate/step1" element={<CandidateStep1 />} />
+        <Route path="/candidate/step2" element={<PlaceholderPage step="2" flow="candidate" />} />
+        <Route path="/admin/login" element={<PlaceholderPage step="Admin Login" flow="admin" />} />
       </Routes>
     </div>
   );
 }
 
-// Temporary HomePage component
+// HomePage component
 function HomePage() {
   const { t, i18n } = useTranslation();
 
@@ -39,21 +34,69 @@ function HomePage() {
   };
 
   return (
-    <div style={{ padding: '2rem', textAlign: 'center' }}>
-      <h1>{t('welcome')}</h1>
-      <p>{t('description')}</p>
+    <div className="home-container">
+      <header className="home-header">
+        <h1>{t('welcome')}</h1>
+        <p className="home-description">{t('description')}</p>
+      </header>
       
-      <div style={{ marginTop: '2rem' }}>
-        <button onClick={() => changeLanguage('en')}>English</button>
-        <button onClick={() => changeLanguage('pt')}>Português</button>
-        <button onClick={() => changeLanguage('fr')}>Français</button>
-        <button onClick={() => changeLanguage('es')}>Español</button>
+      <div className="language-selector">
+        <button 
+          onClick={() => changeLanguage('en')}
+          className={i18n.language === 'en' ? 'active' : ''}
+        >
+          {t('languages.en')}
+        </button>
+        <button 
+          onClick={() => changeLanguage('pt')}
+          className={i18n.language === 'pt' ? 'active' : ''}
+        >
+          {t('languages.pt')}
+        </button>
+        <button 
+          onClick={() => changeLanguage('fr')}
+          className={i18n.language === 'fr' ? 'active' : ''}
+        >
+          {t('languages.fr')}
+        </button>
+        <button 
+          onClick={() => changeLanguage('es')}
+          className={i18n.language === 'es' ? 'active' : ''}
+        >
+          {t('languages.es')}
+        </button>
       </div>
 
-      <div style={{ marginTop: '2rem' }}>
-        <a href="/interviewer" style={{ margin: '0 1rem' }}>{t('interviewer_flow')}</a>
-        <a href="/candidate" style={{ margin: '0 1rem' }}>{t('candidate_flow')}</a>
-        <a href="/admin/login" style={{ margin: '0 1rem' }}>{t('admin_login')}</a>
+      <div className="flow-cards">
+        <Link to="/interviewer/step1" className="flow-card">
+          <h2>{t('interviewer_flow')}</h2>
+          <p>{t('interviewer.subtitle')}</p>
+        </Link>
+        
+        <Link to="/candidate/step1" className="flow-card">
+          <h2>{t('candidate_flow')}</h2>
+          <p>{t('candidate.subtitle')}</p>
+        </Link>
+      </div>
+      
+      <div className="admin-link">
+        <Link to="/admin/login">{t('admin_login')}</Link>
+      </div>
+    </div>
+  );
+}
+
+// Placeholder for steps not yet implemented
+function PlaceholderPage({ step, flow }: { step: string; flow: string }) {
+  const { t } = useTranslation();
+  
+  return (
+    <div className="step-container">
+      <div className="step-content">
+        <h1>{flow === 'interviewer' ? t('interviewer.title') : t('candidate.title')} - Step {step}</h1>
+        <p>This step is under development.</p>
+        <p>Session ID: {sessionStorage.getItem(`${flow}_session_id`) || 'Not set'}</p>
+        <Link to="/">← Back to Home</Link>
       </div>
     </div>
   );
