@@ -80,10 +80,73 @@ This file tracks implementation progress and next steps.
   - Running backend and frontend locally
 
 ### Next steps:
-1. User needs to create GitHub repository and push code
-2. User needs to create Supabase project and update .env
+1. Get Supabase SERVICE_ROLE_KEY from dashboard and add to .env
+2. Create GitHub repository and push code
 3. Install backend dependencies and run server
 4. Install frontend dependencies and run dev server
-5. Begin implementing database migrations
-6. Start building the Interviewer and Candidate flows
+5. Continue implementing service layer (AI, storage, email)
+6. Build out frontend components for Interviewer and Candidate flows
+
+---
+
+## 2025-01-08 - Supabase Database and API Routers
+
+### What was done:
+- ✅ Created Supabase project `shortlistai-dev` in eu-west-2
+- ✅ Applied initial database migration (12 tables)
+- ✅ Verified all tables, indexes, and RLS policies created successfully
+- ✅ Created database connection module with health check
+- ✅ Created Pydantic models for Candidate entity
+- ✅ Implemented Interviewer flow router with all 8 steps (scaffolded)
+- ✅ Implemented Candidate flow router with all 6 steps (scaffolded)
+- ✅ Updated main.py to register routers
+- ✅ Added health check endpoint with database connection verification
+- ✅ Updated SETUP.md with actual Supabase credentials
+
+### Database Structure:
+**Core Entities:**
+- candidates, companies, interviewers, job_postings, cvs, analyses
+
+**Configuration:**
+- ai_providers, ai_prompts, translations, legal_content
+
+**Logs:**
+- audit_logs, ai_usage_logs
+
+All tables have:
+- UUID primary keys
+- Timestamps (created_at, updated_at)
+- RLS enabled
+- Proper indexes for performance
+- Update triggers
+
+### API Endpoints Created:
+**Interviewer Flow:**
+- POST /api/interviewer/step1 - Identification
+- POST /api/interviewer/step2 - Job posting
+- POST /api/interviewer/step3 - Key points
+- POST /api/interviewer/step4 - Weighting
+- POST /api/interviewer/step5 - Upload CVs
+- POST /api/interviewer/step6 - Analysis
+- GET /api/interviewer/step7/{session_id} - Results
+- POST /api/interviewer/step8/email - Send email
+- GET /api/interviewer/step8/report/{session_id} - Download report
+
+**Candidate Flow:**
+- POST /api/candidate/step1 - Identification
+- POST /api/candidate/step2 - Job posting
+- POST /api/candidate/step3 - Upload CV
+- POST /api/candidate/step4 - Analysis
+- GET /api/candidate/step5/{session_id} - Results
+- POST /api/candidate/step6/email - Send email
+- GET /api/candidate/step6/report/{session_id} - Download report
+
+### Next steps:
+- Implement database service layer (CRUD operations)
+- Implement AI service layer (provider abstraction)
+- Implement file storage service (Supabase storage)
+- Implement email service (Resend integration)
+- Complete router implementations with real logic
+- Create Admin authentication and backoffice routers
+- Build frontend components
 

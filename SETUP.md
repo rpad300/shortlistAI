@@ -107,37 +107,39 @@ Fill in real values for:
 - AI API keys (as you obtain them)
 - Email service credentials (when setting up Resend)
 
-### 3. Initialize Supabase Project
+### 3. Supabase Project (✅ COMPLETED)
 
-You need to create a Supabase project for the development environment.
+The Supabase project for development has been created and initialized:
 
-#### Option 1: Using Supabase MCP (if available in Cursor)
+**Project Details:**
+- **Name**: `shortlistai-dev`
+- **Project ID**: `uxmfaziorospaglsufyp`
+- **Region**: `eu-west-2` (Europe West - London)
+- **Status**: `ACTIVE_HEALTHY`
+- **Database Version**: PostgreSQL 17.6.1
 
-Use the Supabase MCP tools to:
-1. List organizations
-2. Create a new project with:
-   - Name: `shortlistai-dev`
-   - Region: Choose closest to you (e.g., `us-east-1` for US, `eu-west-1` for Europe)
-   - Organization: Your organization
+**Credentials (for `.env` file):**
 
-#### Option 2: Using Supabase Dashboard
+```env
+SUPABASE_URL=https://uxmfaziorospaglsufyp.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4bWZhemlvcm9zcGFnbHN1ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2MDc3MzksImV4cCI6MjA3ODE4MzczOX0.AIEg359ub3vHK5ZU2HUSwK2YKPVE_2XjZoV0631z-qk
+SUPABASE_SERVICE_ROLE_KEY=<Get from Supabase Dashboard>
+DATABASE_URL=postgresql://postgres:<YOUR_PASSWORD>@db.uxmfaziorospaglsufyp.supabase.co:5432/postgres
+```
 
-1. Go to https://supabase.com/dashboard
-2. Click "New project"
-3. Fill in:
-   - Name: `shortlistai-dev`
-   - Database Password: Generate a strong password
-   - Region: Choose closest to you
-4. Wait for project to be created
-5. Go to Project Settings → API
-6. Copy:
-   - Project URL → `SUPABASE_URL`
-   - anon/public key → `SUPABASE_ANON_KEY`
-   - service_role key → `SUPABASE_SERVICE_ROLE_KEY`
-7. Go to Project Settings → Database
-8. Copy connection string → `DATABASE_URL`
+**Database Schema (✅ CREATED):**
+- All 12 tables created and ready
+- RLS (Row Level Security) enabled
+- Indexes and constraints configured
+- Triggers for `updated_at` columns
+- See `src/backend/database/migrations/001_initial_schema.sql` for details
 
-Update `.env` with these values.
+**To get SERVICE_ROLE_KEY:**
+1. Go to https://supabase.com/dashboard/project/uxmfaziorospaglsufyp/settings/api
+2. Copy the `service_role` key (secret)
+3. Add to `.env` file
+
+Update `.env` with these values (and add your service_role key and database password).
 
 ### 4. Setup Backend
 
@@ -173,15 +175,31 @@ npm run dev
 
 Frontend will run at http://localhost:3000
 
-### 6. Create Database Schema
+### 6. Database Schema (✅ COMPLETED)
 
-Once Supabase is set up, create the initial database schema:
+The database schema has been created and applied:
 
-1. Review the schema documentation in `docs/db/tables.md`
-2. Create migration files in `src/backend/database/migrations/`
-3. Apply migrations to Supabase
+**Tables Created (12 total):**
+1. ✅ `candidates` - Candidate information
+2. ✅ `companies` - Company information
+3. ✅ `interviewers` - Interviewer contacts
+4. ✅ `job_postings` - Job posting content
+5. ✅ `cvs` - CV files and data
+6. ✅ `analyses` - AI analysis results
+7. ✅ `ai_providers` - AI service configuration
+8. ✅ `ai_prompts` - Prompt templates
+9. ✅ `translations` - Multi-language content
+10. ✅ `legal_content` - Legal documents
+11. ✅ `audit_logs` - Audit trail
+12. ✅ `ai_usage_logs` - AI usage tracking
 
-This will be done as the next phase of implementation.
+**Verification:**
+```bash
+# View tables in Supabase Dashboard
+https://supabase.com/dashboard/project/uxmfaziorospaglsufyp/editor
+```
+
+All migrations have been applied successfully!
 
 ## 🔐 Security Reminders
 

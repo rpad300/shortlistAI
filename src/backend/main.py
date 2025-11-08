@@ -60,23 +60,29 @@ async def health_check():
     
     Verifies that the API is responsive and can connect to critical services.
     """
-    # TODO: Add database connection check
-    # TODO: Add Supabase connection check
+    from database import check_database_connection
+    
+    db_healthy = await check_database_connection()
+    
     return {
-        "status": "healthy",
-        "database": "not_checked",
-        "supabase": "not_checked"
+        "status": "healthy" if db_healthy else "degraded",
+        "database": "connected" if db_healthy else "error",
+        "supabase": "connected" if db_healthy else "error"
     }
 
 
-# TODO: Import and register routers for:
-# - Public interviewer flow endpoints
-# - Public candidate flow endpoints
+# Import routers
+from routers import interviewer, candidate
+
+# Register routers
+app.include_router(interviewer.router, prefix="/api")
+app.include_router(candidate.router, prefix="/api")
+
+# TODO: Add additional routers:
 # - Admin authentication
 # - Admin backoffice (candidates, companies, job postings, analyses)
 # - Admin AI management (prompts, providers, testing)
 # - Admin translation management
-# - File upload and processing
 
 if __name__ == "__main__":
     import uvicorn
