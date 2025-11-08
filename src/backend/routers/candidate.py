@@ -151,7 +151,9 @@ async def step1_identification(data: CandidateIdentification):
 
 @router.post("/step2")
 async def step2_job_posting(
-    data: Optional[CandidateJobPostingInput] = None,
+    session_id: str = Form(...),
+    raw_text: Optional[str] = Form(None),
+    language: str = Form("en"),
     file: Optional[UploadFile] = File(None)
 ):
     """
@@ -160,31 +162,120 @@ async def step2_job_posting(
     Accepts the job posting the candidate is applying for.
     Can be provided as text or file upload.
     """
-    if not data and not file:
+    from services.database import (
+        get_session_service,
+        get_job_posting_service
+    )
+    from services.storage import get_storage_service
+    from utils import FileProcessor
+    from uuid import UUID
+    
+    if not raw_text and not file:
         raise HTTPException(
             status_code=400,
             detail="Either text or file must be provided"
         )
     
-    if file:
-        # TODO: Validate file type (PDF, DOCX)
-        # TODO: Upload to Supabase storage
-        # TODO: Extract text from file
-        logger.info(f"Job posting file uploaded: {file.filename}")
-    
-    if data and data.raw_text:
-        # TODO: Store raw text linked to session
-        logger.info(f"Job posting text provided for session: {data.session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "Job posting stored. Proceed to step 3 to upload your CV."
-    })
+    try:
+        # Get services
+        session_service = get_session_service()
+        job_posting_service = get_job_posting_service()
+        storage_service = get_storage_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        final_text = raw_text or ""
+        file_url = None
+        
+        # Handle file upload
+        if file:
+            # Validate file
+            is_valid, error = FileProcessor.validate_file_type(file.filename)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error)
+            
+            # Read file content
+            file_content = await file.read()
+            
+            # Validate size
+            is_valid, error = FileProcessor.validate_file_size(len(file_content))
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error)
+            
+            # Upload to storage
+            success, url, error = await storage_service.upload_job_posting(
+                file_content,
+                file.filename,
+                session_id
+            )
+            
+            if not success:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to upload file: {error}"
+                )
+            
+            file_url = url
+            
+            # Extract text from file
+            success, extracted_text, error = FileProcessor.extract_text(
+                file_content,
+                file.filename
+            )
+            
+            if success and extracted_text:
+                final_text = extracted_text
+                logger.info(f"Extracted {len(extracted_text)} chars from {file.filename}")
+        
+        # Create job posting record
+        job_posting = await job_posting_service.create(
+            raw_text=final_text,
+            candidate_id=session["data"].get("candidate_id"),
+            file_url=file_url,
+            language=language
+        )
+        
+        if not job_posting:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create job posting record"
+            )
+        
+        # Update session with job posting ID
+        session_service.update_session(
+            UUID(session_id),
+            {
+                "job_posting_id": job_posting["id"],
+                "job_posting_text": final_text[:500]
+            },
+            step=2
+        )
+        
+        logger.info(f"Job posting created: {job_posting['id']} for candidate session: {session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "job_posting_id": job_posting["id"],
+            "text_length": len(final_text),
+            "message": "Job posting stored successfully. Proceed to step 3 to upload your CV."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step2_job_posting: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error processing job posting"
+        )
 
 
 @router.post("/step3")
 async def step3_upload_cv(
-    session_id: str,
+    session_id: str = Form(...),
     file: UploadFile = File(...)
 ):
     """
@@ -192,19 +283,105 @@ async def step3_upload_cv(
     
     Accepts candidate's CV file.
     """
-    # TODO: 
-    # 1. Validate file type and size
-    # 2. Upload to Supabase storage
-    # 3. Extract text using AI
-    # 4. Link to candidate and session
-    # 5. Store CV record
+    from services.database import (
+        get_session_service,
+        get_cv_service
+    )
+    from services.storage import get_storage_service
+    from utils import FileProcessor
+    from uuid import UUID
     
-    logger.info(f"CV uploaded for session: {session_id}, file: {file.filename}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "CV uploaded successfully. Proceed to step 4 for analysis."
-    })
+    try:
+        session_service = get_session_service()
+        cv_service = get_cv_service()
+        storage_service = get_storage_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        candidate_id = session["data"].get("candidate_id")
+        if not candidate_id:
+            raise HTTPException(status_code=400, detail="Candidate ID not found in session")
+        
+        # Validate file
+        is_valid, error = FileProcessor.validate_file_type(file.filename)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error)
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Validate size
+        is_valid, error = FileProcessor.validate_file_size(len(file_content))
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error)
+        
+        # Upload to storage
+        success, file_url, error = await storage_service.upload_cv(
+            file_content,
+            file.filename,
+            candidate_id
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to upload CV: {error}"
+            )
+        
+        # Extract text from file
+        success, extracted_text, error = FileProcessor.extract_text(
+            file_content,
+            file.filename
+        )
+        
+        if not success or not extracted_text:
+            logger.warning(f"Could not extract text from CV: {error}")
+            extracted_text = ""
+        
+        # Create CV record
+        cv = await cv_service.create(
+            candidate_id=UUID(candidate_id),
+            file_url=file_url,
+            uploaded_by_flow="candidate",
+            extracted_text=extracted_text
+        )
+        
+        if not cv:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create CV record"
+            )
+        
+        # Update session
+        session_service.update_session(
+            UUID(session_id),
+            {
+                "cv_id": cv["id"],
+                "cv_text_length": len(extracted_text)
+            },
+            step=3
+        )
+        
+        logger.info(f"CV uploaded: {cv['id']} for session: {session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "cv_id": cv["id"],
+            "text_length": len(extracted_text),
+            "message": "CV uploaded successfully. Proceed to step 4 for AI analysis."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step3_upload_cv: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error uploading CV"
+        )
 
 
 @router.post("/step4")

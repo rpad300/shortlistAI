@@ -172,7 +172,9 @@ async def step1_identification(data: InterviewerIdentification):
 
 @router.post("/step2")
 async def step2_job_posting(
-    data: Optional[JobPostingInput] = None,
+    session_id: str = Form(...),
+    raw_text: Optional[str] = Form(None),
+    language: str = Form("en"),
     file: Optional[UploadFile] = File(None)
 ):
     """
@@ -181,26 +183,118 @@ async def step2_job_posting(
     Accepts job posting as text or file upload.
     Validates and stores raw content.
     """
-    if not data and not file:
+    from services.database import (
+        get_session_service,
+        get_job_posting_service
+    )
+    from services.storage import get_storage_service
+    from utils import FileProcessor
+    from uuid import UUID
+    
+    if not raw_text and not file:
         raise HTTPException(
             status_code=400,
             detail="Either text or file must be provided"
         )
     
-    if file:
-        # TODO: Validate file type (PDF, DOCX)
-        # TODO: Upload to Supabase storage
-        # TODO: Extract text from file
-        logger.info(f"Job posting file uploaded: {file.filename}")
-    
-    if data and data.raw_text:
-        # TODO: Store raw text
-        logger.info(f"Job posting text provided for session: {data.session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "Job posting stored. Proceed to step 3."
-    })
+    try:
+        # Get services
+        session_service = get_session_service()
+        job_posting_service = get_job_posting_service()
+        storage_service = get_storage_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        final_text = raw_text or ""
+        file_url = None
+        
+        # Handle file upload
+        if file:
+            # Validate file
+            is_valid, error = FileProcessor.validate_file_type(file.filename)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error)
+            
+            # Read file content
+            file_content = await file.read()
+            
+            # Validate size
+            is_valid, error = FileProcessor.validate_file_size(len(file_content))
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error)
+            
+            # Upload to storage
+            success, url, error = await storage_service.upload_job_posting(
+                file_content,
+                file.filename,
+                session_id
+            )
+            
+            if not success:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to upload file: {error}"
+                )
+            
+            file_url = url
+            
+            # Extract text from file
+            success, extracted_text, error = FileProcessor.extract_text(
+                file_content,
+                file.filename
+            )
+            
+            if success and extracted_text:
+                final_text = extracted_text
+                logger.info(f"Extracted {len(extracted_text)} chars from {file.filename}")
+            else:
+                logger.warning(f"Could not extract text from file: {error}")
+        
+        # Create job posting record
+        job_posting = await job_posting_service.create(
+            raw_text=final_text,
+            company_id=session["data"].get("company_id"),
+            interviewer_id=session["data"].get("interviewer_id"),
+            file_url=file_url,
+            language=language
+        )
+        
+        if not job_posting:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create job posting record"
+            )
+        
+        # Update session with job posting ID
+        session_service.update_session(
+            UUID(session_id),
+            {
+                "job_posting_id": job_posting["id"],
+                "job_posting_text": final_text[:500]  # Store preview
+            },
+            step=2
+        )
+        
+        logger.info(f"Job posting created: {job_posting['id']} for session: {session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "job_posting_id": job_posting["id"],
+            "text_length": len(final_text),
+            "message": "Job posting stored successfully. Proceed to step 3."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step2_job_posting: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error processing job posting"
+        )
 
 
 @router.post("/step3")
@@ -210,15 +304,63 @@ async def step3_key_points(data: KeyPointsInput):
     
     Stores interviewer-defined key requirements and priorities.
     """
-    # TODO: Store key points linked to session
-    # TODO: Optionally extract structured data using AI
+    from services.database import (
+        get_session_service,
+        get_job_posting_service
+    )
+    from uuid import UUID
     
-    logger.info(f"Key points defined for session: {data.session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "Key points stored. Proceed to step 4."
-    })
+    try:
+        session_service = get_session_service()
+        job_posting_service = get_job_posting_service()
+        
+        # Validate session
+        session = session_service.get_session(data.session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Get job posting ID from session
+        job_posting_id = session["data"].get("job_posting_id")
+        if not job_posting_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Job posting not found. Complete step 2 first."
+            )
+        
+        # Update job posting with key points
+        success = await job_posting_service.update_key_points(
+            UUID(job_posting_id),
+            data.key_points
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to store key points"
+            )
+        
+        # Update session
+        session_service.update_session(
+            data.session_id,
+            {"key_points": data.key_points},
+            step=3
+        )
+        
+        logger.info(f"Key points stored for session: {data.session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": "Key points stored. Proceed to step 4 to define weighting."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step3_key_points: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error storing key points"
+        )
 
 
 @router.post("/step4")
@@ -228,6 +370,12 @@ async def step4_weighting(data: WeightingInput):
     
     Stores evaluation weights and hard blocker rules.
     """
+    from services.database import (
+        get_session_service,
+        get_job_posting_service
+    )
+    from uuid import UUID
+    
     # Validate weights sum to reasonable value (e.g., 100 or close to it)
     total_weight = sum(data.weights.values())
     if total_weight < 80 or total_weight > 120:
@@ -236,14 +384,61 @@ async def step4_weighting(data: WeightingInput):
             detail=f"Total weights should sum to ~100, got {total_weight}"
         )
     
-    # TODO: Store weights and hard blockers
-    
-    logger.info(f"Weighting configured for session: {data.session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "Weighting configured. Proceed to step 5 to upload CVs."
-    })
+    try:
+        session_service = get_session_service()
+        job_posting_service = get_job_posting_service()
+        
+        # Validate session
+        session = session_service.get_session(data.session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Get job posting ID
+        job_posting_id = session["data"].get("job_posting_id")
+        if not job_posting_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Job posting not found. Complete steps 2 and 3 first."
+            )
+        
+        # Update job posting with weights and hard blockers
+        success = await job_posting_service.update_weights_and_blockers(
+            UUID(job_posting_id),
+            data.weights,
+            {"blockers": data.hard_blockers}
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to store weighting configuration"
+            )
+        
+        # Update session
+        session_service.update_session(
+            data.session_id,
+            {
+                "weights": data.weights,
+                "hard_blockers": data.hard_blockers
+            },
+            step=4
+        )
+        
+        logger.info(f"Weighting configured for session: {data.session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": "Weighting configured. Proceed to step 5 to upload CVs."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step4_weighting: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error configuring weighting"
+        )
 
 
 @router.post("/step5")
