@@ -8,6 +8,8 @@ import { Routes, Route, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import InterviewerStep1 from '@pages/InterviewerStep1';
 import CandidateStep1 from '@pages/CandidateStep1';
+import LegalTerms from '@pages/LegalTerms';
+import LegalPrivacy from '@pages/LegalPrivacy';
 import './App.css';
 
 function App() {
@@ -17,8 +19,20 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/interviewer/step1" element={<InterviewerStep1 />} />
         <Route path="/interviewer/step2" element={<PlaceholderPage step="2" flow="interviewer" />} />
+        <Route path="/interviewer/step3" element={<PlaceholderPage step="3" flow="interviewer" />} />
+        <Route path="/interviewer/step4" element={<PlaceholderPage step="4" flow="interviewer" />} />
+        <Route path="/interviewer/step5" element={<PlaceholderPage step="5" flow="interviewer" />} />
+        <Route path="/interviewer/step6" element={<PlaceholderPage step="6" flow="interviewer" />} />
+        <Route path="/interviewer/step7" element={<PlaceholderPage step="7" flow="interviewer" />} />
+        <Route path="/interviewer/step8" element={<PlaceholderPage step="8" flow="interviewer" />} />
         <Route path="/candidate/step1" element={<CandidateStep1 />} />
         <Route path="/candidate/step2" element={<PlaceholderPage step="2" flow="candidate" />} />
+        <Route path="/candidate/step3" element={<PlaceholderPage step="3" flow="candidate" />} />
+        <Route path="/candidate/step4" element={<PlaceholderPage step="4" flow="candidate" />} />
+        <Route path="/candidate/step5" element={<PlaceholderPage step="5" flow="candidate" />} />
+        <Route path="/candidate/step6" element={<PlaceholderPage step="6" flow="candidate" />} />
+        <Route path="/legal/terms" element={<LegalTerms />} />
+        <Route path="/legal/privacy" element={<LegalPrivacy />} />
         <Route path="/admin/login" element={<PlaceholderPage step="Admin Login" flow="admin" />} />
       </Routes>
     </div>
