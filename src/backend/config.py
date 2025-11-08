@@ -24,8 +24,11 @@ class Settings(BaseSettings):
     app_debug: bool = Field(default=True, env="APP_DEBUG")
     secret_key: str = Field(default="dev-secret-key-CHANGE-IN-PRODUCTION", env="SECRET_KEY")
     
-    # Database (Supabase)
+    # Database (Supabase) - New API Keys
     supabase_url: Optional[str] = Field(default=None, env="SUPABASE_URL")
+    supabase_publishable_key: Optional[str] = Field(default=None, env="SUPABASE_PUBLISHABLE_KEY")
+    supabase_secret_key: Optional[str] = Field(default=None, env="SUPABASE_SECRET_KEY")
+    # Legacy keys (for backward compatibility)
     supabase_anon_key: Optional[str] = Field(default=None, env="SUPABASE_ANON_KEY")
     supabase_service_role_key: Optional[str] = Field(default=None, env="SUPABASE_SERVICE_ROLE_KEY")
     database_url: Optional[str] = Field(default=None, env="DATABASE_URL")
