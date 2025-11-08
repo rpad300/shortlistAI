@@ -21,6 +21,7 @@ def get_supabase_client() -> Client:
     
     Uses secret key (service role) for backend operations that bypass RLS.
     Supports both new API keys (sb_secret_*) and legacy keys.
+    Also accepts typo version SUPABESE_SECRETE_KEY.
     
     Returns:
         Supabase client instance
@@ -30,18 +31,20 @@ def get_supabase_client() -> Client:
     if _supabase_client is None:
         supabase_url = os.getenv("SUPABASE_URL")
         
-        # Try new secret key first, then fall back to legacy service_role key
+        # Try new secret key first (including typo version), then fall back to legacy
         supabase_key = (
             os.getenv("SUPABASE_SECRET_KEY") or 
+            os.getenv("SUPABESE_SECRETE_KEY") or  # Accept typo version
             os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         )
         
         if not supabase_url or not supabase_key:
             raise ValueError(
                 "Missing Supabase credentials. "
-                "Ensure SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) are set in .env"
+                "Ensure SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABESE_SECRETE_KEY) are set in .env"
             )
         
+        print(f"[Supabase] Connecting with key: {supabase_key[:20]}...")
         _supabase_client = create_client(supabase_url, supabase_key)
     
     return _supabase_client

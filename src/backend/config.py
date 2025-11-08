@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     supabase_url: Optional[str] = Field(default=None, env="SUPABASE_URL")
     supabase_publishable_key: Optional[str] = Field(default=None, env="SUPABASE_PUBLISHABLE_KEY")
     supabase_secret_key: Optional[str] = Field(default=None, env="SUPABASE_SECRET_KEY")
+    # Accept typo version too (user has SUPABESE_SECRETE_KEY in .env)
+    supabese_secrete_key: Optional[str] = Field(default=None, env="SUPABESE_SECRETE_KEY")
     # Legacy keys (for backward compatibility)
     supabase_anon_key: Optional[str] = Field(default=None, env="SUPABASE_ANON_KEY")
     supabase_service_role_key: Optional[str] = Field(default=None, env="SUPABASE_SERVICE_ROLE_KEY")
