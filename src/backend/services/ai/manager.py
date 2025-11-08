@@ -10,7 +10,7 @@ from .gemini_provider import GeminiProvider
 from .openai_provider import OpenAIProvider
 from .claude_provider import ClaudeProvider
 from .kimi_provider import KimiProvider
-from .minimax_provider import MiniMaxProvider
+# Minimax provider imported dynamically when needed
 from ...config import settings
 import logging
 
