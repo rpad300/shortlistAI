@@ -268,12 +268,47 @@ async def step2_job_posting(
                 detail="Failed to create job posting record"
             )
         
-        # Update session with job posting ID
+        # Use AI to extract key points from job posting (optional, best effort)
+        suggested_key_points = None
+        try:
+            from services.ai_analysis import get_ai_analysis_service
+            ai_service = get_ai_analysis_service()
+            
+            # Normalize job posting to extract structured requirements
+            normalized = await ai_service.normalize_job_posting(final_text, language)
+            
+            if normalized:
+                # Build suggested key points from AI analysis
+                key_points_parts = []
+                
+                if normalized.get("required_skills"):
+                    skills = ", ".join(normalized["required_skills"][:5])
+                    key_points_parts.append(f"Required skills: {skills}")
+                
+                if normalized.get("experience_level"):
+                    key_points_parts.append(f"Experience: {normalized['experience_level']}")
+                
+                if normalized.get("languages"):
+                    langs = ", ".join(normalized["languages"])
+                    key_points_parts.append(f"Languages: {langs}")
+                
+                if normalized.get("qualifications"):
+                    quals = "; ".join(normalized["qualifications"][:3])
+                    key_points_parts.append(f"Qualifications: {quals}")
+                
+                suggested_key_points = "\n\n".join(key_points_parts)
+                logger.info("AI-generated suggested key points")
+        except Exception as e:
+            logger.warning(f"Could not generate suggested key points with AI: {e}")
+            # Continue without suggestions
+        
+        # Update session with job posting ID and suggested key points
         session_service.update_session(
             UUID(session_id),
             {
                 "job_posting_id": job_posting["id"],
-                "job_posting_text": final_text[:500]  # Store preview
+                "job_posting_text": final_text[:500],
+                "suggested_key_points": suggested_key_points  # AI-generated suggestions
             },
             step=2
         )
@@ -303,6 +338,7 @@ async def step3_key_points(data: KeyPointsInput):
     Step 3: Key points definition.
     
     Stores interviewer-defined key requirements and priorities.
+    User can edit AI-suggested key points or write their own.
     """
     from services.database import (
         get_session_service,
@@ -327,7 +363,7 @@ async def step3_key_points(data: KeyPointsInput):
                 detail="Job posting not found. Complete step 2 first."
             )
         
-        # Update job posting with key points
+        # Update job posting with key points (user-edited version)
         success = await job_posting_service.update_key_points(
             UUID(job_posting_id),
             data.key_points
@@ -346,7 +382,7 @@ async def step3_key_points(data: KeyPointsInput):
             step=3
         )
         
-        logger.info(f"Key points stored for session: {data.session_id}")
+        logger.info(f"Key points stored (user-edited) for session: {data.session_id}")
         
         return JSONResponse({
             "status": "success",
