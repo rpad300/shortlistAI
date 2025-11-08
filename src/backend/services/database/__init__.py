@@ -10,6 +10,7 @@ from .interviewer_service import InterviewerService, get_interviewer_service
 from .session_service import SessionService, get_session_service
 from .job_posting_service import JobPostingService, get_job_posting_service
 from .cv_service import CVService, get_cv_service
+from .analysis_service import AnalysisService, get_analysis_service
 
 __all__ = [
     "CandidateService",
@@ -24,5 +25,7 @@ __all__ = [
     "get_job_posting_service",
     "CVService",
     "get_cv_service",
+    "AnalysisService",
+    "get_analysis_service",
 ]
 

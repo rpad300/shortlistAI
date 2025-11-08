@@ -595,20 +595,108 @@ async def step6_analysis(session_id: str):
     Runs AI analysis for all uploaded CVs against the job posting.
     Returns analysis results with rankings.
     """
-    # TODO: 
-    # 1. Fetch job posting, key points, weights, hard blockers from session
-    # 2. Fetch all CVs for this session
-    # 3. Call AI service for each CV
-    # 4. Store analyses
-    # 5. Compute rankings
-    # 6. Return results
+    from services.database import (
+        get_session_service,
+        get_job_posting_service,
+        get_cv_service,
+        get_analysis_service
+    )
+    from uuid import UUID
     
-    logger.info(f"Analysis triggered for session: {session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "Analysis complete. View results in step 7."
-    })
+    try:
+        session_service = get_session_service()
+        job_posting_service = get_job_posting_service()
+        cv_service = get_cv_service()
+        analysis_service = get_analysis_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Get job posting
+        job_posting_id = session["data"].get("job_posting_id")
+        if not job_posting_id:
+            raise HTTPException(status_code=400, detail="Job posting not found")
+        
+        job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
+        
+        # Get CV IDs
+        cv_ids = session["data"].get("cv_ids", [])
+        if len(cv_ids) == 0:
+            raise HTTPException(status_code=400, detail="No CVs uploaded. Complete step 5 first.")
+        
+        # Get weights and blockers
+        weights = session["data"].get("weights", {})
+        hard_blockers = session["data"].get("hard_blockers", [])
+        
+        # For now, create placeholder analyses
+        # TODO: Call AI service for actual analysis
+        analyses = []
+        for cv_id in cv_ids:
+            cv = await cv_service.get_by_id(UUID(cv_id))
+            if not cv:
+                continue
+            
+            # Placeholder analysis
+            categories = {
+                "technical_skills": 4,
+                "experience": 3,
+                "soft_skills": 4,
+                "languages": 5,
+                "education": 4
+            }
+            
+            # Calculate weighted global score
+            global_score = sum(
+                categories.get(cat, 0) * weights.get(cat, 1)
+                for cat in categories.keys()
+            ) / sum(weights.values()) if weights else sum(categories.values()) / len(categories)
+            
+            # Create analysis record
+            analysis = await analysis_service.create(
+                mode="interviewer",
+                job_posting_id=UUID(job_posting_id),
+                cv_id=UUID(cv_id),
+                candidate_id=UUID(cv["candidate_id"]),
+                provider="placeholder",  # TODO: Use actual AI provider
+                categories=categories,
+                global_score=round(global_score, 2),
+                strengths=["Strong technical background", "Good communication"],
+                risks=["Limited experience in X"],
+                questions=["Tell me about your experience with Y"],
+                language=session["data"].get("language", "en")
+            )
+            
+            if analysis:
+                analyses.append(analysis)
+        
+        # Update session
+        session_service.update_session(
+            UUID(session_id),
+            {
+                "analysis_ids": [a["id"] for a in analyses],
+                "analysis_complete": True
+            },
+            step=6
+        )
+        
+        logger.info(f"Analysis complete: {len(analyses)} analyses created for session: {session_id}")
+        
+        return JSONResponse({
+            "status": "success",
+            "analyses_created": len(analyses),
+            "message": "Analysis complete. View results in step 7."
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in step6_analysis: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during analysis"
+        )
 
 
 @router.get("/step7/{session_id}")
