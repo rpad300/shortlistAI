@@ -170,3 +170,40 @@ class FileProcessor:
         
         return True, None
 
+    @staticmethod
+    def text_to_markdown(text: str) -> str:
+        """
+        Convert extracted plain text into lightweight Markdown to improve AI context.
+        """
+        if not text:
+            return ""
+
+        markdown_lines: List[str] = []
+
+        for raw_line in text.splitlines():
+            line = raw_line.strip()
+
+            if not line:
+                markdown_lines.append("")
+                continue
+
+            bullet_prefixes = ("-", "•", "*", "·", "–")
+            if line.startswith(bullet_prefixes):
+                content = line.lstrip("-•*·– \t")
+                markdown_lines.append(f"- {content}")
+                continue
+
+            if ":" in line and line.endswith(":"):
+                heading = line[:-1].strip()
+                if heading:
+                    markdown_lines.append(f"### {heading}")
+                    continue
+
+            if len(line.split()) <= 8 and line.upper() == line:
+                markdown_lines.append(f"### {line.title()}")
+                continue
+
+            markdown_lines.append(line)
+
+        return "\n".join(markdown_lines)
+

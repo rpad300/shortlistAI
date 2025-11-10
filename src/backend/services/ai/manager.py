@@ -4,15 +4,18 @@ AI Manager - Central service for managing AI providers and requests.
 Handles provider selection, routing, fallback, and logging.
 """
 
-from typing import Dict, Optional, Any
-from .base import AIProvider, AIRequest, AIResponse
-from .gemini_provider import GeminiProvider
-from .openai_provider import OpenAIProvider
-from .claude_provider import ClaudeProvider
-from .kimi_provider import KimiProvider
-# Minimax provider imported dynamically when needed
-from ...config import settings
 import logging
+import os
+from typing import Dict, Optional, Any
+
+from config import settings
+
+from .base import AIProvider, AIRequest, AIResponse
+from .claude_provider import ClaudeProvider
+from .gemini_provider import GeminiProvider
+from .kimi_provider import KimiProvider
+from .openai_provider import OpenAIProvider
+# Minimax provider imported dynamically when needed
 
 logger = logging.getLogger(__name__)
 
@@ -113,15 +116,18 @@ class AIManager:
         self,
         request: AIRequest,
         provider_name: Optional[str] = None,
-        enable_fallback: bool = True
+        enable_fallback: bool = False  # DISABLED: No fallback between providers
     ) -> AIResponse:
         """
         Execute AI request with specified or default provider.
         
+        NO FALLBACK BETWEEN PROVIDERS: If Gemini fails, system returns error.
+        Fallback only works WITHIN each provider (e.g., Gemini tries multiple models).
+        
         Args:
             request: The AI request to execute
             provider_name: Specific provider to use or None for default
-            enable_fallback: Whether to try other providers if first fails
+            enable_fallback: DEPRECATED - Always False (no cross-provider fallback)
             
         Returns:
             AIResponse with results or error
@@ -136,24 +142,15 @@ class AIManager:
                 provider="none"
             )
         
-        # Execute request
+        # Execute request (provider handles its own model fallbacks internally)
         response = await provider.complete(request)
         
         # Log usage (TODO: store in database)
         await self._log_usage(request, response)
         
-        # If failed and fallback enabled, try other providers
-        if not response.success and enable_fallback:
-            logger.warning(f"Provider {provider.provider_name} failed, trying fallback")
-            
-            for fallback_name, fallback_provider in self.providers.items():
-                if fallback_name != provider.provider_name:
-                    logger.info(f"Trying fallback provider: {fallback_name}")
-                    response = await fallback_provider.complete(request)
-                    await self._log_usage(request, response)
-                    
-                    if response.success:
-                        break
+        # NO CROSS-PROVIDER FALLBACK
+        # If the primary provider fails, we return the error directly
+        # Each provider (Gemini, OpenAI, etc.) tries its own model fallbacks internally
         
         return response
     

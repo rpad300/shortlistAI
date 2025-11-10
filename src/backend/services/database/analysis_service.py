@@ -34,7 +34,8 @@ class AnalysisService:
         risks: Optional[List[str]] = None,
         questions: Optional[List[str]] = None,
         intro_pitch: Optional[str] = None,
-        hard_blocker_flags: Optional[List[str]] = None
+        hard_blocker_flags: Optional[List[str]] = None,
+        report_id: Optional[UUID] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Create a new analysis record.
@@ -54,6 +55,7 @@ class AnalysisService:
             questions: Optional list of questions
             intro_pitch: Optional intro pitch (candidate mode)
             hard_blocker_flags: Optional hard blocker violations
+            report_id: Optional report UUID to associate analysis with
             
         Returns:
             Created analysis dict or None if failed
@@ -73,7 +75,8 @@ class AnalysisService:
                 "questions": {"items": questions} if questions else None,
                 "intro_pitch": intro_pitch,
                 "hard_blocker_flags": {"flags": hard_blocker_flags} if hard_blocker_flags else None,
-                "language": language
+                "language": language,
+                "report_id": str(report_id) if report_id else None
             }
             
             result = self.client.table(self.table)\

@@ -4,6 +4,7 @@ AI Analysis service - High-level service for CV and candidate analysis.
 Uses AI providers to analyze CVs against job postings.
 """
 
+import json
 from typing import Dict, Any, List, Optional
 from services.ai import get_ai_manager, AIRequest, PromptType
 from services.ai.prompts import get_prompt
@@ -22,6 +23,47 @@ class AIAnalysisService:
     def __init__(self):
         self.ai_manager = get_ai_manager()
     
+    async def recommend_weighting_and_blockers(
+        self,
+        job_posting_text: str,
+        structured_job_posting: Optional[Dict[str, Any]],
+        key_points: Optional[str],
+        language: str = "en"
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Recommend category weights, hard blockers, and nice-to-have requirements.
+        """
+        try:
+            template = get_prompt("weighting_recommendation")
+            
+            variables = {
+                "job_posting": job_posting_text or "No job posting text provided.",
+                "structured_job_posting": json.dumps(structured_job_posting, indent=2, ensure_ascii=False) if structured_job_posting else "Not available",
+                "key_points": key_points or "Not provided",
+                "language": language
+            }
+            
+            ai_request = AIRequest(
+                prompt_type=PromptType.WEIGHTING_RECOMMENDATION,
+                template=template,
+                variables=variables,
+                language=language,
+                temperature=0.4,
+                max_tokens=1024
+            )
+            
+            response = await self.ai_manager.execute(ai_request)
+            
+            if not response.success:
+                logger.error("Weighting recommendation failed: %s", response.error)
+                return None
+            
+            return response.data
+        
+        except Exception as exc:
+            logger.error("Error generating weighting recommendation: %s", exc)
+            return None
+    
     async def analyze_candidate_for_interviewer(
         self,
         job_posting_text: str,
@@ -29,6 +71,7 @@ class AIAnalysisService:
         key_points: str,
         weights: Dict[str, float],
         hard_blockers: List[str],
+        nice_to_have: List[str],
         language: str = "en"
     ) -> Optional[Dict[str, Any]]:
         """
@@ -56,6 +99,7 @@ class AIAnalysisService:
                 "key_points": key_points,
                 "weights": str(weights),
                 "hard_blockers": str(hard_blockers),
+                "nice_to_have": str(nice_to_have),
                 "language": language
             }
             
@@ -76,8 +120,12 @@ class AIAnalysisService:
                 logger.error(f"AI analysis failed: {response.error}")
                 return None
             
-            # Return structured data
-            return response.data
+            return {
+                "provider": response.provider,
+                "model": response.model,
+                "data": response.data or {},
+                "raw_text": response.raw_text
+            }
             
         except Exception as e:
             logger.error(f"Error in interviewer analysis: {e}")
@@ -128,7 +176,12 @@ class AIAnalysisService:
                 logger.error(f"AI analysis failed: {response.error}")
                 return None
             
-            return response.data
+            return {
+                "provider": response.provider,
+                "model": response.model,
+                "data": response.data or {},
+                "raw_text": response.raw_text
+            }
             
         except Exception as e:
             logger.error(f"Error in candidate analysis: {e}")
@@ -168,6 +221,43 @@ class AIAnalysisService:
         except Exception as e:
             logger.error(f"Error extracting CV data: {e}")
             return None
+
+    async def summarize_cv(
+        self,
+        cv_text: str,
+        file_name: str,
+        language: str = "en"
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Generate a structured summary for a CV.
+        """
+        try:
+            template = get_prompt("cv_summary")
+
+            ai_request = AIRequest(
+                prompt_type=PromptType.CV_SUMMARY,
+                template=template,
+                variables={
+                    "cv_text": cv_text,
+                    "file_name": file_name,
+                    "language": language
+                },
+                language=language,
+                temperature=0.4,
+                max_tokens=1024
+            )
+
+            response = await self.ai_manager.execute(ai_request)
+
+            if not response.success:
+                logger.error(f"CV summary failed: {response.error}")
+                return None
+
+            return response.data
+
+        except Exception as exc:
+            logger.error(f"Error summarizing CV: {exc}")
+            return None
     
     async def normalize_job_posting(
         self,
@@ -202,6 +292,83 @@ class AIAnalysisService:
             
         except Exception as e:
             logger.error(f"Error normalizing job posting: {e}")
+            return None
+    
+    async def generate_executive_recommendation(
+        self,
+        job_posting_summary: str,
+        candidates_data: List[Dict[str, Any]],
+        weights: Dict[str, float],
+        hard_blockers: List[str],
+        language: str = "en"
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Generate an executive recommendation summary for hiring decision.
+        
+        Args:
+            job_posting_summary: Summary of the job position
+            candidates_data: List of analyzed candidates with scores
+            weights: Category weights used in evaluation
+            hard_blockers: Hard blocker rules
+            language: Response language
+            
+        Returns:
+            Executive recommendation with top candidate and insights
+        """
+        try:
+            # Build candidates summary for the prompt
+            candidates_summary_list = []
+            for idx, candidate in enumerate(candidates_data[:5], 1):  # Top 5 only
+                name = candidate.get('candidate_label', f'Candidate {idx}')
+                score = candidate.get('global_score', 0)
+                categories = candidate.get('categories', {})
+                strengths = candidate.get('strengths', [])[:3]  # Top 3 strengths
+                blockers = candidate.get('hard_blocker_flags', [])
+                
+                summary_parts = [
+                    f"#{idx}: {name}",
+                    f"Score: {score}/5",
+                    f"Categories: {', '.join(f'{k}={v}' for k, v in categories.items())}",
+                    f"Key Strengths: {'; '.join(strengths)}" if strengths else ""
+                ]
+                
+                if blockers:
+                    summary_parts.append(f"⚠️ Blockers: {', '.join(blockers)}")
+                
+                candidates_summary_list.append("\n".join(filter(None, summary_parts)))
+            
+            candidates_summary = "\n\n".join(candidates_summary_list)
+            
+            template = get_prompt("executive_recommendation")
+            
+            variables = {
+                "job_posting_summary": job_posting_summary,
+                "candidate_count": len(candidates_data),
+                "candidates_summary": candidates_summary,
+                "weights": json.dumps(weights, indent=2),
+                "hard_blockers": "\n".join(f"- {b}" for b in hard_blockers) if hard_blockers else "None specified",
+                "language": language
+            }
+            
+            ai_request = AIRequest(
+                prompt_type=PromptType.EXECUTIVE_RECOMMENDATION,
+                template=template,
+                variables=variables,
+                language=language,
+                temperature=0.6,
+                max_tokens=1536
+            )
+            
+            response = await self.ai_manager.execute(ai_request)
+            
+            if not response.success:
+                logger.error(f"Executive recommendation failed: {response.error}")
+                return None
+            
+            return response.data
+        
+        except Exception as exc:
+            logger.error(f"Error generating executive recommendation: {exc}")
             return None
 
 

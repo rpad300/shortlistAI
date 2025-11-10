@@ -5,9 +5,18 @@ Loads and validates all environment variables and provides
 centralized access to configuration throughout the application.
 """
 
+import os
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import Field, validator
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load .env from project root (2 levels up from this file)
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path, override=True)
+    print(f"[Config] Loaded .env from: {env_path}")
 
 
 class Settings(BaseSettings):
@@ -73,7 +82,7 @@ class Settings(BaseSettings):
     
     class Config:
         """Pydantic configuration."""
-        env_file = "../../.env"  # .env is in project root
+        env_file = ".env"  # Will search in current dir and parent dirs
         env_file_encoding = "utf-8"
         case_sensitive = False
         extra = "ignore"  # Ignore extra fields in .env

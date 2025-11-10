@@ -90,18 +90,33 @@ class MinimaxProvider(AIProvider):
                 PromptType.CV_EXTRACTION,
                 PromptType.JOB_POSTING_NORMALIZATION,
                 PromptType.INTERVIEWER_ANALYSIS,
-                PromptType.CANDIDATE_ANALYSIS
+                PromptType.CANDIDATE_ANALYSIS,
+                PromptType.WEIGHTING_RECOMMENDATION,
+                PromptType.CV_SUMMARY,
+                PromptType.EXECUTIVE_RECOMMENDATION
             ]:
                 try:
+                    # Try to find JSON in response
+                    json_text = raw_text
                     if "```json" in raw_text:
                         json_start = raw_text.find("```json") + 7
                         json_end = raw_text.find("```", json_start)
                         json_text = raw_text[json_start:json_end].strip()
-                        data = json.loads(json_text)
-                    else:
-                        data = json.loads(raw_text)
-                except json.JSONDecodeError:
-                    logger.warning("Failed to parse Minimax response as JSON")
+                    elif "```" in raw_text:
+                        json_start = raw_text.find("```") + 3
+                        json_end = raw_text.find("```", json_start)
+                        json_text = raw_text[json_start:json_end].strip()
+                    
+                    # Clean up common AI mistakes
+                    json_text = json_text.strip()
+                    # Fix double braces (AI sometimes copies {{ from examples)
+                    # Replace ALL occurrences, not just start/end
+                    json_text = json_text.replace("{{", "{").replace("}}", "}")
+                    
+                    data = json.loads(json_text)
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse Minimax response as JSON: {e}")
+                    logger.warning(f"Raw text (first 500 chars): {raw_text[:500]}")
             
             # Extract usage statistics
             usage = result.get("usage", {})

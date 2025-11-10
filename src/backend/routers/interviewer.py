@@ -12,9 +12,11 @@ Handles all steps of the interviewer flow:
 8. Email and report generation
 """
 
+import asyncio
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID
 import logging
@@ -39,12 +41,16 @@ class InterviewerIdentification(BaseModel):
     consent_store_data: bool = Field(..., description="Must consent to data storage")
     consent_future_contact: bool = Field(..., description="Must consent to future headhunting contact")
     language: str = Field(default="en", pattern="^(en|pt|fr|es)$")
+    existing_report_code: Optional[str] = Field(None, max_length=50, description="Optional: Continue existing report by providing report code")
 
 
 class InterviewerIdentificationResponse(BaseModel):
     """Response for step 1."""
     interviewer_id: UUID
     session_id: UUID
+    report_id: Optional[UUID] = None
+    report_code: Optional[str] = None
+    is_continuing: bool = False
     message: str
 
 
@@ -67,6 +73,7 @@ class WeightingInput(BaseModel):
     session_id: UUID
     weights: dict = Field(..., description="Category weights (e.g. {'technical': 50, 'languages': 20})")
     hard_blockers: List[str] = Field(default=[], description="List of hard blocker rules")
+    nice_to_have: List[str] = Field(default=[], description="Preferred but optional requirements")
     language: str = Field(default="en", pattern="^(en|pt|fr|es)$")
 
 
@@ -85,8 +92,25 @@ async def step1_identification(data: InterviewerIdentification):
     from services.database import (
         get_company_service,
         get_interviewer_service,
-        get_session_service
+        get_session_service,
+        get_report_service
     )
+    
+    # Check if continuing existing report
+    existing_report = None
+    if data.existing_report_code:
+        report_service = get_report_service()
+        existing_report = await report_service.get_by_code(data.existing_report_code)
+        
+        if not existing_report:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Report code '{data.existing_report_code}' not found"
+            )
+        
+        # Verify the report belongs to this interviewer (by email)
+        # We'll validate after finding/creating interviewer
+        logger.info(f"Continuing existing report: {data.existing_report_code}")
     
     # Validate all consents are true
     if not all([
@@ -133,31 +157,64 @@ async def step1_identification(data: InterviewerIdentification):
         interviewer_id = interviewer["id"]
         logger.info(f"Interviewer created/found: {data.email} -> {interviewer_id}")
         
+        # Validate existing report belongs to this interviewer
+        if existing_report:
+            if existing_report["interviewer_id"] != interviewer_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="This report belongs to another interviewer"
+                )
+        
         # 3. Create session for multi-step flow
+        initial_session_data = {
+            "interviewer_id": interviewer_id,
+            "company_id": company_id,
+            "language": data.language,
+            "consents": {
+                "terms": data.consent_terms,
+                "privacy": data.consent_privacy,
+                "store_data": data.consent_store_data,
+                "future_contact": data.consent_future_contact
+            }
+        }
+        
+        # If continuing report, load context from DB
+        if existing_report:
+            initial_session_data.update({
+                "report_id": existing_report["id"],
+                "report_code": existing_report["report_code"],
+                "job_posting_id": existing_report["job_posting_id"],
+                "weights": existing_report["weights"],
+                "hard_blockers": existing_report.get("hard_blockers", []),
+                "nice_to_have": existing_report.get("nice_to_have", []),
+                "key_points": existing_report.get("key_points"),
+                "structured_job_posting": existing_report.get("structured_job_posting"),
+                "is_continuing_report": True
+            })
+        
         session_id = session_service.create_session(
             flow_type="interviewer",
             user_id=interviewer_id,
-            initial_data={
-                "interviewer_id": interviewer_id,
-                "company_id": company_id,
-                "language": data.language,
-                "consents": {
-                    "terms": data.consent_terms,
-                    "privacy": data.consent_privacy,
-                    "store_data": data.consent_store_data,
-                    "future_contact": data.consent_future_contact
-                }
-            }
+            initial_data=initial_session_data
         )
         
         logger.info(f"Session created: {session_id} for interviewer {interviewer_id}")
         
         # 4. TODO: Log audit event (future implementation)
         
+        message = f"Welcome {data.name}! "
+        if existing_report:
+            message += f"Continuing report {existing_report['report_code']}. Skip to step 5 to add more CVs."
+        else:
+            message += "Proceed to step 2 to add your job posting."
+        
         return InterviewerIdentificationResponse(
             interviewer_id=interviewer_id,
             session_id=session_id,
-            message=f"Welcome {data.name}! Proceed to step 2 to add your job posting."
+            report_id=UUID(existing_report["id"]) if existing_report else None,
+            report_code=existing_report["report_code"] if existing_report else None,
+            is_continuing=bool(existing_report),
+            message=message
         )
         
     except HTTPException:
@@ -303,6 +360,18 @@ async def step2_job_posting(
                 key_points_parts.append(f"• Nice to have: {prefs}")
             
             suggested_key_points = "\n\n".join(key_points_parts)
+            
+            # Persist structured data for later steps
+            try:
+                await job_posting_service.update_structured_data(
+                    UUID(job_posting["id"]),
+                    normalized
+                )
+            except Exception as structured_err:  # pragma: no cover - logging only
+                logger.warning(
+                    "Failed to store structured job posting data: %s",
+                    structured_err
+                )
             logger.info(f"AI-generated suggested key points ({len(suggested_key_points)} chars)")
         else:
             logger.warning("AI returned no normalized data")
@@ -313,8 +382,9 @@ async def step2_job_posting(
             UUID(session_id),
             {
                 "job_posting_id": job_posting["id"],
-                "job_posting_text": final_text[:500],
-                "suggested_key_points": suggested_key_points  # AI-generated suggestions
+                "job_posting_text": final_text,  # COMPLETE text (no truncation!)
+                "suggested_key_points": suggested_key_points,  # AI-generated suggestions
+                "structured_job_posting": normalized
             },
             step=2
         )
@@ -451,16 +521,140 @@ async def step3_key_points(data: KeyPointsInput):
         )
 
 
+@router.get("/step4/suggestions/{session_id}")
+async def get_weighting_suggestions(session_id: UUID):
+    """
+    Get AI recommendations for category weights, hard blockers, and nice-to-have items.
+    """
+    from services.database import (
+        get_session_service,
+        get_job_posting_service
+    )
+    from services.ai_analysis import get_ai_analysis_service
+    
+    try:
+        session_service = get_session_service()
+        job_posting_service = get_job_posting_service()
+        ai_service = get_ai_analysis_service()
+        
+        session = session_service.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Return cached suggestions if already generated in this session
+        cached = session["data"].get("weighting_suggestions")
+        if cached:
+            return JSONResponse({
+                "status": "success",
+                "has_suggestions": True,
+                "weights": cached.get("weights", {}),
+                "hard_blockers": cached.get("hard_blockers", []),
+                "nice_to_have": cached.get("nice_to_have", []),
+                "summary": cached.get("summary", "")
+            })
+        
+        job_posting_id = session["data"].get("job_posting_id")
+        if not job_posting_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Job posting not found. Complete steps 2 and 3 first."
+            )
+        
+        key_points = session["data"].get("key_points") or session["data"].get("suggested_key_points", "")
+        job_posting_text = session["data"].get("job_posting_text")
+        structured_job_posting = session["data"].get("structured_job_posting")
+        
+        # Fallback: load from database if session does not have full context
+        if not job_posting_text or not structured_job_posting:
+            job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
+            if job_posting:
+                job_posting_text = job_posting_text or job_posting.get("raw_text")
+                structured_job_posting = structured_job_posting or job_posting.get("structured_data")
+        
+        if not job_posting_text:
+            return JSONResponse({
+                "status": "success",
+                "has_suggestions": False,
+                "message": "Job posting text missing. Unable to generate AI recommendations."
+            })
+        
+        suggestions = None
+        try:
+            logger.info(f"Requesting AI weighting suggestions for session {session_id}")
+            suggestions = await asyncio.wait_for(
+                ai_service.recommend_weighting_and_blockers(
+                    job_posting_text,
+                    structured_job_posting,
+                    key_points,
+                    session["data"].get("language", "en")
+                ),
+                timeout=60  # Increased timeout for large context
+            )
+            logger.info(f"AI weighting suggestions received: {bool(suggestions)}")
+        except asyncio.TimeoutError:
+            logger.error("AI weighting recommendation timed out for session %s", session_id)
+            raise HTTPException(
+                status_code=504,
+                detail="AI request timed out. Please try again or check AI provider status."
+            )
+        except Exception as ai_exc:
+            logger.error(
+                "AI weighting recommendation failed for session %s: %s",
+                session_id,
+                ai_exc,
+                exc_info=True  # Add full traceback
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI weighting recommendation failed: {str(ai_exc)}"
+            )
+        
+        if not suggestions:
+            raise HTTPException(
+                status_code=500,
+                detail="AI failed to generate weighting suggestions. Cannot proceed without AI."
+            )
+        
+        normalized = {
+            "weights": suggestions.get("weights", {}),
+            "hard_blockers": suggestions.get("hard_blockers", []),
+            "nice_to_have": suggestions.get("nice_to_have", []),
+            "summary": suggestions.get("summary", "")
+        }
+        
+        session_service.update_session(
+            session_id,
+            {"weighting_suggestions": normalized}
+        )
+        
+        return JSONResponse({
+            "status": "success",
+            "has_suggestions": True,
+            **normalized
+        })
+    
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error generating weighting suggestions: %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error generating weighting suggestions"
+        )
+
+
 @router.post("/step4")
 async def step4_weighting(data: WeightingInput):
     """
     Step 4: Category weighting and hard blockers.
     
     Stores evaluation weights and hard blocker rules.
+    Creates persistent Analysis Report in database.
     """
     from services.database import (
         get_session_service,
-        get_job_posting_service
+        get_job_posting_service,
+        get_report_service
     )
     from uuid import UUID
     
@@ -475,11 +669,16 @@ async def step4_weighting(data: WeightingInput):
     try:
         session_service = get_session_service()
         job_posting_service = get_job_posting_service()
+        report_service = get_report_service()
         
         # Validate session
         session = session_service.get_session(data.session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Check if continuing existing report
+        existing_report_id = session["data"].get("report_id")
+        is_continuing = session["data"].get("is_continuing_report", False)
         
         # Get job posting ID
         job_posting_id = session["data"].get("job_posting_id")
@@ -488,6 +687,8 @@ async def step4_weighting(data: WeightingInput):
                 status_code=400,
                 detail="Job posting not found. Complete steps 2 and 3 first."
             )
+        
+        job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
         
         # Update job posting with weights and hard blockers
         success = await job_posting_service.update_weights_and_blockers(
@@ -502,22 +703,88 @@ async def step4_weighting(data: WeightingInput):
                 detail="Failed to store weighting configuration"
             )
         
+        # Persist nice-to-have items inside structured data for later use
+        if job_posting is not None:
+            structured = job_posting.get("structured_data") or {}
+            if isinstance(structured, dict):
+                structured["nice_to_have"] = data.nice_to_have
+                try:
+                    await job_posting_service.update_structured_data(
+                        UUID(job_posting_id),
+                        structured
+                    )
+                except Exception as structured_err:  # pragma: no cover - logging only
+                    logger.warning(
+                        "Failed to update structured data with nice-to-have items: %s",
+                        structured_err
+                    )
+        
+        # Create or update persistent Report in database
+        report = None
+        report_code = None
+        
+        if not is_continuing:
+            # Create new report
+            interviewer_id = session["data"].get("interviewer_id")
+            company_id = session["data"].get("company_id")
+            key_points = session["data"].get("key_points") or session["data"].get("suggested_key_points", "")
+            structured_job_posting = session["data"].get("structured_job_posting")
+            
+            report = await report_service.create(
+                interviewer_id=UUID(interviewer_id),
+                job_posting_id=UUID(job_posting_id),
+                weights=data.weights,
+                key_points=key_points,
+                company_id=UUID(company_id) if company_id else None,
+                hard_blockers=data.hard_blockers,
+                nice_to_have=data.nice_to_have,
+                structured_job_posting=structured_job_posting,
+                title=job_posting.get("raw_text", "")[:200] if job_posting else None,
+                language=data.language
+            )
+            
+            if report:
+                report_code = report["report_code"]
+                logger.info(f"Created persistent report: {report_code} ({report['id']})")
+            else:
+                logger.warning("Failed to create persistent report (non-critical)")
+        else:
+            # Continuing existing report
+            report_id = existing_report_id
+            report_code = session["data"].get("report_code")
+            logger.info(f"Continuing existing report: {report_code}")
+        
         # Update session
+        session_update_data = {
+            "weights": data.weights,
+            "hard_blockers": data.hard_blockers,
+            "nice_to_have": data.nice_to_have
+        }
+        
+        if report:
+            session_update_data.update({
+                "report_id": report["id"],
+                "report_code": report["report_code"]
+            })
+        
         session_service.update_session(
             data.session_id,
-            {
-                "weights": data.weights,
-                "hard_blockers": data.hard_blockers
-            },
+            session_update_data,
             step=4
         )
         
         logger.info(f"Weighting configured for session: {data.session_id}")
         
-        return JSONResponse({
+        response_data = {
             "status": "success",
             "message": "Weighting configured. Proceed to step 5 to upload CVs."
-        })
+        }
+        
+        if report_code:
+            response_data["report_code"] = report_code
+            response_data["message"] += f" Report code: {report_code}"
+        
+        return JSONResponse(response_data)
         
     except HTTPException:
         raise
@@ -545,6 +812,7 @@ async def step5_upload_cvs(
         get_candidate_service
     )
     from services.storage import get_storage_service
+    from services.ai_analysis import get_ai_analysis_service
     from utils import FileProcessor
     from uuid import UUID
     
@@ -559,6 +827,7 @@ async def step5_upload_cvs(
         cv_service = get_cv_service()
         candidate_service = get_candidate_service()
         storage_service = get_storage_service()
+        ai_service = get_ai_analysis_service()
         
         # Validate session
         session = session_service.get_session(UUID(session_id))
@@ -595,17 +864,28 @@ async def step5_upload_cvs(
                 if not success or not extracted_text:
                     extracted_text = ""
                 
-                # For now, create anonymous candidate for each CV
-                # In production, we'd use AI to extract email from CV text
+                # Generate unique email to avoid duplicates during batch upload
+                generated_email = f"interviewer_session_{session_id}_{idx+1}@shortlistai.test"
                 candidate = await candidate_service.create(
-                    email=f"candidate_{idx+1}@temp.com",  # TODO: Extract from CV with AI
-                    name=f"Candidate {idx+1}",  # TODO: Extract from CV with AI
+                    email=generated_email,
+                    name=f"Candidate {idx+1}",
                     consent_given=False  # Consent from interviewer, not candidate
                 )
                 
                 if not candidate:
                     errors.append(f"{file.filename}: Failed to create candidate")
                     continue
+                
+                # Summarize CV with AI (if we have extracted text)
+                summary = None
+                if extracted_text:
+                    summary = await ai_service.summarize_cv(
+                        extracted_text,
+                        file.filename,
+                        session["data"].get("language", "en")
+                    )
+                else:
+                    logger.warning("No extracted text available for %s, skipping AI summary", file.filename)
                 
                 # Upload CV file
                 success, file_url, error = await storage_service.upload_cv(
@@ -630,7 +910,8 @@ async def step5_upload_cvs(
                     processed_cvs.append({
                         "cv_id": cv["id"],
                         "candidate_id": candidate["id"],
-                        "filename": file.filename
+                        "filename": file.filename,
+                        "summary": summary
                     })
                     logger.info(f"CV processed: {file.filename} -> {cv['id']}")
                 
@@ -649,18 +930,31 @@ async def step5_upload_cvs(
             UUID(session_id),
             {
                 "cv_ids": [cv["cv_id"] for cv in processed_cvs],
-                "cv_count": len(processed_cvs)
+                "cv_count": len(processed_cvs),
+                "candidates_info": processed_cvs,
+                "analysis_complete": False,
+                "analysis_results": []
             },
             step=5
         )
         
         logger.info(f"Uploaded {len(processed_cvs)} CVs for session: {session_id}")
+
+        response_cvs = [
+            {
+                "cv_id": info["cv_id"],
+                "candidate_id": info["candidate_id"],
+                "filename": info["filename"],
+                "summary": info.get("summary")
+            }
+            for info in processed_cvs
+        ]
         
         return JSONResponse({
             "status": "success",
             "files_processed": len(processed_cvs),
             "files_failed": len(errors),
-            "cvs": processed_cvs,
+            "cvs": response_cvs,
             "errors": errors if errors else None,
             "message": f"Uploaded {len(processed_cvs)} CVs. Proceed to step 6 for AI analysis."
         })
@@ -689,6 +983,8 @@ async def step6_analysis(session_id: str):
         get_cv_service,
         get_analysis_service
     )
+    from services.ai_analysis import get_ai_analysis_service
+    from utils import FileProcessor
     from uuid import UUID
     
     try:
@@ -696,6 +992,7 @@ async def step6_analysis(session_id: str):
         job_posting_service = get_job_posting_service()
         cv_service = get_cv_service()
         analysis_service = get_analysis_service()
+        ai_service = get_ai_analysis_service()
         
         # Validate session
         session = session_service.get_session(UUID(session_id))
@@ -708,6 +1005,9 @@ async def step6_analysis(session_id: str):
             raise HTTPException(status_code=400, detail="Job posting not found")
         
         job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
+        job_posting_markdown = ""
+        if job_posting and job_posting.get("raw_text"):
+            job_posting_markdown = FileProcessor.text_to_markdown(job_posting["raw_text"])
         
         # Get CV IDs
         cv_ids = session["data"].get("cv_ids", [])
@@ -717,54 +1017,174 @@ async def step6_analysis(session_id: str):
         # Get weights and blockers
         weights = session["data"].get("weights", {})
         hard_blockers = session["data"].get("hard_blockers", [])
+        nice_to_have = session["data"].get("nice_to_have", [])
+        key_points = session["data"].get("key_points") or session["data"].get("suggested_key_points", "")
+        language = session["data"].get("language", "en")
+        candidates_info = session["data"].get("candidates_info", [])
+
+        def _normalize_list(value: Any) -> List[Any]:
+            if isinstance(value, list):
+                return value
+            if isinstance(value, dict):
+                for key in ("items", "flags", "values", "value"):
+                    maybe = value.get(key)
+                    if isinstance(maybe, list):
+                        return maybe
+            if value is None:
+                return []
+            return [value]
         
-        # For now, create placeholder analyses
-        # TODO: Call AI service for actual analysis
         analyses = []
+        session_results = []
+        candidate_lookup = {info["cv_id"]: info for info in candidates_info}
+
         for cv_id in cv_ids:
             cv = await cv_service.get_by_id(UUID(cv_id))
             if not cv:
                 continue
-            
-            # Placeholder analysis
-            categories = {
-                "technical_skills": 4,
-                "experience": 3,
-                "soft_skills": 4,
-                "languages": 5,
-                "education": 4
-            }
-            
-            # Calculate weighted global score
+
+            candidate_info = candidate_lookup.get(cv_id, {})
+            extracted_text = cv.get("extracted_text") or ""
+
+            ai_result = None
+            cv_markdown = FileProcessor.text_to_markdown(extracted_text) if extracted_text else ""
+
+            if not cv_markdown or not job_posting_markdown:
+                logger.error("Missing CV or job posting text for analysis. CV ID: %s", cv_id)
+                continue
+
+            try:
+                ai_result = await asyncio.wait_for(
+                    ai_service.analyze_candidate_for_interviewer(
+                        job_posting_markdown,
+                        cv_markdown,
+                        key_points,
+                        weights,
+                        hard_blockers,
+                        nice_to_have,
+                        language
+                    ),
+                    timeout=90  # 90 seconds for large context
+                )
+            except asyncio.TimeoutError:
+                logger.error("AI analysis timed out for CV %s", cv_id)
+                raise HTTPException(
+                    status_code=504,
+                    detail=f"AI analysis timed out for CV {cv_id}. Please try again or check AI provider status."
+                )
+            except Exception as ai_exc:
+                logger.error("AI analysis failed for CV %s: %s", cv_id, ai_exc)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"AI analysis failed for CV {cv_id}: {str(ai_exc)}"
+                )
+
+            if not ai_result or not ai_result.get("data"):
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"AI failed to analyze CV {cv_id}. Cannot proceed without AI analysis."
+                )
+
+            data = ai_result.get("data", {})
+            categories = data.get("categories", {})
+            strengths = _normalize_list(data.get("strengths"))
+            risks = _normalize_list(data.get("risks"))
+            questions = _normalize_list(data.get("custom_questions") or data.get("questions"))
+            blocker_flags = _normalize_list(data.get("hard_blocker_violations") or data.get("hard_blocker_flags"))
+            provider_used = ai_result.get("provider") or ai_result.get("model") or "ai"
+
             global_score = sum(
                 categories.get(cat, 0) * weights.get(cat, 1)
                 for cat in categories.keys()
             ) / sum(weights.values()) if weights else sum(categories.values()) / len(categories)
+
+            summary = candidate_info.get("summary") or {}
+            candidate_label = (
+                summary.get("full_name")
+                or summary.get("current_role")
+                or candidate_info.get("filename")
+                or f"Candidate {len(session_results) + 1}"
+            )
+
+            # Get report_id from session (if exists)
+            report_id = session["data"].get("report_id")
             
-            # Create analysis record
             analysis = await analysis_service.create(
                 mode="interviewer",
                 job_posting_id=UUID(job_posting_id),
                 cv_id=UUID(cv_id),
                 candidate_id=UUID(cv["candidate_id"]),
-                provider="placeholder",  # TODO: Use actual AI provider
+                provider=provider_used,
                 categories=categories,
                 global_score=round(global_score, 2),
-                strengths=["Strong technical background", "Good communication"],
-                risks=["Limited experience in X"],
-                questions=["Tell me about your experience with Y"],
-                language=session["data"].get("language", "en")
+                strengths=strengths,
+                risks=risks,
+                questions=questions,
+                language=language,
+                hard_blocker_flags=blocker_flags,
+                report_id=UUID(report_id) if report_id else None
             )
             
+            session_results.append({
+                "analysis_id": analysis["id"] if analysis else None,
+                "candidate_id": str(cv["candidate_id"]),
+                "candidate_label": candidate_label,
+                "file_name": candidate_info.get("filename"),
+                "summary": summary,
+                "global_score": round(global_score, 2),
+                "categories": categories,
+                "strengths": strengths,
+                "risks": risks,
+                "questions": questions,
+                "hard_blocker_flags": blocker_flags,
+                "provider": provider_used
+            })
+
             if analysis:
                 analyses.append(analysis)
+        
+        # Generate executive recommendation (AI summary of results)
+        executive_recommendation = None
+        try:
+            logger.info(f"Generating executive recommendation for session {session_id}")
+            executive_recommendation = await ai_service.generate_executive_recommendation(
+                job_posting_summary=key_points or "Position evaluation",
+                candidates_data=session_results,
+                weights=weights,
+                hard_blockers=hard_blockers,
+                language=language
+            )
+            if executive_recommendation:
+                logger.info("Executive recommendation generated successfully")
+            else:
+                logger.warning("Executive recommendation returned None")
+        except Exception as exec_err:
+            logger.error(f"Failed to generate executive recommendation: {exec_err}")
+            # Continue without recommendation - not critical
+        
+        # Update persistent report in database (if exists)
+        report_id = session["data"].get("report_id")
+        if report_id and executive_recommendation:
+            try:
+                report_service = get_report_service()
+                await report_service.update_executive_recommendation(
+                    UUID(report_id),
+                    executive_recommendation
+                )
+                # Update candidate count
+                await report_service.increment_candidate_count(UUID(report_id), len(analyses))
+                logger.info(f"Updated report {report_id} with executive recommendation")
+            except Exception as report_err:
+                logger.error(f"Failed to update report: {report_err}")
         
         # Update session
         session_service.update_session(
             UUID(session_id),
             {
                 "analysis_ids": [a["id"] for a in analyses],
-                "analysis_complete": True
+                "analysis_complete": True,
+                "analysis_results": session_results,
+                "executive_recommendation": executive_recommendation
             },
             step=6
         )
@@ -774,7 +1194,9 @@ async def step6_analysis(session_id: str):
         return JSONResponse({
             "status": "success",
             "analyses_created": len(analyses),
-            "message": "Analysis complete. View results in step 7."
+            "message": "Analysis complete. View results in step 7.",
+            "results": session_results,
+            "executive_recommendation": executive_recommendation
         })
         
     except HTTPException:
@@ -812,31 +1234,80 @@ async def step7_results(session_id: UUID):
                 detail="Analysis not complete. Run step 6 first."
             )
         
-        # Get all analyses for this job posting
+        results = session["data"].get("analysis_results")
+        executive_recommendation = session["data"].get("executive_recommendation")
+        
+        if results:
+            # SORT by global_score DESCENDING (best candidates first)
+            sorted_results = sorted(
+                results,
+                key=lambda x: x.get('global_score', 0),
+                reverse=True
+            )
+            
+            logger.info("Returning %d analysis results from session cache for %s", len(sorted_results), session_id)
+            return JSONResponse({
+                "status": "success",
+                "total_candidates": len(sorted_results),
+                "results": sorted_results,
+                "executive_recommendation": executive_recommendation,
+                "message": f"Analysis complete for {len(sorted_results)} candidates."
+            })
+        
+        # Fallback: query database (legacy)
         job_posting_id = session["data"].get("job_posting_id")
         analyses = await analysis_service.get_by_job_posting(UUID(job_posting_id))
         
         # Format results
         results = []
+        def _ensure_list(value: Any) -> List[Any]:
+            if isinstance(value, list):
+                return value
+            if isinstance(value, dict):
+                items = value.get("items")
+                if isinstance(items, list):
+                    return items
+                flags = value.get("flags")
+                if isinstance(flags, list):
+                    return flags
+                values = value.get("value") or value.get("values")
+                if isinstance(values, list):
+                    return values
+            if value is None:
+                return []
+            return [value]
+
         for analysis in analyses:
             results.append({
                 "analysis_id": analysis["id"],
                 "candidate_id": analysis["candidate_id"],
                 "global_score": analysis["global_score"],
                 "categories": analysis["categories"],
-                "strengths": analysis.get("strengths", {}).get("items", []),
-                "risks": analysis.get("risks", {}).get("items", []),
-                "questions": analysis.get("questions", {}).get("items", []),
-                "hard_blocker_flags": analysis.get("hard_blocker_flags", {}).get("flags", [])
+                "strengths": _ensure_list(analysis.get("strengths")),
+                "risks": _ensure_list(analysis.get("risks")),
+                "questions": _ensure_list(analysis.get("questions")),
+                "hard_blocker_flags": _ensure_list(analysis.get("hard_blocker_flags")),
+                "provider": analysis.get("provider")
             })
         
-        logger.info(f"Results retrieved: {len(results)} candidates for session: {session_id}")
+        # SORT by global_score DESCENDING (best candidates first)
+        sorted_results = sorted(
+            results,
+            key=lambda x: x.get('global_score', 0),
+            reverse=True
+        )
+        
+        logger.info(f"Results retrieved: {len(sorted_results)} candidates for session: {session_id}")
+        
+        # Get executive recommendation from session (if available)
+        executive_recommendation = session["data"].get("executive_recommendation")
         
         return JSONResponse({
             "status": "success",
-            "total_candidates": len(results),
-            "results": results,
-            "message": f"Analysis complete for {len(results)} candidates."
+            "total_candidates": len(sorted_results),
+            "results": sorted_results,
+            "executive_recommendation": executive_recommendation,
+            "message": f"Analysis complete for {len(sorted_results)} candidates."
         })
         
     except HTTPException:
@@ -922,19 +1393,71 @@ async def step8_send_email(
 @router.get("/step8/report/{session_id}")
 async def step8_download_report(session_id: UUID):
     """
-    Step 8: Download report.
+    Step 8: Download PDF report.
     
-    Generates and returns a PDF report of the analysis.
+    Generates and returns a comprehensive PDF report of the analysis.
+    Includes job details, evaluation criteria, executive recommendation, and candidate rankings.
     """
-    # TODO:
-    # 1. Fetch results
-    # 2. Generate PDF report
-    # 3. Return file
+    from services.database import get_session_service
+    from services.pdf import get_pdf_report_generator
+    from fastapi.responses import Response
     
-    logger.info(f"Report download requested for session: {session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "Report generation in progress. Implementation pending."
-    })
+    try:
+        session_service = get_session_service()
+        pdf_generator = get_pdf_report_generator()
+        
+        # Get session data
+        session = session_service.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Check if analysis is complete
+        if not session["data"].get("analysis_complete"):
+            raise HTTPException(
+                status_code=400,
+                detail="Analysis not complete. Complete step 6 first."
+            )
+        
+        # Get results and executive recommendation
+        results = session["data"].get("analysis_results", [])
+        executive_recommendation = session["data"].get("executive_recommendation")
+        
+        if not results:
+            raise HTTPException(
+                status_code=400,
+                detail="No analysis results found"
+            )
+        
+        # Generate PDF
+        logger.info(f"Generating PDF report for session: {session_id}")
+        pdf_bytes = pdf_generator.generate_interviewer_report(
+            session_data=session,
+            results=results,
+            executive_recommendation=executive_recommendation
+        )
+        
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"candidate_analysis_report_{timestamp}.pdf"
+        
+        logger.info(f"PDF report generated successfully: {len(pdf_bytes)} bytes")
+        
+        # Return PDF file
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Length": str(len(pdf_bytes))
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating PDF report: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating PDF report: {str(e)}"
+        )
 
