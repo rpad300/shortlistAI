@@ -1,24 +1,14 @@
 {
   "welcome": "Bem-vindo à Plataforma de Análise de CVs",
-  "description": "Análise de CVs com IA para entrevistadores e candidatos. Escolha o seu fluxo abaixo.",
-  "interviewer_flow": "Fluxo do Entrevistador",
-  "candidate_flow": "Fluxo do Candidato",
-  "admin_login": "Login do Administrador",
+  "description": "Análise de CVs com IA para recrutadores e candidatos",
   
-  "common": {
-    "loading": "A carregar...",
-    "error": "Ocorreu um erro",
-    "success": "Sucesso",
-    "cancel": "Cancelar",
-    "confirm": "Confirmar",
-    "save": "Guardar",
-    "delete": "Eliminar",
-    "edit": "Editar",
-    "next": "Seguinte",
-    "previous": "Anterior",
-    "submit": "Enviar",
-    "upload": "Carregar",
-    "download": "Descarregar"
+  "nav": {
+    "home": "Início",
+    "features": "Funcionalidades",
+    "about": "Como Funciona",
+    "pricing": "Preços",
+    "analyzeCV": "Analisar CVs",
+    "prepareInterview": "Preparar Entrevista"
   },
   
   "languages": {
@@ -29,61 +19,335 @@
   },
   
   "interviewer": {
-    "title": "Fluxo do Entrevistador",
-    "subtitle": "Analise múltiplos CVs face à sua oferta de emprego",
+    "title": "Fluxo Recrutador",
+    "subtitle": "Analise múltiplos CVs contra sua vaga",
     "step1_title": "Identificação e Consentimento",
-    "step2_title": "Oferta de Emprego",
+    "step1_subtitle": "Vamos começar conhecendo você",
+    "step2_title": "Descrição da Vaga",
+    "step2_subtitle": "Carregue ou cole a descrição da vaga",
     "step3_title": "Pontos-Chave",
-    "step4_title": "Ponderação e Bloqueadores",
+    "step3_subtitle": "Revise e ajuste os requisitos principais",
+    "step4_title": "Pesos e Bloqueadores",
+    "step4_subtitle": "Defina importância e requisitos obrigatórios",
     "step5_title": "Carregar CVs",
-    "step6_title": "Análise",
-    "step7_title": "Resultados"
+    "step5_subtitle": "Carregue os CVs dos candidatos para análise",
+    "step6_title": "Análise IA",
+    "step6_subtitle": "Nossa IA está analisando todos os candidatos",
+    "step7_title": "Resultados e Rankings",
+    "step7_subtitle": "Revise a análise e classificação dos candidatos"
   },
   
   "candidate": {
-    "title": "Fluxo do Candidato",
-    "subtitle": "Prepare-se para a sua entrevista com insights de IA",
-    "step1_title": "Identificação e Consentimento",
-    "step2_title": "Oferta de Emprego",
-    "step3_title": "Carregar CV",
-    "step4_title": "Análise",
-    "step5_title": "Resultados"
-  },
-  
-  "admin": {
-    "title": "Painel de Administração",
-    "login": "Entrar",
-    "logout": "Sair",
-    "candidates": "Candidatos",
-    "companies": "Empresas",
-    "job_postings": "Ofertas de Emprego",
-    "analyses": "Análises",
-    "ai_management": "Gestão de IA",
-    "prompts": "Prompts",
-    "providers": "Fornecedores",
-    "translations": "Traduções",
-    "quality_review": "Revisão de Qualidade",
-    "golden_cases": "Casos de Referência"
+    "title": "Fluxo Candidato",
+    "subtitle": "Prepare-se para sua entrevista com insights de IA",
+    "step1_title": "Suas Informações",
+    "step1_subtitle": "Conte-nos sobre você",
+    "step2_title": "Vaga de Emprego",
+    "step2_subtitle": "Carregue ou cole a vaga para qual está se candidatando",
+    "step3_title": "Seu CV",
+    "step3_subtitle": "Carregue seu currículo ou CV",
+    "step4_title": "Análise IA",
+    "step4_subtitle": "Analisando sua adequação para esta posição",
+    "step5_title": "Seus Resultados",
+    "step5_subtitle": "Aqui está sua preparação personalizada para entrevista"
   },
   
   "forms": {
-    "name": "Nome",
-    "email": "Email",
-    "phone": "Telefone",
+    "name": "Nome Completo",
+    "email": "Endereço de Email",
+    "phone": "Número de Telefone",
     "country": "País",
-    "company": "Empresa (opcional)",
+    "company": "Nome da Empresa",
+    "existing_report": "Código do Relatório (opcional)",
+    "job_posting": "Descrição da Vaga",
+    "paste_or_upload": "Cole o texto ou carregue o arquivo",
+    "upload_cvs": "Carregar CVs",
+    "upload_cv": "Carregar Seu CV",
     "required_field": "Este campo é obrigatório",
     "invalid_email": "Endereço de email inválido",
-    "consent_store_data": "Consinto que os meus dados pessoais sejam armazenados",
-    "consent_future_contact": "Consinto ser contactado para futuras oportunidades",
-    "accept_terms": "Aceito os Termos e Condições",
-    "accept_privacy": "Aceito a Política de Privacidade"
+    "consent_store_data": "Consinto com o armazenamento e processamento dos meus dados pessoais para fins de análise de CV",
+    "consent_future_contact": "Consinto em ser contactado sobre oportunidades futuras e atualizações",
+    "consent_terms": "Li e aceito os Termos e Condições",
+    "consent_privacy": "Li e aceito a Política de Privacidade",
+    "placeholders": {
+      "name": "Seu nome completo",
+      "email": "seu.email@empresa.com",
+      "phone": "+351 912 345 678",
+      "country": "Portugal",
+      "company": "Nome da sua empresa (opcional)",
+      "report_code": "REP-20250110-XXXXX"
+    },
+    "continue": "Continuar para Próximo Passo",
+    "back": "Voltar",
+    "next": "Próximo →",
+    "analyze": "Iniciar Análise",
+    "download_report": "Baixar Relatório PDF",
+    "send_email": "Enviar Resumo por Email"
+  },
+  
+  "home": {
+    "hero": {
+      "title": "Análise de CVs com IA",
+      "subtitle": "Compare candidatos ou prepare-se para entrevistas com tecnologia de IA avançada. Grátis, rápido e multilíngue."
+    },
+    "valueProp": {
+      "title": "Transforme Seu Processo de Recrutamento",
+      "subtitle": "ShortlistAI usa IA avançada para analisar CVs contra vagas, fornecendo insights instantâneos, rankings e perguntas de entrevista.",
+      "stat1": "10x Mais Rápido",
+      "stat2": "100% Grátis Para Sempre",
+      "stat3": "4 Idiomas Suportados",
+      "stat4": "5 Provedores de IA"
+    },
+    "features": {
+      "title": "Dois Modos Poderosos",
+      "interviewer": {
+        "title": "Modo Recrutador",
+        "description": "Compare e classifique múltiplos candidatos contra sua vaga. Carregue 10, 50 ou 100+ CVs e obtenha análise instantânea de IA com pontuações, forças, riscos e perguntas personalizadas.",
+        "features": [
+          "Upload em lote (10, 50, 100+ CVs)",
+          "Ranking automático por pontuação",
+          "Pesos personalizados e bloqueadores",
+          "Perguntas de entrevista por candidato",
+          "Baixe relatórios PDF completos",
+          "Resumo por email para sua equipe"
+        ],
+        "cta": "Começar a Analisar CVs →"
+      },
+      "candidate": {
+        "title": "Modo Candidato",
+        "description": "Prepare-se para sua próxima entrevista com insights de IA. Carregue a vaga e seu CV para receber dicas personalizadas, perguntas prováveis e seu pitch perfeito.",
+        "features": [
+          "Análise instantânea de adequação",
+          "Identifique suas forças e lacunas",
+          "Preveja perguntas prováveis",
+          "Receba respostas sugeridas e dicas",
+          "Aperfeiçoe seu pitch de apresentação",
+          "Receba guia de preparação por email"
+        ],
+        "cta": "Preparar para Entrevista →"
+      }
+    },
+    "howItWorks": {
+      "title": "Como Funciona",
+      "subtitle": "Simples, rápido e alimentado por IA avançada",
+      "step1": { "title": "Carregar", "description": "Carregue sua vaga e CV(s). Suporte para PDF, DOCX e texto." },
+      "step2": { "title": "Analisar", "description": "Nossa IA analisa o conteúdo, extrai informações chave e combina candidatos com requisitos." },
+      "step3": { "title": "Revisar", "description": "Obtenha pontuações detalhadas, rankings, forças, riscos e perguntas de entrevista personalizadas." },
+      "step4": { "title": "Exportar", "description": "Baixe relatórios PDF ou receba resumos por email com todos os detalhes da análise." }
+    },
+    "benefits": {
+      "title": "Por Que Escolher ShortlistAI?",
+      "free": { "title": "100% Grátis", "description": "Sem custos ocultos, sem cartão de crédito. Acesso completo a todos os recursos, para sempre." },
+      "fast": { "title": "Super Rápido", "description": "Analise 100 CVs em minutos. Obtenha resultados instantâneos com processamento de IA avançado." },
+      "multilingual": { "title": "Multilíngue", "description": "Suporte completo para interfaces em Inglês, Português, Francês e Espanhol." },
+      "ai": { "title": "5 Modelos de IA", "description": "Alimentado por Gemini, OpenAI, Claude, Kimi e Minimax para máxima precisão." },
+      "secure": { "title": "Privado e Seguro", "description": "Seus dados estão protegidos. Conformidade GDPR com segurança empresarial." },
+      "everywhere": { "title": "Funciona Em Todo Lugar", "description": "PWA pronto. Instale em celular, tablet, desktop ou use no navegador." }
+    },
+    "useCases": {
+      "title": "Perfeito Para",
+      "recruiters": { "title": "👔 Recrutadores e RH", "description": "Analise centenas de candidatos rapidamente. Foque nos melhores. Economize horas de revisão manual." },
+      "managers": { "title": "💼 Gestores de Contratação", "description": "Tome decisões baseadas em dados. Compare candidatos objetivamente. Obtenha perguntas personalizadas." },
+      "seekers": { "title": "🎯 Candidatos a Emprego", "description": "Prepare-se completamente para entrevistas. Entenda suas forças e lacunas. Aperfeiçoe seu pitch." },
+      "startups": { "title": "🏢 Startups e PMEs", "description": "Ferramentas profissionais de contratação sem o preço empresarial. Grátis, poderoso e fácil de usar." }
+    },
+    "cta": {
+      "title": "Pronto Para Transformar Suas Contratações?",
+      "subtitle": "Comece a analisar CVs com IA em menos de 2 minutos. Sem cadastro necessário.",
+      "note": "✓ Sem cartão de crédito  ·  ✓ Sem cadastro  ·  ✓ 100% Grátis"
+    }
+  },
+  
+  "footer": {
+    "tagline": "Plataforma de Análise de CVs com IA",
+    "description": "Grátis, multilíngue e alimentado pela mais recente tecnologia de IA.",
+    "product": "Produto",
+    "company": "Empresa",
+    "legal": "Legal",
+    "languages": "Idiomas",
+    "copyright": "© 2025 ShortlistAI. Todos os direitos reservados.",
+    "powered": "Alimentado por IA: Gemini, OpenAI, Claude, Kimi, Minimax"
+  },
+  
+  "admin": {
+    "title": "Painel Admin",
+    "login": "Entrar",
+    "logout": "Sair"
   },
   
   "legal": {
     "terms": "Termos e Condições",
     "privacy": "Política de Privacidade",
-    "base_language_notice": "Inglês é a versão legal oficial. Outras línguas são traduções para conveniência."
+    "cookies": "Política de Cookies"
+  },
+  
+  "features": {
+    "title": "Funcionalidades Poderosas",
+    "subtitle": "Tudo que você precisa para tomar melhores decisões de contratação ou arrasar na sua entrevista",
+    "forRecruiters": "Para Recrutadores e Gestores de Contratação",
+    "forCandidates": "Para Candidatos a Emprego",
+    "interviewer": {
+      "intro": "Analise centenas de candidatos em minutos. Nossa IA analisa CVs contra sua vaga, fornecendo pontuações detalhadas, classificações e perguntas de entrevista personalizadas.",
+      "batchUpload": { "title": "Upload em Lote", "description": "Carregue 10, 50, 100+ CVs de uma vez. Suporta PDF, DOCX e formatos de texto." },
+      "smartRanking": { "title": "Classificação Inteligente", "description": "Classificação automática por pontuação de adequação. Personalize pesos para diferentes habilidades e requisitos." },
+      "hardBlockers": { "title": "Bloqueadores Rígidos", "description": "Defina requisitos obrigatórios. Candidatos que não atendem são automaticamente sinalizados." },
+      "aiQuestions": { "title": "Perguntas de Entrevista IA", "description": "Obtenha perguntas de entrevista personalizadas para cada candidato com base em seu CV e sua função." },
+      "pdfReports": { "title": "Relatórios PDF", "description": "Baixe relatórios de análise abrangentes com marca, classificações e insights detalhados." },
+      "emailSummary": { "title": "Resumo por Email", "description": "Compartilhe resultados com sua equipe por email. Suporte multilíngue (EN, PT, FR, ES)." }
+    },
+    "candidate": {
+      "intro": "Entre em sua entrevista com confiança. Nossa IA analisa a vaga e seu CV para fornecer dicas de preparação personalizadas, perguntas prováveis e estratégias.",
+      "fitScore": { "title": "Análise de Pontuação", "description": "Entenda o quão bem você corresponde à função com pontuações detalhadas por categoria." },
+      "strengthsGaps": { "title": "Forças e Lacunas", "description": "Identifique o que faz de você uma ótima escolha e áreas para focar durante a entrevista." },
+      "predictedQuestions": { "title": "Perguntas Previstas", "description": "IA prevê perguntas prováveis de entrevista com base na vaga e seu histórico." },
+      "suggestedAnswers": { "title": "Respostas Sugeridas", "description": "Obtenha frameworks de resposta personalizados e dicas para perguntas comuns de entrevista." },
+      "introPitch": { "title": "Pitch de Apresentação Perfeito", "description": "Pitch de apresentação gerado por IA otimizado para a função e empresa específicas." },
+      "prepGuide": { "title": "Guia de Preparação", "description": "Receba um guia completo de preparação por email em seu idioma preferido." }
+    },
+    "technology": {
+      "title": "Alimentado por IA Avançada",
+      "subtitle": "Usamos os mais recentes modelos de IA para garantir análise precisa e perspicaz",
+      "multiAI": { "title": "Múltiplos Provedores de IA", "description": "Suporta Gemini, OpenAI, Claude, Kimi e Minimax. Fallback automático garante confiabilidade." },
+      "smartExtraction": { "title": "Extração Inteligente", "description": "Extração avançada de texto de arquivos PDF e DOCX. Entende formatos complexos de CV." },
+      "multilingual": { "title": "Multilíngue", "description": "Suporte completo para Inglês, Português, Francês e Espanhol. IA adapta-se ao idioma automaticamente." },
+      "privacyFirst": { "title": "Privacidade em Primeiro Lugar", "description": "Conformidade GDPR. Seus dados nunca são usados para treinamento de IA. Processamento e armazenamento seguros." }
+    },
+    "finalCTA": {
+      "title": "Comece a Usar ShortlistAI Hoje",
+      "subtitle": "Grátis para sempre. Sem cartão de crédito. Sem cadastro. Comece a analisar em 2 minutos."
+    }
+  },
+  
+  "about": {
+    "title": "Sobre o ShortlistAI",
+    "subtitle": "Estamos tornando a contratação mais inteligente, rápida e acessível com IA",
+    "mission": {
+      "title": "Nossa Missão",
+      "text1": "A contratação é difícil. Analisar centenas de CVs é demorado, subjetivo e exaustivo. Candidatos a emprego lutam para se preparar efetivamente para entrevistas, muitas vezes perdendo aspectos-chave do que os torna uma ótima escolha.",
+      "text2": "ShortlistAI muda isso.",
+      "text3": "Usamos IA avançada para analisar CVs contra vagas de emprego, fornecendo insights instantâneos e objetivos para recrutadores e candidatos. Nossa plataforma é 100% gratuita, multilíngue e projetada para democratizar o acesso a ferramentas profissionais de contratação."
+    },
+    "howItWorks": { 
+      "title": "Como Funciona",
+      "forInterviewers": "Para Recrutadores",
+      "forCandidates": "Para Candidatos",
+      "interviewerSteps": {
+        "step1": { "title": "Identificação", "desc": "Forneça seus detalhes e aceite nossos termos de privacidade (conformidade GDPR)." },
+        "step2": { "title": "Vaga de Emprego", "desc": "Carregue ou cole sua descrição de vaga. IA extrai requisitos-chave." },
+        "step3": { "title": "Definir Critérios", "desc": "Revise pontos-chave sugeridos pela IA ou defina os seus próprios. Configure pesos e bloqueadores." },
+        "step4": { "title": "Carregar CVs", "desc": "Carregue 10, 50, 100+ CVs de candidatos em lote. PDF e DOCX suportados." },
+        "step5": { "title": "Análise IA", "desc": "Nossa IA processa todos os CVs, extraindo dados e pontuando contra seus critérios." },
+        "step6": { "title": "Revisar Resultados", "desc": "Veja candidatos classificados com pontuações, forças, riscos e perguntas de entrevista personalizadas." },
+        "step7": { "title": "Exportar e Compartilhar", "desc": "Baixe relatórios PDF ou envie resumos por email para sua equipe. Suporte multilíngue." }
+      },
+      "candidateSteps": {
+        "step1": { "title": "Seus Detalhes", "desc": "Forneça suas informações de contato e aceite os termos de privacidade." },
+        "step2": { "title": "Vaga de Emprego", "desc": "Carregue ou cole a descrição da vaga para qual está se candidatando." },
+        "step3": { "title": "Carregar Seu CV", "desc": "Carregue seu currículo em formato PDF ou DOCX." },
+        "step4": { "title": "Análise IA", "desc": "Nossa IA analisa sua adequação, identifica forças e lacunas, e gera insights." },
+        "step5": { "title": "Revisar Insights", "desc": "Obtenha pontuações de adequação, perguntas previstas, respostas sugeridas e seu pitch perfeito." },
+        "step6": { "title": "Receber Guia", "desc": "Receba um guia completo de preparação por email em seu idioma preferido." }
+      },
+      "tryInterviewer": "Experimentar Modo Recrutador →",
+      "tryCandidate": "Experimentar Modo Candidato →"
+    },
+    "technology": {
+      "title": "Alimentado por IA",
+      "subtitle": "Usamos os mais recentes modelos de IA para garantir análise precisa e confiável",
+      "gemini": { "title": "Google Gemini", "desc": "Compreensão avançada de linguagem e raciocínio. Nosso provedor de IA principal." },
+      "openai": { "title": "OpenAI", "desc": "Modelos GPT-4 e GPT-3.5 para processamento robusto de linguagem natural." },
+      "claude": { "title": "Anthropic Claude", "desc": "Análise sofisticada com fortes capacidades de raciocínio." },
+      "others": { "title": "Kimi & Minimax", "desc": "Provedores adicionais para redundância e suporte multilíngue." },
+      "note": "Fallback Automático: Se um provedor de IA estiver indisponível, tentamos automaticamente outro, garantindo 99,9% de uptime."
+    },
+    "privacy": {
+      "title": "Privacidade e Segurança",
+      "gdpr": { "title": "🔒 Conformidade GDPR", "description": "Conformidade total com regulamentos de proteção de dados da UE. Seus direitos de dados são respeitados." },
+      "noTraining": { "title": "🚫 Sem Treinamento de IA", "description": "Seus CVs e dados NUNCA são usados para treinar modelos de IA. Privado e confidencial." },
+      "secure": { "title": "🛡️ Processamento Seguro", "description": "Segurança empresarial. Conexões criptografadas. Hospedado em infraestrutura segura." },
+      "temporary": { "title": "⏱️ Armazenamento Temporário", "description": "Dados armazenados apenas para sessão de análise. Sem armazenamento permanente sem consentimento." }
+    },
+    "cta": {
+      "title": "Pronto Para Começar?",
+      "subtitle": "Grátis, rápido e alimentado pela mais recente tecnologia de IA"
+    }
+  },
+  
+  "pricing": {
+    "title": "Preços Simples e Transparentes",
+    "subtitle": "Grátis para sempre. Sem cartão de crédito. Sem custos ocultos.",
+    "alwaysFree": "SEMPRE GRÁTIS",
+    "plan": "ShortlistAI",
+    "price": "$0",
+    "period": "/ para sempre",
+    "planSubtitle": "Acesso completo a todos os recursos. Sem limites. Sem expiração.",
+    "included": "Tudo Incluído:",
+    "features": [
+      "Análise ilimitada de CVs",
+      "Upload em lote (10, 50, 100+ CVs)",
+      "5 provedores de IA (Gemini, OpenAI, Claude, Kimi, Minimax)",
+      "4 idiomas (EN, PT, FR, ES)",
+      "Geração de relatórios PDF",
+      "Resumos por email",
+      "Perguntas de entrevista personalizadas",
+      "Modo de preparação para candidato",
+      "PWA - instale em qualquer dispositivo",
+      "Conformidade GDPR e seguro"
+    ],
+    "cta": "Começar Grátis",
+    "note": "Sem cartão de crédito • Sem cadastro • Sem taxas ocultas",
+    "whyFree": {
+      "title": "Por Que ShortlistAI é Grátis?",
+      "mission": { "title": "🎯 Nossa Missão", "description": "Acreditamos que ferramentas profissionais de contratação devem ser acessíveis a todos, não apenas grandes empresas com grandes orçamentos." },
+      "growth": { "title": "🚀 Estratégia de Crescimento", "description": "Estamos construindo uma comunidade de usuários que confiam no ShortlistAI. Recursos premium futuros podem ser adicionados, mas a funcionalidade principal permanece gratuita." },
+      "innovation": { "title": "💡 Inovação", "description": "Estamos explorando novas formas de tornar a contratação mais inteligente. Seu feedback nos ajuda a melhorar e inovar mais rápido." }
+    },
+    "comparison": { 
+      "title": "ShortlistAI vs Métodos Tradicionais",
+      "feature": "Recurso",
+      "manual": "Triagem Manual",
+      "shortlist": "ShortlistAI",
+      "row1": { "feature": "Tempo para analisar 50 CVs", "manual": "5-10 horas", "shortlist": "5 minutos" },
+      "row2": { "feature": "Consistência", "manual": "Subjetiva, varia", "shortlist": "100% objetiva" },
+      "row3": { "feature": "Perguntas de entrevista", "manual": "Genéricas", "shortlist": "Personalizadas por candidato" },
+      "row4": { "feature": "Custo", "manual": "Horas de salário", "shortlist": "$0" },
+      "row5": { "feature": "Multilíngue", "manual": "Limitado", "shortlist": "4 idiomas" },
+      "row6": { "feature": "Relatórios", "manual": "Criação manual", "shortlist": "PDF auto-gerado" }
+    },
+    "faq": {
+      "title": "Perguntas Frequentes",
+      "q1": { "q": "ShortlistAI é realmente grátis?", "a": "Sim! 100% grátis, para sempre. Sem cartão de crédito, sem cadastro, sem taxas ocultas. Todos os recursos estão disponíveis para todos." },
+      "q2": { "q": "Quantos CVs posso analisar?", "a": "Ilimitado! Você pode carregar e analisar quantos CVs precisar, em lotes de 10, 50, 100 ou mais." },
+      "q3": { "q": "Quais formatos de arquivo são suportados?", "a": "Suportamos PDF, DOCX (Word) e texto simples para CVs e vagas." },
+      "q4": { "q": "Quais idiomas são suportados?", "a": "A interface da plataforma está disponível em Inglês, Português, Francês e Espanhol. CVs podem estar em qualquer idioma - nossa IA entende todos!" },
+      "q5": { "q": "Meus dados estão seguros?", "a": "Sim! Somos compatíveis com GDPR. Seus dados são criptografados, nunca usados para treinar modelos de IA e armazenados apenas durante sua sessão de análise." },
+      "q6": { "q": "Quais modelos de IA vocês usam?", "a": "Suportamos Google Gemini, OpenAI (GPT-4), Anthropic Claude, Kimi e Minimax. Você pode escolher seu provedor preferido ou deixar-nos usar o melhor disponível." },
+      "q7": { "q": "Posso usar no celular?", "a": "Absolutamente! ShortlistAI é um PWA (Progressive Web App). Funciona perfeitamente em celular, tablet, desktop e pode até ser instalado como um app." },
+      "q8": { "q": "Preciso criar uma conta?", "a": "Sem cadastro necessário para os modos candidato e recrutador! Basta começar a usar a plataforma imediatamente. (Acesso admin requer autenticação.)" }
+    },
+    "finalCTA": {
+      "title": "Comece a Usar ShortlistAI Agora",
+      "subtitle": "Grátis, rápido e poderoso. Sem compromisso."
+    }
+  },
+  
+  "common": {
+    "loading": "Carregando...",
+    "error": "Ocorreu um erro",
+    "success": "Sucesso!",
+    "backToHome": "← Voltar ao Início",
+    "learnMore": "Saiba mais →",
+    "getStarted": "Começar",
+    "tryNow": "Experimentar Agora",
+    "continue": "Continuar",
+    "back": "Voltar",
+    "next": "Próximo →",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "upload": "Carregar",
+    "download": "Baixar"
   }
 }
-

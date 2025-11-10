@@ -1,0 +1,69 @@
+/**
+ * Theme Switcher Styles
+ */
+
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 102, 255, 0.2);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary-light, #111827);
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-switcher {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(51, 136, 255, 0.3);
+    color: var(--text-primary-dark, #F9FAFB);
+  }
+}
+
+.theme-switcher:hover {
+  background: rgba(0, 102, 255, 0.1);
+  border-color: rgba(0, 102, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-switcher:hover {
+    background: rgba(51, 136, 255, 0.2);
+    border-color: rgba(51, 136, 255, 0.5);
+    box-shadow: 0 4px 12px rgba(51, 136, 255, 0.3);
+  }
+}
+
+.theme-switcher:active {
+  transform: translateY(0);
+}
+
+.theme-icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.theme-label {
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .theme-switcher {
+    transition: none;
+  }
+  
+  .theme-switcher:hover {
+    transform: none;
+  }
+}
+

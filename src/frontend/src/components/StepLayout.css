@@ -1,0 +1,62 @@
+/**
+ * Step Layout Styles
+ */
+
+.step-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-layout-main {
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.step-layout-footer {
+  padding: 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 102, 255, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .step-layout-footer {
+    background: rgba(26, 26, 28, 0.5);
+    border-top-color: rgba(51, 136, 255, 0.2);
+  }
+}
+
+.step-back-home {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 102, 255, 0.2);
+  border-radius: 12px;
+  color: var(--color-ai-blue, #0066FF);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.step-back-home:hover {
+  background: rgba(0, 102, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .step-back-home {
+    background: rgba(26, 26, 28, 0.7);
+    border-color: rgba(51, 136, 255, 0.3);
+    color: var(--color-ai-blue, #3388FF);
+  }
+  
+  .step-back-home:hover {
+    background: rgba(51, 136, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(51, 136, 255, 0.3);
+  }
+}
+

@@ -7,6 +7,8 @@
  * - Base reset and normalization
  */
 
+@import './styles/theme.css';
+
 :root {
   /* Light Theme Colors */
   --color-bg-primary: #ffffff;

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="ai-gradient-icon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0066FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle with Gradient -->
+  <circle cx="32" cy="32" r="32" fill="url(#ai-gradient-icon)"/>
+  
+  <!-- Neural Network Nodes (White) -->
+  <circle cx="32" cy="20" r="3.5" fill="white"/>
+  <circle cx="32" cy="44" r="3.5" fill="white"/>
+  <circle cx="17" cy="32" r="3.5" fill="white"/>
+  <circle cx="47" cy="32" r="3.5" fill="white"/>
+  <circle cx="23" cy="26" r="2.8" fill="white" opacity="0.9"/>
+  <circle cx="41" cy="26" r="2.8" fill="white" opacity="0.9"/>
+  <circle cx="23" cy="38" r="2.8" fill="white" opacity="0.9"/>
+  <circle cx="41" cy="38" r="2.8" fill="white" opacity="0.9"/>
+  
+  <!-- Neural Network Connections (White) -->
+  <line x1="32" y1="20" x2="17" y2="32" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="32" y1="20" x2="47" y2="32" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="32" y1="44" x2="17" y2="32" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="32" y1="44" x2="47" y2="32" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="23" y1="26" x2="17" y2="32" stroke="white" stroke-width="1.5" opacity="0.5"/>
+  <line x1="41" y1="26" x2="47" y2="32" stroke="white" stroke-width="1.5" opacity="0.5"/>
+  <line x1="23" y1="38" x2="17" y2="32" stroke="white" stroke-width="1.5" opacity="0.5"/>
+  <line x1="41" y1="38" x2="47" y2="32" stroke="white" stroke-width="1.5" opacity="0.5"/>
+  <line x1="23" y1="26" x2="32" y2="20" stroke="white" stroke-width="1.5" opacity="0.4"/>
+  <line x1="41" y1="26" x2="32" y2="20" stroke="white" stroke-width="1.5" opacity="0.4"/>
+  <line x1="23" y1="38" x2="32" y2="44" stroke="white" stroke-width="1.5" opacity="0.4"/>
+  <line x1="41" y1="38" x2="32" y2="44" stroke="white" stroke-width="1.5" opacity="0.4"/>
+</svg>
+

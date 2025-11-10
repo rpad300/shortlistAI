@@ -12,6 +12,7 @@ interface FileUploadProps {
   accept?: string;
   maxSizeMB?: number;
   label?: string;
+  hideFileList?: boolean;  // Hide internal file list (if parent manages display)
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -19,7 +20,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
   multiple = false,
   accept = '.pdf,.docx,.doc',
   maxSizeMB = 10,
-  label
+  label,
+  hideFileList = false
 }) => {
   const { t } = useTranslation();
   const [dragActive, setDragActive] = useState(false);
@@ -112,7 +114,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         </div>
       </div>
       
-      {selectedFiles.length > 0 && (
+      {!hideFileList && selectedFiles.length > 0 && (
         <div className="file-upload-list">
           {selectedFiles.map((file, index) => (
             <div key={index} className="file-upload-item">

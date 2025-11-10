@@ -2,8 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/icons/icon-48x48.png" />
     
     <!-- Primary Meta Tags -->
     <title>ShortlistAI - AI-Powered CV Analysis Platform</title>
@@ -16,37 +21,50 @@
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ShortlistAI" />
     <meta property="og:url" content="https://shortlistai.com/" />
     <meta property="og:title" content="ShortlistAI - AI-Powered CV Analysis" />
     <meta property="og:description" content="Free AI-powered CV analysis. Compare candidates or prepare for interviews in EN, PT, FR, ES." />
-    <meta property="og:image" content="https://shortlistai.com/og-image.png" />
+    <meta property="og:image" content="https://shortlistai.com/assets/social/og-default.png" />
+    <meta property="og:image:width" content="1344" />
+    <meta property="og:image:height" content="768" />
+    <meta property="og:image:alt" content="ShortlistAI - AI-Powered CV Analysis Platform" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="pt_PT" />
     <meta property="og:locale:alternate" content="fr_FR" />
     <meta property="og:locale:alternate" content="es_ES" />
     
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://shortlistai.com/" />
-    <meta property="twitter:title" content="ShortlistAI - AI-Powered CV Analysis" />
-    <meta property="twitter:description" content="Free AI-powered CV analysis for interviewers and candidates." />
-    <meta property="twitter:image" content="https://shortlistai.com/twitter-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@ShortlistAI" />
+    <meta name="twitter:creator" content="@ShortlistAI" />
+    <meta name="twitter:url" content="https://shortlistai.com/" />
+    <meta name="twitter:title" content="ShortlistAI - AI-Powered CV Analysis" />
+    <meta name="twitter:description" content="Free AI-powered CV analysis for interviewers and candidates." />
+    <meta name="twitter:image" content="https://shortlistai.com/assets/social/og-default.png" />
+    <meta name="twitter:image:alt" content="ShortlistAI - AI-Powered CV Analysis Platform" />
     
-    <!-- PWA -->
-    <meta name="theme-color" content="#2563eb" />
+    <!-- PWA Theme -->
+    <meta name="theme-color" content="#0066FF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0A0A0B" media="(prefers-color-scheme: dark)" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ShortlistAI" />
     
-    <!-- Apple Touch Icon -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png" sizes="152x152" />
+    <link rel="apple-touch-icon" href="/icons/icon-144x144.png" sizes="144x144" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
     <!-- Canonical URL -->
     <link rel="canonical" href="https://shortlistai.com/" />
+    
+    <!-- Preload Critical Assets -->
+    <link rel="preload" href="/assets/logos/shortlistai-full-color.svg" as="image" type="image/svg+xml" />
   </head>
   <body>
     <div id="root"></div>

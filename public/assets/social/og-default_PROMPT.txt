@@ -1,0 +1,23 @@
+=== SHORTLISTAI IMAGE GENERATION PROMPT ===
+
+File: social/og-default.png
+Dimensions: 1200x630px (OG standard)
+
+=== ENHANCED PROMPT ===
+
+Open Graph image, abstract, modern tech aesthetic. Diagonal gradient background, AI Blue #0066FF (top left) to Neural Purple #7C3AED (bottom right). Subtle neural network pattern overlay, 20% opacity. Central negative space for text. Geometric corners, abstract data visualization. Minimalist, professional, eye-catching. Soft, diffused lighting. 1200x630px. No text, no logos, avoid photorealism.
+
+=== ORIGINAL BRIEF ===
+
+Open Graph image ShortlistAI. Professional eye-catching. 
+Blue #0066FF to purple #7C3AED diagonal gradient. Neural network pattern 20% opacity. 
+Central space for text. Geometric corners AI data. 1200x630px. No actual text.
+
+=== USAGE INSTRUCTIONS ===
+
+1. Copy the ENHANCED PROMPT above
+2. Paste into your image generation tool:
+   - Google ImageFX: https://aitestkitchen.withgoogle.com/tools/image-fx
+   - ChatGPT DALL-E 3: https://chat.openai.com
+   - Midjourney: https://midjourney.com
+3. Generate and save as: social/og-default.png

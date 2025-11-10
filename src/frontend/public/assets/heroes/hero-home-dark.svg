@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hero Background - Dark Mode -->
+  <defs>
+    <linearGradient id="hero-gradient-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A0A0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A1A1C;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="glow-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0066FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1920" height="1080" fill="url(#hero-gradient-dark)"/>
+  
+  <!-- Neural Network Visualization with Glow -->
+  <g filter="url(#glow)">
+    <!-- Large Glowing Nodes -->
+    <circle cx="1400" cy="300" r="80" fill="url(#glow-gradient)" opacity="0.15"/>
+    <circle cx="1600" cy="700" r="70" fill="url(#glow-gradient)" opacity="0.12"/>
+    <circle cx="1200" cy="850" r="60" fill="url(#glow-gradient)" opacity="0.1"/>
+    
+    <!-- Medium Nodes -->
+    <circle cx="1300" cy="500" r="25" fill="#0066FF" opacity="0.5"/>
+    <circle cx="1500" cy="450" r="22" fill="#7C3AED" opacity="0.5"/>
+    <circle cx="1450" cy="650" r="20" fill="#0066FF" opacity="0.45"/>
+    <circle cx="1350" cy="750" r="18" fill="#7C3AED" opacity="0.45"/>
+    
+    <!-- Small Bright Nodes -->
+    <circle cx="1380" cy="380" r="10" fill="#0066FF" opacity="0.8"/>
+    <circle cx="1520" cy="570" r="10" fill="#7C3AED" opacity="0.8"/>
+    <circle cx="1280" cy="680" r="8" fill="#0066FF" opacity="0.7"/>
+    <circle cx="1550" cy="520" r="8" fill="#7C3AED" opacity="0.7"/>
+    
+    <!-- Glowing Connections -->
+    <line x1="1400" y1="300" x2="1300" y2="500" stroke="#0066FF" stroke-width="3" opacity="0.4"/>
+    <line x1="1400" y1="300" x2="1500" y2="450" stroke="#7C3AED" stroke-width="3" opacity="0.4"/>
+    <line x1="1600" y1="700" x2="1450" y2="650" stroke="#0066FF" stroke-width="3" opacity="0.35"/>
+    <line x1="1600" y1="700" x2="1350" y2="750" stroke="#7C3AED" stroke-width="3" opacity="0.35"/>
+    <line x1="1300" y1="500" x2="1450" y2="650" stroke="#0066FF" stroke-width="2" opacity="0.3"/>
+    <line x1="1500" y1="450" x2="1450" y2="650" stroke="#7C3AED" stroke-width="2" opacity="0.3"/>
+  </g>
+  
+  <!-- Geometric Shapes with Neon Effect -->
+  <g opacity="0.6" filter="url(#glow)">
+    <!-- Hexagons -->
+    <path d="M 1150 200 L 1180 180 L 1210 200 L 1210 240 L 1180 260 L 1150 240 Z" 
+          fill="none" stroke="#0066FF" stroke-width="2.5"/>
+    <path d="M 1550 350 L 1575 335 L 1600 350 L 1600 380 L 1575 395 L 1550 380 Z" 
+          fill="none" stroke="#7C3AED" stroke-width="2.5"/>
+    
+    <!-- Rectangles -->
+    <rect x="1250" y="580" width="60" height="60" rx="8" 
+          fill="none" stroke="#0066FF" stroke-width="2.5"/>
+    <rect x="1480" y="780" width="50" height="50" rx="6" 
+          fill="none" stroke="#7C3AED" stroke-width="2.5"/>
+  </g>
+  
+  <!-- Bright Floating Particles -->
+  <g opacity="0.9">
+    <circle cx="1220" cy="420" r="5" fill="#0066FF"/>
+    <circle cx="1420" cy="520" r="4" fill="#7C3AED"/>
+    <circle cx="1320" cy="620" r="4.5" fill="#0066FF"/>
+    <circle cx="1520" cy="820" r="4" fill="#7C3AED"/>
+    <circle cx="1180" cy="720" r="5" fill="#0066FF"/>
+  </g>
+  
+  <!-- Subtle Grid Lines -->
+  <g opacity="0.08" stroke="#3388FF" stroke-width="1">
+    <line x1="0" y1="270" x2="1920" y2="270"/>
+    <line x1="0" y1="540" x2="1920" y2="540"/>
+    <line x1="0" y1="810" x2="1920" y2="810"/>
+    <line x1="640" y1="0" x2="640" y2="1080"/>
+    <line x1="1280" y1="0" x2="1280" y2="1080"/>
+  </g>
+  
+  <!-- Energy Streams -->
+  <g opacity="0.2">
+    <path d="M 1100 300 Q 1150 350, 1200 400" stroke="url(#glow-gradient)" 
+          stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M 1450 200 Q 1500 300, 1550 400" stroke="url(#glow-gradient)" 
+          stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+

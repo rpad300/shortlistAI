@@ -1,16 +1,33 @@
-# robots.txt for ShortlistAI
+# Robots.txt for ShortlistAI
+# Updated: 2025-11-10
 
 User-agent: *
 Allow: /
+Allow: /features
+Allow: /about
+Allow: /how-it-works
+Allow: /pricing
 Allow: /interviewer/step1
 Allow: /candidate/step1
-Allow: /legal/terms
-Allow: /legal/privacy
+Allow: /legal/
 
-# Disallow private areas
+# Disallow internal/admin routes
 Disallow: /admin/
-Disallow: /api/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
 
-# Sitemap
+# Sitemaps
 Sitemap: https://shortlistai.com/sitemap.xml
 
+# Crawl Delay (be nice to servers)
+Crawl-delay: 1

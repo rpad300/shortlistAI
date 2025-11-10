@@ -20,14 +20,19 @@
 
 .home-header {
   text-align: center;
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
   max-width: 800px;
+}
+
+.home-logo {
+  margin: 0 auto var(--spacing-lg) auto;
+  display: block;
 }
 
 .home-header h1 {
   font-size: var(--font-size-3xl);
   margin-bottom: var(--spacing-md);
-  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-hover));
+  background: linear-gradient(135deg, #0066FF, #7C3AED);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -36,6 +41,25 @@
 .home-description {
   font-size: var(--font-size-lg);
   color: var(--color-text-secondary);
+}
+
+/* Hero Section */
+.hero-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: var(--spacing-2xl) auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.hero-section picture {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.hero-section picture:hover {
+  transform: scale(1.02);
 }
 
 /* Language selector */
@@ -74,9 +98,19 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--spacing-xl);
-  max-width: 800px;
+  max-width: 1000px;
   width: 100%;
-  margin-bottom: var(--spacing-xl);
+  margin: var(--spacing-2xl) 0;
+  padding: 0 var(--spacing-lg);
+}
+
+.flow-card-image {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  margin: 0 auto var(--spacing-md) auto;
+  display: block;
+  border-radius: 12px;
 }
 
 .flow-card {

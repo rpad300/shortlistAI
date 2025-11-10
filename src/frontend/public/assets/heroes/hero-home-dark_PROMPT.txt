@@ -1,0 +1,23 @@
+=== SHORTLISTAI IMAGE GENERATION PROMPT ===
+
+File: heroes/hero-home-dark.png
+Dimensions: 1920x1080px (16:9 landscape)
+
+=== ENHANCED PROMPT ===
+
+Futuristic dark mode hero image, glowing neural network of geometric shapes, interconnected nodes and lines with neon effects, sophisticated minimal design, color palette: AI Blue #0066FF, Neural Purple #7C3AED on dark background #0A0A0B, modern tech-forward aesthetic, dramatic volumetric lighting, high contrast, 16:9 aspect ratio, 1920x1080px, avoid text and logos.
+
+=== ORIGINAL BRIEF ===
+
+Modern professional hero dark mode for ShortlistAI. 
+Tech-forward futuristic neon glow. Colors: blue #0066FF purple #7C3AED on dark #0A0A0B. 
+Glowing neural network geometric shapes neon effects sophisticated dark. 16:9 1920x1080px. No text logos.
+
+=== USAGE INSTRUCTIONS ===
+
+1. Copy the ENHANCED PROMPT above
+2. Paste into your image generation tool:
+   - Google ImageFX: https://aitestkitchen.withgoogle.com/tools/image-fx
+   - ChatGPT DALL-E 3: https://chat.openai.com
+   - Midjourney: https://midjourney.com
+3. Generate and save as: heroes/hero-home-dark.png

@@ -1,0 +1,13 @@
+/**
+ * Logo Styles
+ */
+
+.logo {
+  display: block;
+  transition: opacity 0.3s ease;
+}
+
+.logo:hover {
+  opacity: 0.9;
+}
+

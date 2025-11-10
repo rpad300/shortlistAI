@@ -6,6 +6,10 @@
 
 import { Routes, Route, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import Home from '@pages/Home';
+import Features from '@pages/Features';
+import About from '@pages/About';
+import Pricing from '@pages/Pricing';
 import InterviewerStep1 from '@pages/InterviewerStep1';
 import InterviewerStep2 from '@pages/InterviewerStep2';
 import InterviewerStep3 from '@pages/InterviewerStep3';
@@ -21,13 +25,19 @@ import InterviewerStep7 from '@pages/InterviewerStep7';
 import AdminLogin from '@pages/AdminLogin';
 import LegalTerms from '@pages/LegalTerms';
 import LegalPrivacy from '@pages/LegalPrivacy';
+import Logo from '@components/Logo';
+import HeroImage from '@components/HeroImage';
 import './App.css';
 
 function App() {
   return (
     <div className="app">
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/how-it-works" element={<About />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/interviewer/step1" element={<InterviewerStep1 />} />
         <Route path="/interviewer/step2" element={<InterviewerStep2 />} />
         <Route path="/interviewer/step3" element={<InterviewerStep3 />} />
@@ -62,9 +72,14 @@ function HomePage() {
   return (
     <div className="home-container">
       <header className="home-header">
+        <Logo variant="full-color" size="large" className="home-logo" />
         <h1>{t('welcome')}</h1>
         <p className="home-description">{t('description')}</p>
       </header>
+      
+      <div className="hero-section">
+        <HeroImage page="home" priority={true} />
+      </div>
       
       <div className="language-selector">
         <button 
@@ -95,11 +110,25 @@ function HomePage() {
 
       <div className="flow-cards">
         <Link to="/interviewer/step1" className="flow-card">
+          <img 
+            src="/assets/illustrations/feature-interviewer.png" 
+            alt="Interviewer feature"
+            className="flow-card-image"
+            width="200"
+            height="200"
+          />
           <h2>{t('interviewer_flow')}</h2>
           <p>{t('interviewer.subtitle')}</p>
         </Link>
-        
+
         <Link to="/candidate/step1" className="flow-card">
+          <img 
+            src="/assets/illustrations/feature-candidate.png" 
+            alt="Candidate feature"
+            className="flow-card-image"
+            width="200"
+            height="200"
+          />
           <h2>{t('candidate_flow')}</h2>
           <p>{t('candidate.subtitle')}</p>
         </Link>

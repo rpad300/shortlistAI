@@ -1,0 +1,23 @@
+=== SHORTLISTAI IMAGE GENERATION PROMPT ===
+
+File: illustrations/feature-candidate.png
+Dimensions: 512x512px or 400x400px (square)
+
+=== ENHANCED PROMPT ===
+
+Flat design illustration. Single lightbulb transforming into an upward arrow, symbolizing career growth and AI connection. Minimal geometric shapes. Palette: #7C3AED (Neural Purple) and #0066FF (AI Blue). Encouraging and professional mood. Tech, modern, geometric art style. 400x400px. No faces, no text. Clean, crisp lighting.
+
+=== ORIGINAL BRIEF ===
+
+Flat design illustration Candidate feature. 
+Geometric minimal encouraging. Purple #7C3AED blue #0066FF. 
+Single CV job posting AI connecting lightbulb upward arrow. 400x400px. No faces text.
+
+=== USAGE INSTRUCTIONS ===
+
+1. Copy the ENHANCED PROMPT above
+2. Paste into your image generation tool:
+   - Google ImageFX: https://aitestkitchen.withgoogle.com/tools/image-fx
+   - ChatGPT DALL-E 3: https://chat.openai.com
+   - Midjourney: https://midjourney.com
+3. Generate and save as: illustrations/feature-candidate.png

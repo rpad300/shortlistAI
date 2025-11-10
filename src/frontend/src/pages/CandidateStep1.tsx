@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import Input from '@components/Input';
 import Checkbox from '@components/Checkbox';
 import Button from '@components/Button';
@@ -107,10 +108,11 @@ const CandidateStep1: React.FC = () => {
   };
   
   return (
-    <div className="step-container">
-      <div className="step-content">
-        <h1>{t('candidate.step1_title')}</h1>
-        <p className="step-subtitle">{t('candidate.subtitle')}</p>
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content">
+          <h1>{t('candidate.step1_title')}</h1>
+          <p className="step-subtitle">{t('candidate.subtitle')}</p>
         
         <form onSubmit={handleSubmit} className="step-form">
           <section className="form-section">
@@ -213,6 +215,7 @@ const CandidateStep1: React.FC = () => {
         </form>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

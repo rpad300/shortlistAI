@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import Input from '@components/Input';
 import Checkbox from '@components/Checkbox';
 import Button from '@components/Button';
@@ -23,7 +24,8 @@ const InterviewerStep1: React.FC = () => {
     email: '',
     phone: '',
     country: '',
-    company_name: ''
+    company_name: '',
+    existing_report_code: ''  // NEW: Optional report code to continue
   });
   
   // Consent state
@@ -37,6 +39,7 @@ const InterviewerStep1: React.FC = () => {
   // UI state
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [showContinueReport, setShowContinueReport] = useState(false);
   
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -88,14 +91,25 @@ const InterviewerStep1: React.FC = () => {
         language: localStorage.getItem('language') || 'en'
       });
       
-      const { interviewer_id, session_id, message } = response.data;
+      const { interviewer_id, session_id, report_code, is_continuing, message } = response.data;
       
       // Store session ID for next steps
       sessionStorage.setItem('interviewer_session_id', session_id);
       sessionStorage.setItem('interviewer_id', interviewer_id);
       
-      // Navigate to step 2
-      navigate('/interviewer/step2');
+      // Store report code if generated or continuing
+      if (report_code) {
+        sessionStorage.setItem('interviewer_report_code', report_code);
+      }
+      
+      // Navigate to appropriate step
+      if (is_continuing) {
+        // Skip to step 5 if continuing existing report
+        alert(`Continuing report ${report_code}. You can now add more CVs!`);
+        navigate('/interviewer/step5');
+      } else {
+        navigate('/interviewer/step2');
+      }
       
     } catch (error: any) {
       console.error('Error in step 1:', error);
@@ -114,10 +128,11 @@ const InterviewerStep1: React.FC = () => {
   };
   
   return (
-    <div className="step-container">
-      <div className="step-content">
-        <h1>{t('interviewer.step1_title')}</h1>
-        <p className="step-subtitle">{t('interviewer.subtitle')}</p>
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content">
+          <h1>{t('interviewer.step1_title')}</h1>
+          <p className="step-subtitle">{t('interviewer.subtitle')}</p>
         
         <form onSubmit={handleSubmit} className="step-form">
           <section className="form-section">
@@ -161,6 +176,49 @@ const InterviewerStep1: React.FC = () => {
               onChange={(value) => setFormData({ ...formData, company_name: value })}
               error={errors.company_name}
             />
+          </section>
+          
+          {/* Continue Existing Report Section */}
+          <section className="form-section">
+            <div style={{ 
+              backgroundColor: 'var(--color-bg-secondary)', 
+              padding: 'var(--spacing-md)', 
+              borderRadius: 'var(--radius-md)',
+              marginBottom: 'var(--spacing-md)'
+            }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowContinueReport(!showContinueReport)}
+                style={{ width: '100%' }}
+              >
+                {showContinueReport ? '➖' : '➕'} Continue Existing Report (Optional)
+              </Button>
+            </div>
+            
+            {showContinueReport && (
+              <div style={{ 
+                backgroundColor: 'var(--color-accent-light)', 
+                padding: 'var(--spacing-md)', 
+                borderRadius: 'var(--radius-md)' 
+              }}>
+                <Input
+                  label="Report Code (e.g., REP-20250109-A3B7K2)"
+                  value={formData.existing_report_code}
+                  onChange={(value) => setFormData({ ...formData, existing_report_code: value.toUpperCase() })}
+                  placeholder="REP-XXXXXXXX-XXXXXX"
+                  error={errors.existing_report_code}
+                />
+                <p style={{ 
+                  fontSize: 'var(--font-size-sm)', 
+                  color: 'var(--color-text-secondary)',
+                  marginTop: 'var(--spacing-sm)' 
+                }}>
+                  💡 If you have an existing report and want to add more candidates to it, enter the report code here.
+                  You can find the report code in the Step 7 results or in the PDF report.
+                </p>
+              </div>
+            )}
           </section>
           
           <section className="form-section">
@@ -227,6 +285,7 @@ const InterviewerStep1: React.FC = () => {
         </form>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

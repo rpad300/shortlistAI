@@ -1,0 +1,23 @@
+=== SHORTLISTAI IMAGE GENERATION PROMPT ===
+
+File: logos/app-icon-512.png
+Dimensions: 512x512px or 400x400px (square)
+
+=== ENHANCED PROMPT ===
+
+icon, 512x512, ShortlistAI app, abstract neural network centered, clean geometric lines, gradient background from AI Blue #0066FF to Neural Purple #7C3AED, modern tech style, minimal design, professional, soft subtle lighting, smooth gradients, high detail, recognizable, scalable, avoid text, no photorealism.
+
+=== ORIGINAL BRIEF ===
+
+App icon ShortlistAI. Modern clean recognizable. 
+Blue to purple gradient #0066FF to #7C3AED. White neural network centered. 
+Simple works all sizes 16-512px. 512x512px. No text.
+
+=== USAGE INSTRUCTIONS ===
+
+1. Copy the ENHANCED PROMPT above
+2. Paste into your image generation tool:
+   - Google ImageFX: https://aitestkitchen.withgoogle.com/tools/image-fx
+   - ChatGPT DALL-E 3: https://chat.openai.com
+   - Midjourney: https://midjourney.com
+3. Generate and save as: logos/app-icon-512.png

@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import Textarea from '@components/Textarea';
 import FileUpload from '@components/FileUpload';
 import Button from '@components/Button';
+import StepHelper from '@components/StepHelper';
+import AILoadingOverlay from '@components/AILoadingOverlay';
 import { interviewerAPI } from '@services/api';
 import './InterviewerStep1.css';
 
@@ -88,6 +90,31 @@ const InterviewerStep2: React.FC = () => {
       <div className="step-content">
         <h1>{t('interviewer.step2_title')}</h1>
         <p className="step-subtitle">Provide the job posting you want to analyze CVs against</p>
+        
+        <StepHelper
+          title="📝 What to do in this step?"
+          type="info"
+          defaultOpen={true}
+          content={
+            <div>
+              <p><strong>Goal:</strong> Provide the complete job description so our AI can understand the requirements.</p>
+              <p style={{ marginTop: '12px' }}><strong>You can:</strong></p>
+              <ul style={{ marginLeft: '20px', marginTop: '8px' }}>
+                <li>✍️ Paste the full job description text (recommended for best results)</li>
+                <li>📄 Upload a job posting file (PDF, DOCX)</li>
+              </ul>
+              <p style={{ marginTop: '12px' }}><strong>💡 What happens next:</strong></p>
+              <p>Our AI will analyze your job posting and automatically extract key requirements, skills, and qualifications. You'll be able to review and edit these in the next step.</p>
+              <p style={{ marginTop: '12px' }}><strong>⏱️ Processing time:</strong> ~5-15 seconds</p>
+            </div>
+          }
+        />
+        
+        <AILoadingOverlay 
+          isVisible={loading}
+          message="AI is analyzing your job posting"
+          estimatedSeconds={15}
+        />
         
         <form onSubmit={handleSubmit} className="step-form">
           <div className="form-section">

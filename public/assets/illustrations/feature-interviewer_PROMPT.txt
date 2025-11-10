@@ -1,0 +1,23 @@
+=== SHORTLISTAI IMAGE GENERATION PROMPT ===
+
+File: illustrations/feature-interviewer.png
+Dimensions: 512x512px or 400x400px (square)
+
+=== ENHANCED PROMPT ===
+
+Flat design illustration, geometric minimal professional, interviewer feature analyzing stacked CVs with AI, ranking 1, 2, 3, checkmarks; AI Blue #0066FF accent, Neural Purple #7C3AED, clean lighting, modern tech atmosphere, 400x400px, no faces, no text.
+
+=== ORIGINAL BRIEF ===
+
+Flat design illustration Interviewer feature. 
+Geometric minimal professional. Blue #0066FF accent purple #7C3AED. 
+Multiple CVs stacked AI analyzing ranking 1,2,3 checkmarks. 400x400px. No faces text.
+
+=== USAGE INSTRUCTIONS ===
+
+1. Copy the ENHANCED PROMPT above
+2. Paste into your image generation tool:
+   - Google ImageFX: https://aitestkitchen.withgoogle.com/tools/image-fx
+   - ChatGPT DALL-E 3: https://chat.openai.com
+   - Midjourney: https://midjourney.com
+3. Generate and save as: illustrations/feature-interviewer.png

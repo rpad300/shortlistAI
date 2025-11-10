@@ -1,0 +1,90 @@
+/**
+ * Theme System
+ * 
+ * CSS Variables for light and dark themes.
+ * Automatically detects system preference or uses manual selection.
+ */
+
+:root {
+  /* Light Theme (Default) */
+  --color-ai-blue: #0066FF;
+  --color-neural-purple: #7C3AED;
+  
+  --bg-light: #FFFFFF;
+  --bg-dark: #0A0A0B;
+  --surface-light: #F8F9FA;
+  --surface-dark: #1A1A1C;
+  --border-light: #E5E7EB;
+  --border-dark: #2D2D30;
+  
+  --text-primary-light: #111827;
+  --text-primary-dark: #F9FAFB;
+  --text-secondary-light: #6B7280;
+  --text-secondary-dark: #9CA3AF;
+  
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  
+  /* Active theme colors */
+  --bg: var(--bg-light);
+  --surface: var(--surface-light);
+  --border: var(--border-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+}
+
+/* Dark Mode - System Preference */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--bg-dark);
+    --surface: var(--surface-dark);
+    --border: var(--border-dark);
+    --text-primary: var(--text-primary-dark);
+    --text-secondary: var(--text-secondary-dark);
+    --color-ai-blue: #3388FF;
+    --color-neural-purple: #9F7AEA;
+  }
+}
+
+/* Dark Mode - Manual Override */
+[data-theme="dark"] {
+  --bg: var(--bg-dark);
+  --surface: var(--surface-dark);
+  --border: var(--border-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --color-ai-blue: #3388FF;
+  --color-neural-purple: #9F7AEA;
+}
+
+/* Light Mode - Manual Override */
+[data-theme="light"] {
+  --bg: var(--bg-light);
+  --surface: var(--surface-light);
+  --border: var(--border-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --color-ai-blue: #0066FF;
+  --color-neural-purple: #7C3AED;
+}
+
+/* Apply to body */
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Gradients */
+.gradient-ai {
+  background: linear-gradient(135deg, var(--color-ai-blue) 0%, var(--color-neural-purple) 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-ai-blue) 0%, var(--color-neural-purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+

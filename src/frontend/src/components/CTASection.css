@@ -1,0 +1,135 @@
+/**
+ * CTA Section Styles
+ */
+
+.cta-section-component {
+  padding: 5rem 2rem;
+  text-align: center;
+}
+
+.cta-gradient {
+  background: linear-gradient(135deg, #0066FF 0%, #7C3AED 100%);
+  color: white;
+}
+
+.cta-light {
+  background: var(--surface-light, #F8F9FA);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cta-light {
+    background: var(--surface-dark, #1A1A1C);
+  }
+}
+
+.cta-dark {
+  background: var(--bg-dark, #0A0A0B);
+  color: white;
+}
+
+.cta-section-component .cta-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.cta-gradient .cta-title,
+.cta-dark .cta-title {
+  color: white;
+}
+
+.cta-light .cta-title {
+  color: var(--text-primary-light, #111827);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cta-light .cta-title {
+    color: var(--text-primary-dark, #F9FAFB);
+  }
+}
+
+.cta-section-component .cta-subtitle {
+  font-size: 1.25rem;
+  margin: 0 0 2rem 0;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta-gradient .cta-subtitle,
+.cta-dark .cta-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cta-light .cta-subtitle {
+  color: var(--text-secondary-light, #6B7280);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cta-light .cta-subtitle {
+    color: var(--text-secondary-dark, #9CA3AF);
+  }
+}
+
+.cta-section-component .cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Override button styles for gradient variant */
+.cta-gradient .btn-primary {
+  background: white;
+  color: #0066FF;
+}
+
+.cta-gradient .btn-primary:hover {
+  background: #F8F9FA;
+}
+
+.cta-gradient .btn-secondary {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+}
+
+.cta-gradient .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cta-section-component .cta-note {
+  font-size: 0.875rem;
+  margin-top: 1.5rem;
+}
+
+.cta-gradient .cta-note,
+.cta-dark .cta-note {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cta-light .cta-note {
+  color: var(--text-secondary-light, #6B7280);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cta-light .cta-note {
+    color: var(--text-secondary-dark, #9CA3AF);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cta-section-component .cta-title {
+    font-size: 2rem;
+  }
+
+  .cta-section-component .cta-buttons {
+    flex-direction: column;
+  }
+
+  .cta-section-component .btn {
+    width: 100%;
+  }
+}
+

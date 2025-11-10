@@ -1,24 +1,14 @@
 {
   "welcome": "Welcome to CV Analysis Platform",
-  "description": "AI-powered CV analysis for interviewers and candidates. Choose your flow below.",
-  "interviewer_flow": "Interviewer Flow",
-  "candidate_flow": "Candidate Flow",
-  "admin_login": "Admin Login",
+  "description": "AI-powered CV analysis for interviewers and candidates",
   
-  "common": {
-    "loading": "Loading...",
-    "error": "An error occurred",
-    "success": "Success",
-    "cancel": "Cancel",
-    "confirm": "Confirm",
-    "save": "Save",
-    "delete": "Delete",
-    "edit": "Edit",
-    "next": "Next",
-    "previous": "Previous",
-    "submit": "Submit",
-    "upload": "Upload",
-    "download": "Download"
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "about": "How It Works",
+    "pricing": "Pricing",
+    "analyzeCV": "Analyze CVs",
+    "prepareInterview": "Prepare Interview"
   },
   
   "languages": {
@@ -32,58 +22,303 @@
     "title": "Interviewer Flow",
     "subtitle": "Analyze multiple CVs against your job posting",
     "step1_title": "Identification & Consent",
+    "step1_subtitle": "Let's start by getting to know you",
     "step2_title": "Job Posting",
+    "step2_subtitle": "Upload or paste the job description",
     "step3_title": "Key Points",
+    "step3_subtitle": "Review and adjust key requirements",
     "step4_title": "Weighting & Blockers",
+    "step4_subtitle": "Define importance and must-have requirements",
     "step5_title": "Upload CVs",
-    "step6_title": "Analysis",
-    "step7_title": "Results"
+    "step5_subtitle": "Upload candidate CVs for analysis",
+    "step6_title": "AI Analysis",
+    "step6_subtitle": "Our AI is analyzing all candidates",
+    "step7_title": "Results & Rankings",
+    "step7_subtitle": "Review candidate analysis and rankings"
   },
   
   "candidate": {
     "title": "Candidate Flow",
     "subtitle": "Prepare for your interview with AI-powered insights",
-    "step1_title": "Identification & Consent",
+    "step1_title": "Your Information",
+    "step1_subtitle": "Tell us about yourself",
     "step2_title": "Job Posting",
-    "step3_title": "Upload CV",
-    "step4_title": "Analysis",
-    "step5_title": "Results"
+    "step2_subtitle": "Upload or paste the job you're applying for",
+    "step3_title": "Your CV",
+    "step3_subtitle": "Upload your resume or CV",
+    "step4_title": "AI Analysis",
+    "step4_subtitle": "Analyzing your fit for this position",
+    "step5_title": "Your Results",
+    "step5_subtitle": "Here's your personalized interview preparation"
+  },
+  
+  "forms": {
+    "name": "Full Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "country": "Country",
+    "company": "Company Name",
+    "existing_report": "Report Code (optional)",
+    "job_posting": "Job Posting",
+    "paste_or_upload": "Paste text or upload file",
+    "upload_cvs": "Upload CVs",
+    "upload_cv": "Upload Your CV",
+    "required_field": "This field is required",
+    "invalid_email": "Invalid email address",
+    "consent_store_data": "I consent to the storage and processing of my personal data for CV analysis purposes",
+    "consent_future_contact": "I consent to be contacted about future opportunities and updates",
+    "consent_terms": "I have read and accept the Terms and Conditions",
+    "consent_privacy": "I have read and accept the Privacy Policy",
+    "placeholders": {
+      "name": "Your full name",
+      "email": "your.email@company.com",
+      "phone": "+1 234 567 8900",
+      "country": "United States",
+      "company": "Your company name (optional)",
+      "report_code": "REP-20250110-XXXXX"
+    },
+    "continue": "Continue to Next Step",
+    "back": "Go Back",
+    "next": "Next",
+    "analyze": "Start Analysis",
+    "download_report": "Download PDF Report",
+    "send_email": "Send Email Summary"
+  },
+  
+  "home": {
+    "hero": {
+      "title": "AI-Powered CV Analysis",
+      "subtitle": "Compare candidates or prepare for interviews with advanced AI technology. Free, fast, and multilingual."
+    },
+    "valueProp": {
+      "title": "Transform Your Hiring Process",
+      "subtitle": "ShortlistAI uses advanced AI to analyze CVs against job postings, providing instant insights, rankings, and interview questions.",
+      "stat1": "10x Faster CV Screening",
+      "stat2": "100% Free Forever",
+      "stat3": "4 Languages Supported",
+      "stat4": "5 AI Providers"
+    },
+    "features": {
+      "title": "Two Powerful Modes",
+      "interviewer": {
+        "title": "Interviewer Mode",
+        "description": "Compare and rank multiple candidates against your job posting. Upload 10, 50, or 100+ CVs and get instant AI analysis with scores, strengths, risks, and custom interview questions.",
+        "features": [
+          "Batch upload (10, 50, 100+ CVs)",
+          "Automatic ranking by fit score",
+          "Custom weighting and hard blockers",
+          "Interview questions per candidate",
+          "Download comprehensive PDF reports",
+          "Email summary to your team"
+        ],
+        "cta": "Start Analyzing CVs →"
+      },
+      "candidate": {
+        "title": "Candidate Mode",
+        "description": "Prepare for your next interview with AI-powered insights. Upload the job posting and your CV to receive personalized preparation tips, likely questions, and your perfect intro pitch.",
+        "features": [
+          "Instant fit score analysis",
+          "Identify your strengths and gaps",
+          "Predict likely interview questions",
+          "Get suggested answers and tips",
+          "Perfect your intro pitch",
+          "Receive email preparation guide"
+        ],
+        "cta": "Prepare for Interview →"
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "Simple, fast, and powered by advanced AI",
+      "step1": { "title": "Upload", "description": "Upload your job posting and CV(s). Support for PDF, DOCX, and text formats." },
+      "step2": { "title": "Analyze", "description": "Our AI analyzes content, extracts key information, and matches candidates to requirements." },
+      "step3": { "title": "Review", "description": "Get detailed scores, rankings, strengths, risks, and custom interview questions." },
+      "step4": { "title": "Export", "description": "Download PDF reports or receive email summaries with all analysis details." }
+    },
+    "benefits": {
+      "title": "Why Choose ShortlistAI?",
+      "free": { "title": "100% Free", "description": "No hidden costs, no credit card required. Full access to all features, forever." },
+      "fast": { "title": "Lightning Fast", "description": "Analyze 100 CVs in minutes. Get instant results with advanced AI processing." },
+      "multilingual": { "title": "Multilingual", "description": "Full support for English, Portuguese, French, and Spanish interfaces." },
+      "ai": { "title": "5 AI Models", "description": "Powered by Gemini, OpenAI, Claude, Kimi, and Minimax for maximum accuracy." },
+      "secure": { "title": "Private & Secure", "description": "Your data is protected. GDPR compliant with enterprise-grade security." },
+      "everywhere": { "title": "Works Everywhere", "description": "PWA-ready. Install on mobile, tablet, desktop, or use in your browser." }
+    },
+    "useCases": {
+      "title": "Perfect For",
+      "recruiters": { "title": "👔 Recruiters & HR Teams", "description": "Screen hundreds of candidates quickly. Focus on the best matches. Save hours of manual CV review." },
+      "managers": { "title": "💼 Hiring Managers", "description": "Make data-driven hiring decisions. Compare candidates objectively. Get custom interview questions." },
+      "seekers": { "title": "🎯 Job Seekers", "description": "Prepare thoroughly for interviews. Understand your strengths and gaps. Perfect your pitch." },
+      "startups": { "title": "🏢 Startups & SMBs", "description": "Professional hiring tools without the enterprise price tag. Free, powerful, and easy to use." }
+    },
+    "cta": {
+      "title": "Ready to Transform Your Hiring?",
+      "subtitle": "Start analyzing CVs with AI in under 2 minutes. No signup required.",
+      "note": "✓ No credit card required  ·  ✓ No signup needed  ·  ✓ 100% Free"
+    }
+  },
+  
+  "footer": {
+    "tagline": "AI-Powered CV Analysis Platform",
+    "description": "Free, multilingual, and powered by the latest AI technology.",
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "languages": "Languages",
+    "copyright": "© 2025 ShortlistAI. All rights reserved.",
+    "powered": "Powered by AI: Gemini, OpenAI, Claude, Kimi, Minimax"
   },
   
   "admin": {
     "title": "Admin Dashboard",
     "login": "Login",
-    "logout": "Logout",
-    "candidates": "Candidates",
-    "companies": "Companies",
-    "job_postings": "Job Postings",
-    "analyses": "Analyses",
-    "ai_management": "AI Management",
-    "prompts": "Prompts",
-    "providers": "Providers",
-    "translations": "Translations",
-    "quality_review": "Quality Review",
-    "golden_cases": "Golden Cases"
+    "logout": "Logout"
   },
   
-  "forms": {
-    "name": "Name",
-    "email": "Email",
-    "phone": "Phone",
-    "country": "Country",
-    "company": "Company (optional)",
-    "required_field": "This field is required",
-    "invalid_email": "Invalid email address",
-    "consent_store_data": "I consent to store my personal data",
-    "consent_future_contact": "I consent to be contacted for future opportunities",
-    "accept_terms": "I accept the Terms and Conditions",
-    "accept_privacy": "I accept the Privacy Policy"
+  "features": {
+    "title": "Powerful Features",
+    "subtitle": "Everything you need to make better hiring decisions or ace your next interview",
+    "forRecruiters": "For Recruiters & Hiring Managers",
+    "forCandidates": "For Job Seekers",
+    "interviewer": {
+      "batchUpload": { "title": "Batch Upload", "description": "Upload 10, 50, 100+ CVs at once. Supports PDF, DOCX, and text formats." },
+      "smartRanking": { "title": "Smart Ranking", "description": "Automatic ranking by fit score. Customize weights for different skills and requirements." },
+      "hardBlockers": { "title": "Hard Blockers", "description": "Define must-have requirements. Candidates missing these are automatically flagged." },
+      "aiQuestions": { "title": "AI Interview Questions", "description": "Get custom interview questions for each candidate based on their CV and your role." },
+      "pdfReports": { "title": "PDF Reports", "description": "Download comprehensive analysis reports with branding, rankings, and detailed insights." },
+      "emailSummary": { "title": "Email Summary", "description": "Share results with your team via email. Multilingual support (EN, PT, FR, ES)." }
+    },
+    "candidate": {
+      "fitScore": { "title": "Fit Score Analysis", "description": "Understand how well you match the role with detailed category scores." },
+      "strengthsGaps": { "title": "Strengths & Gaps", "description": "Identify what makes you a great fit and areas to focus on during the interview." },
+      "predictedQuestions": { "title": "Predicted Questions", "description": "AI predicts likely interview questions based on the job posting and your background." },
+      "suggestedAnswers": { "title": "Suggested Answers", "description": "Get tailored answer frameworks and tips for common interview questions." },
+      "introPitch": { "title": "Perfect Intro Pitch", "description": "AI-generated introduction pitch optimized for the specific role and company." },
+      "prepGuide": { "title": "Preparation Guide", "description": "Receive a complete preparation guide by email in your preferred language." }
+    },
+    "technology": {
+      "title": "Powered by Advanced AI",
+      "subtitle": "We use the latest AI models to ensure accurate, insightful analysis",
+      "multiAI": { "title": "Multi-AI Provider", "description": "Supports Gemini, OpenAI, Claude, Kimi, and Minimax. Automatic fallback ensures reliability." },
+      "smartExtraction": { "title": "Smart Extraction", "description": "Advanced text extraction from PDF and DOCX files. Understands complex CV formats." },
+      "multilingual": { "title": "Multilingual", "description": "Full support for English, Portuguese, French, and Spanish. AI adapts to language automatically." },
+      "privacyFirst": { "title": "Privacy First", "description": "GDPR compliant. Your data is never used for AI training. Secure processing and storage." }
+    },
+    "finalCTA": {
+      "title": "Start Using ShortlistAI Today",
+      "subtitle": "Free forever. No credit card. No signup. Start analyzing in 2 minutes."
+    }
+  },
+  
+  "about": {
+    "title": "About ShortlistAI",
+    "subtitle": "We're making hiring smarter, faster, and more accessible with AI",
+    "mission": {
+      "title": "Our Mission",
+      "text1": "Hiring is hard. Screening hundreds of CVs is time-consuming, subjective, and exhausting. Job seekers struggle to prepare effectively for interviews, often missing key aspects of what makes them a great fit.",
+      "text2": "ShortlistAI changes that.",
+      "text3": "We use advanced AI to analyze CVs against job postings, providing instant, objective insights for both interviewers and candidates. Our platform is 100% free, multilingual, and designed to democratize access to professional hiring tools."
+    },
+    "howItWorks": { "title": "How It Works" },
+    "technology": {
+      "title": "Powered by AI",
+      "subtitle": "We use the latest AI models to ensure accurate, reliable analysis",
+      "note": "Automatic Fallback: If one AI provider is unavailable, we automatically try another, ensuring 99.9% uptime."
+    },
+    "privacy": {
+      "title": "Privacy & Security",
+      "gdpr": { "title": "🔒 GDPR Compliant", "description": "Full compliance with EU data protection regulations. Your data rights are respected." },
+      "noTraining": { "title": "🚫 No AI Training", "description": "Your CVs and data are NEVER used to train AI models. Private and confidential." },
+      "secure": { "title": "🛡️ Secure Processing", "description": "Enterprise-grade security. Encrypted connections. Hosted on secure infrastructure." },
+      "temporary": { "title": "⏱️ Temporary Storage", "description": "Data stored only for analysis session. No permanent storage without consent." }
+    },
+    "cta": {
+      "title": "Ready to Get Started?",
+      "subtitle": "Free, fast, and powered by the latest AI technology"
+    }
+  },
+  
+  "pricing": {
+    "title": "Simple, Transparent Pricing",
+    "subtitle": "Free forever. No credit card. No hidden costs.",
+    "alwaysFree": "ALWAYS FREE",
+    "plan": "ShortlistAI",
+    "price": "$0",
+    "period": "/ forever",
+    "planSubtitle": "Full access to all features. No limits. No expiration.",
+    "included": "Everything Included:",
+    "features": [
+      "Unlimited CV analysis",
+      "Batch upload (10, 50, 100+ CVs)",
+      "5 AI providers (Gemini, OpenAI, Claude, Kimi, Minimax)",
+      "4 languages (EN, PT, FR, ES)",
+      "PDF report generation",
+      "Email summaries",
+      "Custom interview questions",
+      "Candidate preparation mode",
+      "PWA - install on any device",
+      "GDPR compliant & secure"
+    ],
+    "cta": "Get Started Free",
+    "note": "No credit card required • No signup needed • No hidden fees",
+    "whyFree": {
+      "title": "Why is ShortlistAI Free?",
+      "mission": { "title": "🎯 Our Mission", "description": "We believe that professional hiring tools should be accessible to everyone, not just large enterprises with big budgets." },
+      "growth": { "title": "🚀 Growth Strategy", "description": "We're building a community of users who trust and rely on ShortlistAI. Future premium features may be added, but core functionality stays free." },
+      "innovation": { "title": "💡 Innovation", "description": "We're exploring new ways to make hiring smarter. Your feedback helps us improve and innovate faster." }
+    },
+    "comparison": { 
+      "title": "ShortlistAI vs Traditional Methods",
+      "feature": "Feature",
+      "manual": "Manual Screening",
+      "shortlist": "ShortlistAI",
+      "row1": { "feature": "Time to screen 50 CVs", "manual": "5-10 hours", "shortlist": "5 minutes" },
+      "row2": { "feature": "Consistency", "manual": "Subjective, varies", "shortlist": "100% objective" },
+      "row3": { "feature": "Interview questions", "manual": "Generic", "shortlist": "Custom per candidate" },
+      "row4": { "feature": "Cost", "manual": "Hours of salary", "shortlist": "$0" },
+      "row5": { "feature": "Multilingual", "manual": "Limited", "shortlist": "4 languages" },
+      "row6": { "feature": "Reports", "manual": "Manual creation", "shortlist": "Auto-generated PDF" }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": { "q": "Is ShortlistAI really free?", "a": "Yes! 100% free, forever. No credit card required, no signup needed, no hidden fees. All features are available to everyone." },
+      "q2": { "q": "How many CVs can I analyze?", "a": "Unlimited! You can upload and analyze as many CVs as you need, in batches of 10, 50, 100 or more." },
+      "q3": { "q": "What file formats are supported?", "a": "We support PDF, DOCX (Word), and plain text for both CVs and job postings." },
+      "q4": { "q": "Which languages are supported?", "a": "The platform interface is available in English, Portuguese, French, and Spanish. CVs can be in any language - our AI understands them all!" },
+      "q5": { "q": "Is my data secure?", "a": "Yes! We're GDPR compliant. Your data is encrypted, never used to train AI models, and stored only for your analysis session." },
+      "q6": { "q": "Which AI models do you use?", "a": "We support Google Gemini, OpenAI (GPT-4), Anthropic Claude, Kimi, and Minimax. You can choose your preferred provider or let us use the best available." },
+      "q7": { "q": "Can I use this on mobile?", "a": "Absolutely! ShortlistAI is a PWA (Progressive Web App). It works perfectly on mobile, tablet, desktop, and can even be installed as an app." },
+      "q8": { "q": "Do I need to create an account?", "a": "No signup required for candidate and interviewer modes! Simply start using the platform immediately. (Admin access requires authentication.)" }
+    },
+    "finalCTA": {
+      "title": "Start Using ShortlistAI Now",
+      "subtitle": "Free, fast, and powerful. No commitment required."
+    }
   },
   
   "legal": {
     "terms": "Terms and Conditions",
     "privacy": "Privacy Policy",
-    "base_language_notice": "English is the official legal version. Other languages are translations for convenience."
+    "cookies": "Cookie Policy"
+  },
+  
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!",
+    "backToHome": "← Back to Home",
+    "learnMore": "Learn more →",
+    "getStarted": "Get Started",
+    "tryNow": "Try Now",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next →",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "upload": "Upload",
+    "download": "Download"
   }
 }
-

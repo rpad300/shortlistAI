@@ -59,15 +59,22 @@ export const interviewerAPI = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   step3: (data: any) => api.post('/api/interviewer/step3', data),
+  step4Suggestions: (sessionId: string) => api.get(`/api/interviewer/step4/suggestions/${sessionId}`, {
+    timeout: 60000,
+  }),
   step4: (data: any) => api.post('/api/interviewer/step4', data),
   step5: (data: FormData) => api.post('/api/interviewer/step5', data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  step6: (sessionId: string) => api.post(`/api/interviewer/step6?session_id=${sessionId}`),
+  step6: (sessionId: string) => api.post(`/api/interviewer/step6?session_id=${sessionId}`, null, {
+    timeout: 90000,
+  }),
   step7: (sessionId: string) => api.get(`/api/interviewer/step7/${sessionId}`),
   sendEmail: (sessionId: string, email: string) => 
     api.post('/api/interviewer/step8/email', { session_id: sessionId, recipient_email: email }),
-  downloadReport: (sessionId: string) => api.get(`/api/interviewer/step8/report/${sessionId}`),
+  downloadReport: (sessionId: string) => api.get(`/api/interviewer/step8/report/${sessionId}`, {
+    responseType: 'blob'
+  }),
 };
 
 /**
