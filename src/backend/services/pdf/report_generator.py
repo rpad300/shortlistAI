@@ -31,12 +31,21 @@ class PDFReportGenerator:
     def __init__(self):
         self.styles = getSampleStyleSheet()
         self.branding = get_branding()
+        self.branding.ensure_fonts_registered()
         self._setup_custom_styles()
     
     def _setup_custom_styles(self):
         """Set up custom paragraph styles with ShortlistAI branding."""
         # Get branded styles
         branded_styles = self.branding.get_custom_styles(self.styles)
+        
+        if self.branding.fonts_available():
+            self.styles['Normal'].fontName = 'Inter-Regular'
+            self.styles['BodyText'].fontName = 'Inter-Regular'
+            self.styles['Title'].fontName = 'Inter-Bold'
+            self.styles['Heading1'].fontName = 'Inter-Bold'
+            self.styles['Heading2'].fontName = 'Inter-SemiBold'
+            self.styles['Heading3'].fontName = 'Inter-SemiBold'
         
         # Add all branded styles to stylesheet
         for name, style in branded_styles.items():
@@ -98,7 +107,7 @@ class PDFReportGenerator:
             pagesize=A4,
             rightMargin=inch,
             leftMargin=inch,
-            topMargin=1.2*inch,  # More space for header
+            topMargin=self.branding.get_header_height() + self.branding.get_content_top_padding(),
             bottomMargin=inch
         )
         
@@ -155,29 +164,40 @@ class PDFReportGenerator:
         elements.append(Spacer(1, 0.8*inch))
         
         # Try to add logo image
-        logo_img = self.branding.get_logo_image(width=1.2*inch)
+        logo_img = self.branding.get_logo_image(width=1.4*inch)
+        show_wordmark = True
         if logo_img:
-            from reportlab.platypus import Table
-            # Center the logo using a table
-            logo_table = Table([[logo_img]], colWidths=[1.2*inch])
-            logo_table.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ]))
-            elements.append(logo_table)
+            # Center both Image and Paragraph fallback
+            if hasattr(logo_img, "hAlign"):
+                logo_img.hAlign = 'CENTER'
+            if isinstance(logo_img, Paragraph):
+                logo_img.style.alignment = TA_CENTER
+                show_wordmark = False
+            elements.append(logo_img)
         else:
             # Fallback to text logo
             elements.append(Paragraph(
-                '<font size="32" color="#0066FF"><b>ShortlistAI</b></font>',
+                '<font size="34" color="#0066FF"><b>ShortlistAI</b></font>',
                 ParagraphStyle(
-                    name='LogoStyle',
+                    name='LogoStyleFallback',
                     parent=self.styles['Normal'],
                     alignment=TA_CENTER,
                     spaceAfter=10
                 )
             ))
+            show_wordmark = False
         
         elements.append(Spacer(1, 0.15*inch))
+        if show_wordmark:
+            elements.append(Paragraph(
+                '<font size="13" color="#111827"><b>ShortlistAI</b></font>',
+                ParagraphStyle(
+                    name='Wordmark',
+                    parent=self.styles['Normal'],
+                    alignment=TA_CENTER,
+                    spaceAfter=4
+                )
+            ))
         elements.append(Paragraph(
             '<font size="11" color="#6B7280">AI-Powered CV Analysis Platform</font>',
             ParagraphStyle(

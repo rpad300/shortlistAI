@@ -211,3 +211,58 @@ filter: blur(0.5px);
 **Status:** ✅ **COMPLETED**  
 **Date:** November 11, 2025  
 **Developer:** AI Assistant (Build Stabilization)
+
+## 2025-11-11: PDF Logo Path & Title Page Polish
+
+### Summary
+- Corrected the PDF branding helper to resolve logo assets from the actual project root (`src/frontend/public/...`) so the icon renders in headers and title pages.
+- Center-aligned the logo flowable and adjusted wordmark/tagline layout on the title page to eliminate overlapping text and fallback artifacts.
+
+### Verification
+- Regenerated the interviewer report locally to confirm the ShortlistAI icon appears and the title page hierarchy is consistent in both header and body.
+
+### Next Steps
+- [ ] Consider embedding Inter font files for an exact match with the web brand typography.
+- [ ] Add automated regression snapshots for generated PDFs once CI pipeline is ready.
+
+**Status:** ✅ **COMPLETED**  
+**Date:** November 11, 2025  
+**Developer:** AI Assistant (PDF Branding Fix)
+
+## 2025-11-11: Inter Font Embedding for PDF Reports
+
+### Summary
+- Downloaded Inter font family (Regular, Medium, SemiBold, Bold) and bundled under `src/backend/assets/fonts/` with the SIL Open Font License.
+- Registered the fonts with ReportLab and updated branding helpers so all PDF headers, footers, tables, and paragraph styles use Inter instead of Helvetica.
+- Ensured fallbacks remain in place when fonts are unavailable and propagated Inter styling throughout base styles in `PDFReportGenerator`.
+
+### Verification
+- Regenerated interviewer report locally to confirm Inter renders across title page, headings, and tables.
+- Verified ReportLab registration logs for each Inter weight.
+
+### Next Steps
+- [ ] Evaluate adding Inter Italic weights if future copy requires italics.
+- [ ] Consider snapshot tests to detect accidental font regressions.
+
+**Status:** ✅ **COMPLETED**  
+**Date:** November 11, 2025  
+**Developer:** AI Assistant (PDF Typography Upgrade)
+
+## 2025-11-11: PDF Header Layout & Branding Corrections
+
+### Summary
+- Reserved a dedicated header band (`1.9"`) and added a white backdrop so page content never overlaps the masthead or background accents.
+- Redesigned the header to use the platform wordmark treatment (icon + “Shortlist”/“AI” dual-color text) plus contact info aligned right.
+- Updated footer styling with matching background cleanup and typography, ensuring table/page content respects the reserved space.
+- Increased document top margin via `SimpleDocTemplate` to create consistent breathing room between header and body content.
+
+### Verification
+- Regenerated interviewer report locally; confirmed header no longer overlaps body sections and correct logo styling renders on every page.
+
+### Next Steps
+- [ ] Add regression tests to capture PDF header screenshots for visual diffing.
+- [ ] Investigate gzip warning logs emitted during streaming responses.
+
+**Status:** ✅ **COMPLETED**  
+**Date:** November 11, 2025  
+**Developer:** AI Assistant (PDF Header Refresh)
