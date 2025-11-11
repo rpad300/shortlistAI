@@ -310,6 +310,20 @@ const InterviewerStep4: React.FC = () => {
                 </div>
               </div>
             )})}
+
+            {userAdjusted && (
+              <div
+                style={{
+                  marginTop: 'var(--spacing-md)',
+                  padding: 'var(--spacing-sm)',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                ✅ {t('interviewer.step4_manual_adjust_notice', { defaultValue: 'You adjusted the weights manually. We will prioritize your custom values when generating the shortlist.' })}
+              </div>
+            )}
             
             {(totalWeight < 90 || totalWeight > 110) && (
               <div style={{ padding: 'var(--spacing-sm)', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderRadius: 'var(--radius-md)', marginTop: 'var(--spacing-md)' }}>

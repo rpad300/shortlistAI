@@ -13,6 +13,8 @@ import './Pricing.css';
 
 export const Pricing: React.FC = () => {
   const { t } = useTranslation();
+  const pricingFeaturesRaw = t('pricing.features', { returnObjects: true }) as unknown;
+  const pricingFeatures = Array.isArray(pricingFeaturesRaw) ? (pricingFeaturesRaw as string[]) : [];
   
   // FAQ structured data
   const faqData = [
@@ -55,7 +57,7 @@ export const Pricing: React.FC = () => {
             <div className="pricing-features">
               <h3>{t('pricing.included')}</h3>
               <ul className="pricing-feature-list">
-                {t('pricing.features', { returnObjects: true }).map((feature: string, i: number) => (
+                {pricingFeatures.map((feature, i: number) => (
                   <li key={i}>
                     <img src="/assets/icons/check-circle.svg" alt="" width="20" height="20" />
                     <span>{feature}</span>

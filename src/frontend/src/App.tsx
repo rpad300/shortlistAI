@@ -25,8 +25,6 @@ import InterviewerStep7 from '@pages/InterviewerStep7';
 import AdminLogin from '@pages/AdminLogin';
 import LegalTerms from '@pages/LegalTerms';
 import LegalPrivacy from '@pages/LegalPrivacy';
-import Logo from '@components/Logo';
-import HeroImage from '@components/HeroImage';
 import './App.css';
 
 function App() {
@@ -57,86 +55,6 @@ function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<PlaceholderPage step="Dashboard" flow="admin" />} />
       </Routes>
-    </div>
-  );
-}
-
-// HomePage component
-function HomePage() {
-  const { t, i18n } = useTranslation();
-
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-  };
-
-  return (
-    <div className="home-container">
-      <header className="home-header">
-        <Logo variant="full-color" size="large" className="home-logo" />
-        <h1>{t('welcome')}</h1>
-        <p className="home-description">{t('description')}</p>
-      </header>
-      
-      <div className="hero-section">
-        <HeroImage page="home" priority={true} />
-      </div>
-      
-      <div className="language-selector">
-        <button 
-          onClick={() => changeLanguage('en')}
-          className={i18n.language === 'en' ? 'active' : ''}
-        >
-          {t('languages.en')}
-        </button>
-        <button 
-          onClick={() => changeLanguage('pt')}
-          className={i18n.language === 'pt' ? 'active' : ''}
-        >
-          {t('languages.pt')}
-        </button>
-        <button 
-          onClick={() => changeLanguage('fr')}
-          className={i18n.language === 'fr' ? 'active' : ''}
-        >
-          {t('languages.fr')}
-        </button>
-        <button 
-          onClick={() => changeLanguage('es')}
-          className={i18n.language === 'es' ? 'active' : ''}
-        >
-          {t('languages.es')}
-        </button>
-      </div>
-
-      <div className="flow-cards">
-        <Link to="/interviewer/step1" className="flow-card">
-          <img 
-            src="/assets/illustrations/feature-interviewer.png" 
-            alt="Interviewer feature"
-            className="flow-card-image"
-            width="200"
-            height="200"
-          />
-          <h2>{t('interviewer_flow')}</h2>
-          <p>{t('interviewer.subtitle')}</p>
-        </Link>
-
-        <Link to="/candidate/step1" className="flow-card">
-          <img 
-            src="/assets/illustrations/feature-candidate.png" 
-            alt="Candidate feature"
-            className="flow-card-image"
-            width="200"
-            height="200"
-          />
-          <h2>{t('candidate_flow')}</h2>
-          <p>{t('candidate.subtitle')}</p>
-        </Link>
-      </div>
-      
-      <div className="admin-link">
-        <Link to="/admin/login">{t('admin_login')}</Link>
-      </div>
     </div>
   );
 }

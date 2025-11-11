@@ -91,7 +91,7 @@ const InterviewerStep1: React.FC = () => {
         language: localStorage.getItem('language') || 'en'
       });
       
-      const { interviewer_id, session_id, report_code, is_continuing, message } = response.data;
+      const { interviewer_id, session_id, report_code, is_continuing } = response.data;
       
       // Store session ID for next steps
       sessionStorage.setItem('interviewer_session_id', session_id);

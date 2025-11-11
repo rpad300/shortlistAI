@@ -50,7 +50,7 @@ const InterviewerStep2: React.FC = () => {
         formData.append('language', i18n.language);
         formData.append('file', files[0]);
         
-        const response = await interviewerAPI.step2(formData);
+        await interviewerAPI.step2(formData);
         navigate('/interviewer/step3');
         return;
       }
@@ -62,7 +62,7 @@ const InterviewerStep2: React.FC = () => {
         formData.append('language', i18n.language);
         formData.append('raw_text', jobText);
         
-        const response = await interviewerAPI.step2(formData);
+        await interviewerAPI.step2(formData);
         navigate('/interviewer/step3');
         return;
       }

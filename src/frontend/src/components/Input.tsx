@@ -3,7 +3,6 @@
  */
 
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import './Input.css';
 
 interface InputProps {
@@ -27,8 +26,6 @@ const Input: React.FC<InputProps> = ({
   error,
   disabled = false
 }) => {
-  const { t } = useTranslation();
-  
   return (
     <div className="input-wrapper">
       <label className="input-label">

@@ -88,7 +88,7 @@ const CandidateStep1: React.FC = () => {
         language: localStorage.getItem('language') || 'en'
       });
       
-      const { candidate_id, session_id, message } = response.data;
+      const { candidate_id, session_id } = response.data;
       
       // Store session ID for next steps
       sessionStorage.setItem('candidate_session_id', session_id);

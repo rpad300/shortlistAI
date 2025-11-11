@@ -190,3 +190,24 @@ filter: blur(0.5px);
 **Status:** ✅ **COMPLETED**  
 **Date:** November 11, 2025  
 **Developer:** AI Assistant (Docker Enablement)
+
+## 2025-11-11: Frontend Production Build Fix
+
+### Summary
+- Resolved TypeScript build blockers raised during `npm run build`.
+- Added Vite environment type declarations (`src/frontend/src/vite-env.d.ts`) and referenced them in `tsconfig.json` so `import.meta.env` is recognised in strict mode.
+- Cleaned up unused variables across pages (Candidate/Interviewer flows, Legal pages) and removed an obsolete `HomePage` component left in `App.tsx`.
+- Updated typed translations to coerce array returns safely before mapping (Home, Pricing).
+- Extended the shared `Button` component to accept `style` and `className` props to support inline layout adjustments without casting.
+- Surfaced a manual-adjustment notice in `InterviewerStep4` so the `userAdjusted` state provides visible feedback after slider tweaks.
+
+### Verification
+- `cd src/frontend && npm run build` now completes successfully in production mode.
+
+### Next Steps
+- [ ] Monitor future TypeScript strictness warnings to catch unused variables earlier.
+- [ ] Translate the new manual-adjustment notice key (`interviewer.step4_manual_adjust_notice`) in the i18n JSON files if we keep a non-default string.
+
+**Status:** ✅ **COMPLETED**  
+**Date:** November 11, 2025  
+**Developer:** AI Assistant (Build Stabilization)

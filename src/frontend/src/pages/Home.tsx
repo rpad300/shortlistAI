@@ -15,6 +15,10 @@ import './Home.css';
 
 export const Home: React.FC = () => {
   const { t } = useTranslation();
+  const interviewerFeaturesRaw = t('home.features.interviewer.features', { returnObjects: true }) as unknown;
+  const interviewerFeatures = Array.isArray(interviewerFeaturesRaw) ? (interviewerFeaturesRaw as string[]) : [];
+  const candidateFeaturesRaw = t('home.features.candidate.features', { returnObjects: true }) as unknown;
+  const candidateFeatures = Array.isArray(candidateFeaturesRaw) ? (candidateFeaturesRaw as string[]) : [];
 
   // Structured data for homepage
   const structuredData = {
@@ -113,7 +117,7 @@ export const Home: React.FC = () => {
                   {t('home.features.interviewer.description')}
                 </p>
                 <ul className="feature-list">
-                  {t('home.features.interviewer.features', { returnObjects: true }).map((feature: string, i: number) => (
+                  {interviewerFeatures.map((feature, i: number) => (
                     <li key={i}>✓ {feature}</li>
                   ))}
                 </ul>
@@ -144,7 +148,7 @@ export const Home: React.FC = () => {
                   {t('home.features.candidate.description')}
                 </p>
                 <ul className="feature-list">
-                  {t('home.features.candidate.features', { returnObjects: true }).map((feature: string, i: number) => (
+                  {candidateFeatures.map((feature, i: number) => (
                     <li key={i}>✓ {feature}</li>
                   ))}
                 </ul>
