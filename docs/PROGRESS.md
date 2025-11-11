@@ -168,3 +168,25 @@ filter: blur(0.5px);
 **Status:** ✅ **COMPLETED**  
 **Date:** November 10, 2025  
 **Developer:** AI Assistant (PDF Branding Refresh)
+
+## 2025-11-11: Dockerized Local Stack
+
+### Summary
+- Added production-ready Dockerfiles for `src/backend` (FastAPI + Uvicorn) and `src/frontend` (Node build → Nginx).
+- Created root `docker-compose.yml` to orchestrate both services, exposing the UI on http://localhost:3399 and proxying `/api` to the backend.
+- Added Docker ignore files and Nginx reverse proxy config to keep images lean and route API traffic securely.
+- Documented the infrastructure layout in `docs/infra/overview.md` and the local deployment workflow in `docs/infra/deployments.md`.
+- Extended `README.md` with Docker quick-start instructions.
+
+### Verification
+- Configuration reviewed; run `docker compose config` to validate build contexts before the first boot.
+- Startup sequencing documented; expect the backend health endpoint at http://localhost:3399/api/health once containers are running.
+
+### Next Steps
+- [ ] Add CI jobs to build and publish Docker images to the chosen registry.
+- [ ] Define staging/production deployment targets that consume the new images.
+- [ ] Configure structured logging aggregation for containerized environments.
+
+**Status:** ✅ **COMPLETED**  
+**Date:** November 11, 2025  
+**Developer:** AI Assistant (Docker Enablement)
