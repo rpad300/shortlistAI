@@ -3,7 +3,7 @@
  */
 
 .textarea-wrapper {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 0.5rem;
   width: 100%;
 }
 

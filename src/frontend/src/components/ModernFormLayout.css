@@ -7,13 +7,7 @@
 .modern-form-layout {
   min-height: 100vh;
   position: relative;
-  background: var(--bg-light, #FFFFFF);
-}
-
-@media (prefers-color-scheme: dark) {
-  .modern-form-layout {
-    background: var(--bg-dark, #0A0A0B);
-  }
+  background: transparent;
 }
 
 /* Header */

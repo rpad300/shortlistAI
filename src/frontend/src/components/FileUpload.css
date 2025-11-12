@@ -3,7 +3,7 @@
  */
 
 .file-upload-wrapper {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 1rem;
 }
 
 .file-upload-label {

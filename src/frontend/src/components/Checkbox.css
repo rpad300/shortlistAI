@@ -3,7 +3,7 @@
  */
 
 .checkbox-wrapper {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: 0.25rem;
 }
 
 .checkbox-label {

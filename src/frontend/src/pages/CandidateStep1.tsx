@@ -157,8 +157,7 @@ const CandidateStep1: React.FC = () => {
             <Checkbox
               label={
                 <>
-                  {t('forms.accept_terms')} -{' '}
-                  <a href="/legal/terms" target="_blank">{t('legal.terms')}</a>
+                  {t('forms.consent_terms')}
                 </>
               }
               checked={consents.consent_terms}
@@ -170,8 +169,7 @@ const CandidateStep1: React.FC = () => {
             <Checkbox
               label={
                 <>
-                  {t('forms.accept_privacy')} -{' '}
-                  <a href="/legal/privacy" target="_blank">{t('legal.privacy')}</a>
+                  {t('forms.consent_privacy')}
                 </>
               }
               checked={consents.consent_privacy}

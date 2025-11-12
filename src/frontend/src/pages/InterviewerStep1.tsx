@@ -179,29 +179,18 @@ const InterviewerStep1: React.FC = () => {
           </section>
           
           {/* Continue Existing Report Section */}
-          <section className="form-section">
-            <div style={{ 
-              backgroundColor: 'var(--color-bg-secondary)', 
-              padding: 'var(--spacing-md)', 
-              borderRadius: 'var(--radius-md)',
-              marginBottom: 'var(--spacing-md)'
-            }}>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowContinueReport(!showContinueReport)}
-                style={{ width: '100%' }}
-              >
-                {showContinueReport ? '➖' : '➕'} Continue Existing Report (Optional)
-              </Button>
-            </div>
+          <section className="form-section continue-report-section">
+            <Button
+              type="button"
+              variant="outline"
+              className="continue-report-btn"
+              onClick={() => setShowContinueReport(!showContinueReport)}
+            >
+              {showContinueReport ? '➖' : '➕'} Continue Report (Optional)
+            </Button>
             
             {showContinueReport && (
-              <div style={{ 
-                backgroundColor: 'var(--color-accent-light)', 
-                padding: 'var(--spacing-md)', 
-                borderRadius: 'var(--radius-md)' 
-              }}>
+              <div className="continue-report-content">
                 <Input
                   label="Report Code (e.g., REP-20250109-A3B7K2)"
                   value={formData.existing_report_code}
@@ -209,11 +198,7 @@ const InterviewerStep1: React.FC = () => {
                   placeholder="REP-XXXXXXXX-XXXXXX"
                   error={errors.existing_report_code}
                 />
-                <p style={{ 
-                  fontSize: 'var(--font-size-sm)', 
-                  color: 'var(--color-text-secondary)',
-                  marginTop: 'var(--spacing-sm)' 
-                }}>
+                <p className="continue-report-help">
                   💡 If you have an existing report and want to add more candidates to it, enter the report code here.
                   You can find the report code in the Step 7 results or in the PDF report.
                 </p>
@@ -227,8 +212,7 @@ const InterviewerStep1: React.FC = () => {
             <Checkbox
               label={
                 <>
-                  {t('forms.accept_terms')} -{' '}
-                  <a href="/legal/terms" target="_blank">{t('legal.terms')}</a>
+                  {t('forms.consent_terms')}
                 </>
               }
               checked={consents.consent_terms}
@@ -240,8 +224,7 @@ const InterviewerStep1: React.FC = () => {
             <Checkbox
               label={
                 <>
-                  {t('forms.accept_privacy')} -{' '}
-                  <a href="/legal/privacy" target="_blank">{t('legal.privacy')}</a>
+                  {t('forms.consent_privacy')}
                 </>
               }
               checked={consents.consent_privacy}

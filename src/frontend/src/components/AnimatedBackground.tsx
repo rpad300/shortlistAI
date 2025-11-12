@@ -37,8 +37,8 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               top: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 20}s`,
               animationDuration: `${15 + Math.random() * 10}s`,
-              width: `${6 + Math.random() * 8}px`,
-              height: `${6 + Math.random() * 8}px`,
+              width: `${10 + Math.random() * 15}px`,
+              height: `${10 + Math.random() * 15}px`,
             }}
           />
         ))}
