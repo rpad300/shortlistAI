@@ -7,11 +7,33 @@ Provides connection pooling and helper functions for database operations.
 from supabase import create_client, Client
 from typing import Optional
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from pathlib import Path
+import logging
 
-# Load environment variables from project root
-load_dotenv(dotenv_path=Path(__file__).resolve().parents[3] / ".env")
+logger = logging.getLogger(__name__)
+
+# Load environment variables
+# Try to find .env automatically (works in both dev and Docker)
+env_file = find_dotenv()
+if env_file:
+    load_dotenv(dotenv_path=env_file)
+    logger.info(f"[Config] Loaded .env from: {env_file}")
+else:
+    # Fallback: try common locations
+    possible_paths = [
+        Path("/app/.env"),  # Docker: /app/.env
+        Path(__file__).resolve().parent.parent / ".env",  # Docker: /app/.env
+        Path(__file__).resolve().parents[2] / ".env",  # Dev: src/backend -> src -> ShortlistAI
+        Path.cwd() / ".env",  # Current working directory
+    ]
+    for env_path in possible_paths:
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path)
+            logger.info(f"[Config] Loaded .env from: {env_path}")
+            break
+    else:
+        logger.warning("[Config] No .env file found, using environment variables")
 
 # Global Supabase client instance
 _supabase_client: Optional[Client] = None
