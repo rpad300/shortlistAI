@@ -54,7 +54,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       // Verify token with backend
-      const response = await api.get('/api/admin/me');
+      const response = await api.get('/admin/me');
       setUser(response.data);
     } catch (error) {
       // Token is invalid, remove it
@@ -67,7 +67,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await api.post('/api/admin/login', {
+      const response = await api.post('/admin/login', {
         email,
         password
       });

@@ -40,7 +40,7 @@ const AdminJobPostings: React.FC = () => {
         offset: pagination.offset.toString(),
       });
 
-      const response = await api.get(`/api/admin/job-postings?${params}`);
+      const response = await api.get(`/admin/job-postings?${params}`);
       const data = response.data;
       
       setJobPostings(data.job_postings);

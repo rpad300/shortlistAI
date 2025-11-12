@@ -46,7 +46,7 @@ const AdminUsers: React.FC = () => {
   const loadAdmins = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/admin/list-users`);
+      const response = await api.get(`/admin/list-users`);
       const data = response.data;
       
       setAdmins(data.admins);
@@ -112,7 +112,7 @@ const AdminUsers: React.FC = () => {
     }
 
     try {
-      await api.delete(`/api/admin/delete-user/${adminId}`);
+      await api.delete(`/admin/delete-user/${adminId}`);
       loadAdmins(); // Reload the list
     } catch (error: any) {
       console.error('Error deleting admin:', error);
@@ -136,7 +136,7 @@ const AdminUsers: React.FC = () => {
 
       try {
         // Create user via Supabase Auth Admin API
-        await api.post('/api/admin/create-user', {
+        await api.post('/admin/create-user', {
           email: formData.email,
           password: formData.password,
           email_confirm: true,

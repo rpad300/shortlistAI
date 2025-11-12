@@ -38,7 +38,7 @@ const AdminCompanies: React.FC = () => {
         offset: pagination.offset.toString(),
       });
 
-      const response = await api.get(`/api/admin/companies?${params}`);
+      const response = await api.get(`/admin/companies?${params}`);
       const data = response.data;
       
       setCompanies(data.companies);

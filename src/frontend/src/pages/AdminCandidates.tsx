@@ -51,7 +51,7 @@ const AdminCandidates: React.FC = () => {
         offset: pagination.offset.toString(),
       });
 
-      const response = await api.get(`/api/admin/candidates?${params}`);
+      const response = await api.get(`/admin/candidates?${params}`);
       const data: CandidatesResponse = response.data;
       
       setCandidates(data.candidates);

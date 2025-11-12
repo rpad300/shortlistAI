@@ -86,7 +86,7 @@ const AdminPrompts: React.FC = () => {
       if (activeFilter !== '') params.append('is_active', activeFilter);
       if (languageFilter) params.append('language', languageFilter);
       
-      const response = await api.get(`/api/admin/prompts?${params.toString()}`);
+      const response = await api.get(`/admin/prompts?${params.toString()}`);
       setPrompts(response.data.prompts || []);
     } catch (err: any) {
       console.error('Error fetching prompts:', err);
@@ -98,7 +98,7 @@ const AdminPrompts: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await api.get('/api/admin/prompts/stats');
+      const response = await api.get('/admin/prompts/stats');
       setStats(response.data);
     } catch (err) {
       console.error('Error fetching stats:', err);
@@ -107,7 +107,7 @@ const AdminPrompts: React.FC = () => {
 
   const fetchVersions = async (promptId: string) => {
     try {
-      const response = await api.get(`/api/admin/prompts/${promptId}/versions`);
+      const response = await api.get(`/admin/prompts/${promptId}/versions`);
       setVersions(response.data.versions || []);
       setShowVersions(true);
     } catch (err) {
@@ -155,7 +155,7 @@ const AdminPrompts: React.FC = () => {
 
   const handleSaveCreate = async () => {
     try {
-      await api.post('/api/admin/prompts/', formData);
+      await api.post('/admin/prompts/', formData);
       alert('Prompt created successfully!');
       setIsCreating(false);
       fetchPrompts();
@@ -185,7 +185,7 @@ const AdminPrompts: React.FC = () => {
         create_new_version: true
       };
       
-      await api.put(`/api/admin/prompts/${selectedPrompt.id}`, updateData);
+      await api.put(`/admin/prompts/${selectedPrompt.id}`, updateData);
       alert('Prompt updated successfully!');
       setIsEditing(false);
       fetchPrompts();
@@ -204,7 +204,7 @@ const AdminPrompts: React.FC = () => {
     if (!window.confirm('Are you sure you want to deactivate this prompt?')) return;
     
     try {
-      await api.delete(`/api/admin/prompts/${promptId}`);
+      await api.delete(`/admin/prompts/${promptId}`);
       alert('Prompt deactivated successfully!');
       setSelectedPrompt(null);
       fetchPrompts();
@@ -221,12 +221,12 @@ const AdminPrompts: React.FC = () => {
     if (!window.confirm(`Are you sure you want to rollback to version ${version}?`)) return;
     
     try {
-      await api.post(`/api/admin/prompts/${selectedPrompt.id}/rollback/${version}`);
+      await api.post(`/admin/prompts/${selectedPrompt.id}/rollback/${version}`);
       alert(`Rolled back to version ${version} successfully!`);
       setShowVersions(false);
       
       // Refresh the prompt
-      const response = await api.get(`/api/admin/prompts/${selectedPrompt.id}`);
+      const response = await api.get(`/admin/prompts/${selectedPrompt.id}`);
       handleSelectPrompt(response.data);
       fetchPrompts();
     } catch (err: any) {

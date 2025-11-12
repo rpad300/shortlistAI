@@ -43,7 +43,7 @@ const AdminDashboard: React.FC = () => {
   const loadDashboardStats = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/admin/dashboard/detailed-stats');
+      const response = await api.get('/admin/dashboard/detailed-stats');
       setStats(response.data);
     } catch (error: any) {
       console.error('Error loading dashboard stats:', error);

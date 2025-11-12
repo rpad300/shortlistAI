@@ -46,7 +46,7 @@ const AdminAnalyses: React.FC = () => {
       if (modeFilter) params.append('mode', modeFilter);
       if (providerFilter) params.append('provider', providerFilter);
 
-      const response = await api.get(`/api/admin/analyses?${params}`);
+      const response = await api.get(`/admin/analyses?${params}`);
       const data = response.data;
       
       setAnalyses(data.analyses);

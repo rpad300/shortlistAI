@@ -60,7 +60,7 @@ const AdminCandidateDetail: React.FC = () => {
   const loadCandidateDetails = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/admin/candidates/${id}`);
+      const response = await api.get(`/admin/candidates/${id}`);
       setData(response.data);
     } catch (error: any) {
       console.error('Error loading candidate details:', error);

@@ -41,7 +41,7 @@ const AdminInterviewers: React.FC = () => {
         offset: pagination.offset.toString(),
       });
 
-      const response = await api.get(`/api/admin/interviewers?${params}`);
+      const response = await api.get(`/admin/interviewers?${params}`);
       const data = response.data;
       
       setInterviewers(data.interviewers);
