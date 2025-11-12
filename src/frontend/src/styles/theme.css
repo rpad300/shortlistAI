@@ -22,6 +22,7 @@
   --text-secondary-light: #6B7280;
   --text-secondary-dark: #9CA3AF;
   
+  /* Semantic colors */
   --success: #10B981;
   --warning: #F59E0B;
   --error: #EF4444;
@@ -32,6 +33,26 @@
   --border: var(--border-light);
   --text-primary: var(--text-primary-light);
   --text-secondary: var(--text-secondary-light);
+  --text-tertiary: #9CA3AF;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  
+  /* Border radius */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  
+  /* Shadows */
+  --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-large: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 /* Dark Mode - System Preference */
@@ -42,6 +63,7 @@
     --border: var(--border-dark);
     --text-primary: var(--text-primary-dark);
     --text-secondary: var(--text-secondary-dark);
+    --text-tertiary: #6B7280;
     --color-ai-blue: #3388FF;
     --color-neural-purple: #9F7AEA;
   }
@@ -54,6 +76,7 @@
   --border: var(--border-dark);
   --text-primary: var(--text-primary-dark);
   --text-secondary: var(--text-secondary-dark);
+  --text-tertiary: #6B7280;
   --color-ai-blue: #3388FF;
   --color-neural-purple: #9F7AEA;
 }
