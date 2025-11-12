@@ -80,7 +80,7 @@ const AdminCandidateDetail: React.FC = () => {
     });
   };
 
-  const getScoreColor = (score?: number) => {
+  const getScoreColor = (score?: number): string => {
     if (!score) return '';
     if (score >= 75) return 'var(--color-success)';
     if (score >= 50) return 'var(--color-warning)';

@@ -3,11 +3,10 @@ import { trackEvent } from '@utils/analytics';
 
 interface AdminAnalyticsProps {
   page: string;
-  action?: string;
   data?: Record<string, any>;
 }
 
-export const useAdminAnalytics = ({ page, action, data }: AdminAnalyticsProps) => {
+export const useAdminAnalytics = ({ page, data }: AdminAnalyticsProps) => {
   useEffect(() => {
     // Track admin page views
     trackEvent('admin_page_view', {

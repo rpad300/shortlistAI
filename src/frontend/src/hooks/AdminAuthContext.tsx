@@ -2,9 +2,12 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import api from '@services/api';
 
 interface AdminUser {
+  id: string;
+  email: string;
   username: string;
   role: string;
   authenticated: boolean;
+  user_metadata?: Record<string, any>;
 }
 
 interface AdminAuthContextType {

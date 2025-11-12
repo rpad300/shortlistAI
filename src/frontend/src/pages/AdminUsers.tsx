@@ -17,13 +17,6 @@ interface AdminUser {
   updated_at: string;
 }
 
-interface AdminUsersResponse {
-  total: number;
-  limit: number;
-  offset: number;
-  admins: AdminUser[];
-}
-
 const AdminUsers: React.FC = () => {
   const { user, logout } = useAdminAuth();
   const navigate = useNavigate();
@@ -53,12 +46,6 @@ const AdminUsers: React.FC = () => {
   const loadAdmins = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({
-        limit: pagination.limit.toString(),
-        offset: pagination.offset.toString(),
-        include_inactive: 'false'
-      });
-
       const response = await api.get(`/api/admin/list-users`);
       const data = response.data;
       
@@ -149,7 +136,7 @@ const AdminUsers: React.FC = () => {
 
       try {
         // Create user via Supabase Auth Admin API
-        const response = await api.post('/api/admin/create-user', {
+        await api.post('/api/admin/create-user', {
           email: formData.email,
           password: formData.password,
           email_confirm: true,
@@ -345,7 +332,7 @@ const AdminUsers: React.FC = () => {
                           >
                             Edit
                           </button>
-                          {admin.id !== user?.id && (
+                          {admin.email !== user?.email && (
                             <button 
                               onClick={() => handleDelete(admin.id)}
                               className="btn-sm btn-danger"

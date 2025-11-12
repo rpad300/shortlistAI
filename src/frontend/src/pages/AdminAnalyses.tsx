@@ -81,11 +81,11 @@ const AdminAnalyses: React.FC = () => {
     );
   };
 
-  const getScoreColor = (score?: number) => {
-    if (!score) return '';
-    if (score >= 75) return 'color: var(--color-success)';
-    if (score >= 50) return 'color: var(--color-warning)';
-    return 'color: var(--color-error)';
+  const getScoreColor = (score?: number): React.CSSProperties => {
+    if (!score) return {};
+    if (score >= 75) return { color: 'var(--color-success)' };
+    if (score >= 50) return { color: 'var(--color-warning)' };
+    return { color: 'var(--color-error)' };
   };
 
   return (

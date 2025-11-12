@@ -129,5 +129,10 @@ class Analytics {
 // Global analytics instance
 const analytics = new Analytics();
 
+// Named export for direct function access
+export const trackEvent = (event: string, properties?: Record<string, any>) => {
+  analytics.track(event, properties);
+};
+
 export default analytics;
 
