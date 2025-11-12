@@ -356,3 +356,4 @@ A ShortlistAI agora possui:
 Data: 10 de Novembro de 2025  
 Desenvolvido com ❤️ usando Gemini AI
 
+

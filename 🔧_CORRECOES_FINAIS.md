@@ -246,3 +246,4 @@ http://localhost:3000/
 
 **Desenvolvido com Gemini AI** 🤖
 
+

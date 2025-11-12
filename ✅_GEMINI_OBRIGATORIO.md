@@ -115,3 +115,4 @@ SUPABASE_SECRET_KEY=...
 **Próximo passo:** Reiniciar backend e testar Steps 1-6  
 **Documentação:** Ver `docs/PROGRESS.md` para histórico completo
 
+

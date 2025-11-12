@@ -556,3 +556,4 @@ http://localhost:3000/pricing    ← Pricing
 Inicie o frontend e veja tudo funcionando:  
 `npm run dev` em `src/frontend/`
 
+

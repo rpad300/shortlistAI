@@ -131,3 +131,4 @@ Ctrl+Shift+R
 **🎊 AGORA VAI FICAR LINDO!**
 
 **Partículas +50% mais visíveis + Footer = Perfeito!** ✅
+

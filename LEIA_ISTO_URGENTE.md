@@ -110,3 +110,4 @@ Ctrl + Shift + R
 **Tudo pronto**: ✅  
 **Só falta**: REINICIAR! 🔴
 
+

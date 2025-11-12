@@ -249,3 +249,4 @@ Recuperável via session_id ou analysis_id!
 
 **Next:** Testar e verificar que tudo funciona
 
+

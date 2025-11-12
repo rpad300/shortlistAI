@@ -145,3 +145,4 @@ Ctrl+Shift+R
 
 **Teste /pricing em português!** 🎉
 
+

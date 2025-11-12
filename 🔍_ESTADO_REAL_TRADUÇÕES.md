@@ -170,3 +170,4 @@ E eu adiciono:
 1. Lançar agora com Home + Pricing 100%?
 2. Ou traduzir tudo 100% (mais 2-3h)?
 
+

@@ -202,3 +202,4 @@ Ctrl+Shift+R
 **Desenvolvido com Gemini AI** 🤖  
 **ShortlistAI - Ready to Launch!** 🚀
 
+

@@ -127,3 +127,4 @@ Ctrl+Shift+R
 
 **Status**: Arquivos criados, aguardando restart do frontend ✅
 
+

@@ -107,3 +107,4 @@ import { Hero } from './components/Hero';
 Gerado com **Gemini Nano Banana**  
 API: https://ai.google.dev/gemini-api/docs/image-generation
 
+

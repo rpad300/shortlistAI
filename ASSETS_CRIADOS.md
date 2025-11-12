@@ -276,3 +276,4 @@ Use qualquer editor vetorial:
 **Gerado em**: 10 de Novembro de 2025  
 **Tool**: Gemini Nano Banana + Manual SVG Design
 
+
