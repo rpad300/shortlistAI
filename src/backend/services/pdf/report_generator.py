@@ -88,11 +88,11 @@ class PDFReportGenerator:
             parent=branded_styles['BrandedSubSection']
         ))
         
-        # Body text justified
+        # Body text justified with larger font
         self.styles.add(ParagraphStyle(
             name='BodyJustified',
             parent=self.styles['BodyText'],
-            fontSize=11,
+            fontSize=12,  # Increased from 11
             alignment=TA_JUSTIFY,
             spaceAfter=12
         ))
@@ -619,6 +619,158 @@ class PDFReportGenerator:
                             spaceAfter=4
                         )
                     ))
+            
+            # Intro Pitch
+            intro_pitch = result.get('intro_pitch', '')
+            if intro_pitch:
+                candidate_elements.append(Spacer(1, 0.15*inch))
+                candidate_elements.append(Paragraph(
+                    "<b>🎤 Intro Pitch:</b>",
+                    self.styles['BodyText']
+                ))
+                candidate_elements.append(Paragraph(
+                    intro_pitch,
+                    ParagraphStyle(
+                        name='IntroPitch',
+                        parent=self.styles['BodyText'],
+                        leftIndent=15,
+                        fontSize=10,
+                        spaceAfter=4,
+                        textColor=colors.HexColor('#3b82f6')
+                    )
+                ))
+            
+            # Gap Strategies
+            gap_strategies = self._normalize_list_field(result.get('gap_strategies', []))
+            if gap_strategies:
+                candidate_elements.append(Spacer(1, 0.15*inch))
+                candidate_elements.append(Paragraph(
+                    "<b>💡 Strategies to Address Gaps & Risks:</b>",
+                    self.styles['BodyText']
+                ))
+                for strategy in gap_strategies:
+                    candidate_elements.append(Paragraph(
+                        f"• {strategy}",
+                        ParagraphStyle(
+                            name='GapStrategy',
+                            parent=self.styles['BodyText'],
+                            leftIndent=15,
+                            fontSize=10,
+                            spaceAfter=4
+                        )
+                    ))
+            
+            # Preparation Tips
+            preparation_tips = self._normalize_list_field(result.get('preparation_tips', []))
+            if preparation_tips:
+                candidate_elements.append(Spacer(1, 0.15*inch))
+                candidate_elements.append(Paragraph(
+                    "<b>📚 Study Topics for Interview:</b>",
+                    self.styles['BodyText']
+                ))
+                for tip in preparation_tips:
+                    candidate_elements.append(Paragraph(
+                        f"• {tip}",
+                        ParagraphStyle(
+                            name='PrepTip',
+                            parent=self.styles['BodyText'],
+                            leftIndent=15,
+                            fontSize=10,
+                            spaceAfter=4
+                        )
+                    ))
+            
+            # AI Recommendation
+            recommendation = result.get('recommendation', '')
+            if recommendation:
+                candidate_elements.append(Spacer(1, 0.15*inch))
+                candidate_elements.append(Paragraph(
+                    "<b>💡 AI Recommendation:</b>",
+                    self.styles['BodyText']
+                ))
+                candidate_elements.append(Paragraph(
+                    recommendation,
+                    ParagraphStyle(
+                        name='Recommendation',
+                        parent=self.styles['BodyText'],
+                        leftIndent=15,
+                        fontSize=10,
+                        spaceAfter=4,
+                        textColor=colors.HexColor('#059669')
+                    )
+                ))
+            
+            # Enrichment Data
+            enrichment = result.get('enrichment', {})
+            if enrichment and (enrichment.get('company') or enrichment.get('candidate')):
+                candidate_elements.append(Spacer(1, 0.15*inch))
+                candidate_elements.append(Paragraph(
+                    "<b>🔍 Enrichment Data (Brave Search):</b>",
+                    self.styles['BodyText']
+                ))
+                
+                # Company enrichment
+                if enrichment.get('company'):
+                    company = enrichment['company']
+                    candidate_elements.append(Paragraph(
+                        "<b>Company Information:</b>",
+                        ParagraphStyle(
+                            name='EnrichmentSubHeader',
+                            parent=self.styles['BodyText'],
+                            leftIndent=15,
+                            fontSize=10,
+                            spaceAfter=4
+                        )
+                    ))
+                    if company.get('name'):
+                        candidate_elements.append(Paragraph(
+                            f"• Name: {company['name']}",
+                            ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
+                        ))
+                    if company.get('website'):
+                        candidate_elements.append(Paragraph(
+                            f"• Website: {company['website']}",
+                            ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
+                        ))
+                    if company.get('industry'):
+                        candidate_elements.append(Paragraph(
+                            f"• Industry: {company['industry']}",
+                            ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
+                        ))
+                    if company.get('size'):
+                        candidate_elements.append(Paragraph(
+                            f"• Size: {company['size']}",
+                            ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
+                        ))
+                
+                # Candidate enrichment
+                if enrichment.get('candidate'):
+                    cand = enrichment['candidate']
+                    candidate_elements.append(Paragraph(
+                        "<b>Candidate Professional Profile:</b>",
+                        ParagraphStyle(
+                            name='EnrichmentSubHeader',
+                            parent=self.styles['BodyText'],
+                            leftIndent=15,
+                            fontSize=10,
+                            spaceAfter=4
+                        )
+                    ))
+                    if cand.get('linkedin_profile'):
+                        candidate_elements.append(Paragraph(
+                            f"• LinkedIn: {cand['linkedin_profile']}",
+                            ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
+                        ))
+                    if cand.get('github_profile'):
+                        candidate_elements.append(Paragraph(
+                            f"• GitHub: {cand['github_profile']}",
+                            ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
+                        ))
+                    if cand.get('portfolio_url'):
+                        candidate_elements.append(Paragraph(
+                            f"• Portfolio: {cand['portfolio_url']}",
+                            ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
+                        ))
             
             # Wrap in KeepTogether to avoid page breaks in middle of candidate
             elements.append(KeepTogether(candidate_elements))

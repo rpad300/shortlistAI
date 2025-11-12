@@ -151,10 +151,11 @@ const InterviewerStep7: React.FC = () => {
         width: '100%',
         overflow: 'visible',
         wordWrap: 'break-word',
-        overflowWrap: 'break-word'
+        overflowWrap: 'break-word',
+        fontSize: '1rem'
       }}>
-        <h1>{t('interviewer.step7_title')}</h1>
-        <p className="step-subtitle">Ranked candidates for your position</p>
+        <h1 style={{ fontSize: '2rem' }}>{t('interviewer.step7_title')}</h1>
+        <p className="step-subtitle" style={{ fontSize: '1.125rem' }}>Ranked candidates for your position</p>
         
         {/* Report Code Banner */}
         {reportCode && (
@@ -184,7 +185,7 @@ const InterviewerStep7: React.FC = () => {
             marginBottom: 'var(--spacing-xl)',
             border: '2px solid var(--color-accent-primary)'
           }}>
-            <h2 style={{ marginTop: 0, color: 'var(--color-accent-primary)' }}>
+            <h2 style={{ marginTop: 0, color: 'var(--color-accent-primary)', fontSize: '1.5rem' }}>
               📊 Executive Recommendation
             </h2>
             
@@ -196,10 +197,10 @@ const InterviewerStep7: React.FC = () => {
                 borderRadius: 'var(--radius-md)',
                 marginBottom: 'var(--spacing-lg)'
               }}>
-                <h3 style={{ margin: '0 0 var(--spacing-sm) 0' }}>
+                <h3 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem' }}>
                   ✅ Top Candidate: {executiveRec.top_recommendation.candidate_name}
                 </h3>
-                <p style={{ margin: 0, fontSize: 'var(--font-size-md)' }}>
+                <p style={{ margin: 0, fontSize: '1.125rem' }}>
                   {executiveRec.top_recommendation.summary}
                 </p>
               </div>
@@ -213,19 +214,20 @@ const InterviewerStep7: React.FC = () => {
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word'
               }}>
-                <h3>Summary</h3>
-                <p style={{ margin: 0 }}>{executiveRec.executive_summary}</p>
+                <h3 style={{ fontSize: '1.25rem' }}>Summary</h3>
+                <p style={{ margin: 0, fontSize: '1rem' }}>{executiveRec.executive_summary}</p>
               </div>
             )}
             
             {executiveRec.key_insights && executiveRec.key_insights.length > 0 && (
               <div>
-                <h3>Key Insights</h3>
+                <h3 style={{ fontSize: '1.25rem' }}>Key Insights</h3>
                 <ul style={{ 
                   lineHeight: '1.8',
                   paddingLeft: 'var(--spacing-lg)',
                   wordWrap: 'break-word',
-                  overflowWrap: 'break-word'
+                  overflowWrap: 'break-word',
+                  fontSize: '1rem'
                 }}>
                   {executiveRec.key_insights.map((insight, idx) => (
                     <li key={idx} style={{ marginBottom: 'var(--spacing-xs)' }}>{insight}</li>
@@ -245,14 +247,15 @@ const InterviewerStep7: React.FC = () => {
             marginBottom: 'var(--spacing-xl)',
             border: '2px solid var(--color-error)'
           }}>
-            <h2 style={{ color: 'var(--color-error)', marginTop: 0 }}>
+            <h2 style={{ color: 'var(--color-error)', marginTop: 0, fontSize: '1.5rem' }}>
               🚫 Hard Blockers (Must-Have Requirements)
             </h2>
             <ul style={{ 
               paddingLeft: 'var(--spacing-lg)',
               lineHeight: '1.8',
               wordWrap: 'break-word',
-              overflowWrap: 'break-word'
+              overflowWrap: 'break-word',
+              fontSize: '1rem'
             }}>
               {hardBlockers.map((blocker, idx) => (
                 <li key={idx} style={{ marginBottom: 'var(--spacing-xs)' }}>{blocker}</li>
@@ -263,7 +266,7 @@ const InterviewerStep7: React.FC = () => {
         
         {/* Ranking Table */}
         <div className="form-section">
-          <h2>Candidate Ranking ({results.length} total)</h2>
+          <h2 style={{ fontSize: '1.5rem' }}>Candidate Ranking ({results.length} total)</h2>
           
           <div style={{ overflowX: 'auto', marginBottom: 'var(--spacing-lg)' }}>
             <table style={{ 
@@ -352,7 +355,7 @@ const InterviewerStep7: React.FC = () => {
             wordWrap: 'break-word',
             overflowWrap: 'break-word'
           }}>
-            <h2>
+            <h2 style={{ fontSize: '1.75rem' }}>
               {results[selectedCandidate].summary?.full_name || 
                results[selectedCandidate].candidate_label || 
                `Candidate ${selectedCandidate + 1}`} - Detailed Analysis
@@ -363,7 +366,7 @@ const InterviewerStep7: React.FC = () => {
                 backgroundColor: 'var(--color-bg-primary)', 
                 borderRadius: 'var(--radius-md)',
                 marginBottom: 'var(--spacing-lg)',
-                fontSize: 'var(--font-size-sm)'
+                fontSize: '1rem'
               }}>
                 {results[selectedCandidate].summary.current_role && (
                   <div><strong>Role:</strong> {results[selectedCandidate].summary.current_role}</div>
@@ -399,12 +402,13 @@ const InterviewerStep7: React.FC = () => {
             </div>
             
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-              <h3 style={{ color: 'var(--color-success)' }}>✓ Strengths</h3>
+              <h3 style={{ color: 'var(--color-success)', fontSize: '1.25rem' }}>✓ Strengths</h3>
               <ul style={{ 
                 paddingLeft: 'var(--spacing-lg)',
                 lineHeight: '1.8',
                 wordWrap: 'break-word',
-                overflowWrap: 'break-word'
+                overflowWrap: 'break-word',
+                fontSize: '1rem'
               }}>
                 {results[selectedCandidate].strengths.map((s, i) => (
                   <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{s}</li>
@@ -413,12 +417,13 @@ const InterviewerStep7: React.FC = () => {
             </div>
             
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-              <h3 style={{ color: 'var(--color-warning)' }}>⚠️ Risks & Gaps</h3>
+              <h3 style={{ color: 'var(--color-warning)', fontSize: '1.25rem' }}>⚠️ Risks & Gaps</h3>
               <ul style={{ 
                 paddingLeft: 'var(--spacing-lg)',
                 lineHeight: '1.8',
                 wordWrap: 'break-word',
-                overflowWrap: 'break-word'
+                overflowWrap: 'break-word',
+                fontSize: '1rem'
               }}>
                 {results[selectedCandidate].risks.map((r, i) => (
                   <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{r}</li>
@@ -428,12 +433,13 @@ const InterviewerStep7: React.FC = () => {
             
             {results[selectedCandidate].hard_blocker_flags && results[selectedCandidate].hard_blocker_flags.length > 0 && (
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ color: 'var(--color-error)' }}>🚫 Hard Blocker Violations</h3>
+                <h3 style={{ color: 'var(--color-error)', fontSize: '1.25rem' }}>🚫 Hard Blocker Violations</h3>
                 <ul style={{ 
                   paddingLeft: 'var(--spacing-lg)',
                   lineHeight: '1.8',
                   wordWrap: 'break-word',
-                  overflowWrap: 'break-word'
+                  overflowWrap: 'break-word',
+                  fontSize: '1rem'
                 }}>
                   {results[selectedCandidate].hard_blocker_flags.map((flag, i) => (
                     <li key={i} style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--color-error)' }}>{flag}</li>
@@ -443,12 +449,13 @@ const InterviewerStep7: React.FC = () => {
             )}
             
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-              <h3>❓ Suggested Interview Questions</h3>
+              <h3 style={{ fontSize: '1.25rem' }}>❓ Suggested Interview Questions</h3>
               <ol style={{ 
                 paddingLeft: 'var(--spacing-lg)',
                 lineHeight: '1.8',
                 wordWrap: 'break-word',
-                overflowWrap: 'break-word'
+                overflowWrap: 'break-word',
+                fontSize: '1rem'
               }}>
                 {results[selectedCandidate].questions.map((q, i) => (
                   <li key={i} style={{ marginBottom: 'var(--spacing-sm)' }}>{q}</li>
@@ -458,7 +465,7 @@ const InterviewerStep7: React.FC = () => {
             
             {results[selectedCandidate].intro_pitch && (
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ color: 'var(--color-accent-primary)' }}>🎤 Intro Pitch</h3>
+                <h3 style={{ color: 'var(--color-accent-primary)', fontSize: '1.25rem' }}>🎤 Intro Pitch</h3>
                 <p style={{ 
                   padding: 'var(--spacing-md)', 
                   backgroundColor: 'var(--color-bg-primary)', 
@@ -475,12 +482,13 @@ const InterviewerStep7: React.FC = () => {
             
             {results[selectedCandidate].gap_strategies && results[selectedCandidate].gap_strategies.length > 0 && (
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ color: 'var(--color-accent-primary)' }}>💡 Strategies to Address Gaps & Risks</h3>
+                <h3 style={{ color: 'var(--color-accent-primary)', fontSize: '1.25rem' }}>💡 Strategies to Address Gaps & Risks</h3>
                 <ul style={{ 
                   paddingLeft: 'var(--spacing-lg)',
                   lineHeight: '1.8',
                   wordWrap: 'break-word',
-                  overflowWrap: 'break-word'
+                  overflowWrap: 'break-word',
+                  fontSize: '1rem'
                 }}>
                   {results[selectedCandidate].gap_strategies.map((strategy, i) => (
                     <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{strategy}</li>
@@ -491,15 +499,16 @@ const InterviewerStep7: React.FC = () => {
             
             {results[selectedCandidate].preparation_tips && results[selectedCandidate].preparation_tips.length > 0 && (
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ color: 'var(--color-accent-primary)' }}>📚 Study Topics for Interview</h3>
-                <p style={{ marginBottom: 'var(--spacing-sm)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                <h3 style={{ color: 'var(--color-accent-primary)', fontSize: '1.25rem' }}>📚 Study Topics for Interview</h3>
+                <p style={{ marginBottom: 'var(--spacing-sm)', fontSize: '1rem', color: 'var(--color-text-secondary)' }}>
                   Topics to study to address the identified risks and gaps:
                 </p>
                 <ul style={{ 
                   paddingLeft: 'var(--spacing-lg)',
                   lineHeight: '1.8',
                   wordWrap: 'break-word',
-                  overflowWrap: 'break-word'
+                  overflowWrap: 'break-word',
+                  fontSize: '1rem'
                 }}>
                   {results[selectedCandidate].preparation_tips.map((tip, i) => (
                     <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{tip}</li>
@@ -510,7 +519,7 @@ const InterviewerStep7: React.FC = () => {
             
             {results[selectedCandidate].recommendation && (
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ color: 'var(--color-accent-primary)' }}>💡 AI Recommendation</h3>
+                <h3 style={{ color: 'var(--color-accent-primary)', fontSize: '1.25rem' }}>💡 AI Recommendation</h3>
                 <p style={{ 
                   padding: 'var(--spacing-md)', 
                   backgroundColor: 'var(--color-bg-primary)', 
@@ -527,7 +536,7 @@ const InterviewerStep7: React.FC = () => {
             
             {results[selectedCandidate].enrichment && (results[selectedCandidate].enrichment.company || results[selectedCandidate].enrichment.candidate) && (
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <h3 style={{ color: 'var(--color-accent-primary)' }}>🔍 Enrichment Data (Brave Search)</h3>
+                <h3 style={{ color: 'var(--color-accent-primary)', fontSize: '1.25rem' }}>🔍 Enrichment Data (Brave Search)</h3>
                 <div style={{ 
                   padding: 'var(--spacing-md)', 
                   backgroundColor: 'var(--color-bg-primary)', 
@@ -538,7 +547,7 @@ const InterviewerStep7: React.FC = () => {
                 }}>
                   {results[selectedCandidate].enrichment?.company && (
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                      <h4 style={{ fontSize: 'var(--font-size-md)', marginBottom: 'var(--spacing-sm)' }}>Company Information</h4>
+                      <h4 style={{ fontSize: '1.125rem', marginBottom: 'var(--spacing-sm)' }}>Company Information</h4>
                       {results[selectedCandidate].enrichment.company.name && (
                         <div><strong>Name:</strong> {results[selectedCandidate].enrichment.company.name}</div>
                       )}
@@ -575,7 +584,7 @@ const InterviewerStep7: React.FC = () => {
                   )}
                   {results[selectedCandidate].enrichment.candidate && (
                     <div>
-                      <h4 style={{ fontSize: 'var(--font-size-md)', marginBottom: 'var(--spacing-sm)' }}>Candidate Professional Profile</h4>
+                      <h4 style={{ fontSize: '1.125rem', marginBottom: 'var(--spacing-sm)' }}>Candidate Professional Profile</h4>
                       {results[selectedCandidate].enrichment.candidate.professional_summary && (
                         <div style={{ wordWrap: 'break-word', overflowWrap: 'break-word', marginBottom: 'var(--spacing-sm)' }}><strong>Summary:</strong> {results[selectedCandidate].enrichment.candidate.professional_summary}</div>
                       )}
