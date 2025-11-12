@@ -82,10 +82,11 @@ const CandidateStep5: React.FC = () => {
   }
   
   return (
-    <div className="step-container">
-      <div className="step-content" style={{ maxWidth: '900px' }}>
-        <h1>{t('candidate.step5_title')}</h1>
-        <p className="step-subtitle">Your personalized interview preparation guide</p>
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content" style={{ maxWidth: '900px' }}>
+          <h1>{t('candidate.step5_title')}</h1>
+          <p className="step-subtitle">Your personalized interview preparation guide</p>
         
         {results.company_name && (
           <div style={{

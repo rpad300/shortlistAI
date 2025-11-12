@@ -202,10 +202,11 @@ const InterviewerStep4: React.FC = () => {
   };
   
   return (
-    <div className="step-container">
-      <div className="step-content" style={{ maxWidth: '700px' }}>
-        <h1>{t('interviewer.step4_title')}</h1>
-        <p className="step-subtitle">Configure scoring weights and must-have requirements</p>
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content" style={{ maxWidth: '700px' }}>
+          <h1>{t('interviewer.step4_title')}</h1>
+          <p className="step-subtitle">Configure scoring weights and must-have requirements</p>
         
         <StepHelper
           title="⚖️ What are weights and blockers?"
