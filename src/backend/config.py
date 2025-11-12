@@ -10,13 +10,29 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import Field, validator
 from typing import Optional
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-# Load .env from project root (2 levels up from this file)
-env_path = Path(__file__).parent.parent.parent / ".env"
-if env_path.exists():
-    load_dotenv(env_path, override=True)
-    print(f"[Config] Loaded .env from: {env_path}")
+# Load .env - works in both dev and Docker
+env_file = find_dotenv()
+if env_file:
+    load_dotenv(env_file, override=True)
+    print(f"[Config] Loaded .env from: {env_file}")
+else:
+    # Try common locations
+    possible_paths = [
+        Path("/app/.env"),  # Docker
+        Path(__file__).parent / ".env",  # Same directory
+        Path(__file__).parent.parent / ".env",  # src/
+        Path(__file__).parent.parent.parent / ".env",  # ShortlistAI/
+        Path.cwd() / ".env",  # Current working directory
+    ]
+    for env_path in possible_paths:
+        if env_path.exists():
+            load_dotenv(env_path, override=True)
+            print(f"[Config] Loaded .env from: {env_path}")
+            break
+    else:
+        print("[Config] No .env file found, using environment variables from docker-compose")
 
 
 class Settings(BaseSettings):
