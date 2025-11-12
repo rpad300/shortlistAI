@@ -5,18 +5,78 @@ This router provides CRUD operations for managing AI prompts
 through the Admin interface.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Header
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
 
-from middleware.auth import require_admin_auth
 from services.database.prompt_service import get_prompt_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin/prompts", tags=["Admin - Prompts"])
+
+
+# ============================================================================
+# Auth Helper
+# ============================================================================
+
+async def get_current_admin(authorization: Optional[str] = Header(None)):
+    """
+    Dependency to verify admin authentication using Supabase Auth.
+    
+    Validates Bearer token and verifies admin role in user_metadata.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    token = authorization.replace("Bearer ", "")
+    
+    try:
+        from database import get_supabase_client
+        client = get_supabase_client()
+        
+        # Verify token with Supabase Auth
+        user_response = client.auth.get_user(token)
+        
+        if not user_response or not user_response.user:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or expired token",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        
+        user = user_response.user
+        user_metadata = user.user_metadata or {}
+        
+        # Verify admin role
+        user_role = user_metadata.get("role", "")
+        if user_role not in ["admin", "super_admin"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Admin access required"
+            )
+        
+        return {
+            "id": user.id,
+            "email": user.email,
+            "role": user_role,
+            "username": user_metadata.get("username", user.email)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Token verification error: {e}")
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication failed"
+        )
 
 
 # ============================================================================
@@ -112,7 +172,7 @@ async def list_prompts(
     category: Optional[str] = None,
     is_active: Optional[bool] = None,
     language: Optional[str] = None,
-    admin: dict = Depends(require_admin_auth)
+    admin: dict = Depends(get_current_admin)
 ):
     """
     Get all prompts with optional filtering.
@@ -142,7 +202,7 @@ async def list_prompts(
 
 
 @router.get("/stats", response_model=PromptStatsResponse)
-async def get_prompt_stats(admin: dict = Depends(require_admin_auth)):
+async def get_prompt_stats(admin: dict = Depends(get_current_admin)):
     """
     Get statistics about prompts.
     
@@ -165,7 +225,7 @@ async def get_prompt_stats(admin: dict = Depends(require_admin_auth)):
 @router.get("/{prompt_id}")
 async def get_prompt(
     prompt_id: str,
-    admin: dict = Depends(require_admin_auth)
+    admin: dict = Depends(get_current_admin)
 ):
     """
     Get a single prompt by ID.
@@ -191,7 +251,7 @@ async def get_prompt(
 @router.post("/", status_code=201)
 async def create_prompt(
     prompt: PromptCreate,
-    admin: dict = Depends(require_admin_auth)
+    admin: dict = Depends(get_current_admin)
 ):
     """
     Create a new prompt.
@@ -240,7 +300,7 @@ async def create_prompt(
 async def update_prompt(
     prompt_id: str,
     update: PromptUpdate,
-    admin: dict = Depends(require_admin_auth)
+    admin: dict = Depends(get_current_admin)
 ):
     """
     Update an existing prompt.
@@ -281,7 +341,7 @@ async def update_prompt(
 @router.delete("/{prompt_id}")
 async def delete_prompt(
     prompt_id: str,
-    admin: dict = Depends(require_admin_auth)
+    admin: dict = Depends(get_current_admin)
 ):
     """
     Delete a prompt (soft delete - sets is_active to false).
@@ -307,7 +367,7 @@ async def delete_prompt(
 @router.get("/{prompt_id}/versions")
 async def get_prompt_versions(
     prompt_id: str,
-    admin: dict = Depends(require_admin_auth)
+    admin: dict = Depends(get_current_admin)
 ):
     """
     Get all version history for a prompt.
@@ -332,7 +392,7 @@ async def get_prompt_versions(
 async def rollback_prompt(
     prompt_id: str,
     version: int,
-    admin: dict = Depends(require_admin_auth)
+    admin: dict = Depends(get_current_admin)
 ):
     """
     Rollback a prompt to a previous version.
@@ -371,7 +431,7 @@ async def get_prompt_by_key(
     prompt_key: str,
     language: str = "en",
     version: Optional[int] = None,
-    admin: dict = Depends(require_admin_auth)
+    admin: dict = Depends(get_current_admin)
 ):
     """
     Get a prompt by its key.
@@ -406,7 +466,7 @@ async def get_prompt_by_key(
 
 
 @router.get("/categories/list")
-async def list_categories(admin: dict = Depends(require_admin_auth)):
+async def list_categories(admin: dict = Depends(get_current_admin)):
     """
     Get list of all prompt categories in use.
     
