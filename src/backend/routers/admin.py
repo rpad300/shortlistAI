@@ -478,3 +478,149 @@ async def list_job_postings(
     except Exception as e:
         logger.error(f"Error listing job postings: {e}")
         raise HTTPException(status_code=500, detail="Error retrieving job postings")
+
+
+# =============================================================================
+# Admin User Management
+# =============================================================================
+
+class CreateUserRequest(BaseModel):
+    """Request to create new admin user."""
+    email: EmailStr
+    password: str
+    email_confirm: bool = True
+    user_metadata: dict
+
+
+@router.post("/create-user")
+async def create_admin_user(
+    user_data: CreateUserRequest,
+    admin=Depends(require_super_admin)
+):
+    """Create new admin user via Supabase Auth (super admin only)."""
+    from database import get_supabase_client
+    
+    try:
+        client = get_supabase_client()
+        
+        # Verify role in metadata
+        role = user_data.user_metadata.get("role", "")
+        if role not in ["admin", "super_admin"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid role. Must be 'admin' or 'super_admin'"
+            )
+        
+        # Create user via Supabase Auth Admin API
+        response = client.auth.admin.create_user({
+            "email": user_data.email,
+            "password": user_data.password,
+            "email_confirm": user_data.email_confirm,
+            "user_metadata": user_data.user_metadata
+        })
+        
+        if not response or not response.user:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create user"
+            )
+        
+        logger.info(f"Admin user created: {response.user.email} - Role: {role}")
+        
+        return JSONResponse({
+            "message": "Admin user created successfully",
+            "user": {
+                "id": response.user.id,
+                "email": response.user.email,
+                "role": role
+            }
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating admin user: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error creating admin user: {str(e)}"
+        )
+
+
+@router.get("/list-users")
+async def list_admin_users(
+    admin=Depends(require_super_admin)
+):
+    """List all admin users from Supabase Auth (super admin only)."""
+    from database import get_supabase_client
+    
+    try:
+        client = get_supabase_client()
+        
+        # List all users from Supabase Auth
+        response = client.auth.admin.list_users()
+        
+        # Filter users with admin roles
+        admin_users = []
+        for user in response:
+            user_metadata = user.user_metadata or {}
+            role = user_metadata.get("role", "")
+            if role in ["admin", "super_admin"]:
+                admin_users.append({
+                    "id": user.id,
+                    "email": user.email,
+                    "role": role,
+                    "is_active": not user.banned_until,
+                    "created_at": user.created_at,
+                    "last_sign_in_at": user.last_sign_in_at,
+                    "first_name": user_metadata.get("first_name"),
+                    "last_name": user_metadata.get("last_name")
+                })
+        
+        return JSONResponse({
+            "total": len(admin_users),
+            "admins": admin_users
+        })
+        
+    except Exception as e:
+        logger.error(f"Error listing admin users: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Error retrieving admin users"
+        )
+
+
+@router.delete("/delete-user/{user_id}")
+async def delete_admin_user(
+    user_id: str,
+    admin=Depends(require_super_admin)
+):
+    """Delete admin user from Supabase Auth (super admin only)."""
+    from database import get_supabase_client
+    
+    try:
+        # Prevent deleting yourself
+        if user_id == admin["id"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete your own account"
+            )
+        
+        client = get_supabase_client()
+        
+        # Delete user via Supabase Auth Admin API
+        client.auth.admin.delete_user(user_id)
+        
+        logger.info(f"Admin user deleted: {user_id}")
+        
+        return JSONResponse({
+            "message": "Admin user deleted successfully"
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting admin user: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Error deleting admin user"
+        )

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@hooks/AdminAuthContext';
 import api from '@services/api';
+import { exportInterviewersToCSV } from '@utils/exportCSV';
 import './AdminCandidates.css';
 
 interface Interviewer {
@@ -88,6 +89,9 @@ const AdminInterviewers: React.FC = () => {
         <div className="candidates-section">
           <div className="section-header">
             <h2>Interviewers ({pagination.total})</h2>
+            <button onClick={() => exportInterviewersToCSV(interviewers)} className="btn-secondary" style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
+              Export CSV
+            </button>
           </div>
 
           {loading ? (

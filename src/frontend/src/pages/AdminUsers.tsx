@@ -59,8 +59,8 @@ const AdminUsers: React.FC = () => {
         include_inactive: 'false'
       });
 
-      const response = await api.get(`/api/admin/admin-users?${params}`);
-      const data: AdminUsersResponse = response.data;
+      const response = await api.get(`/api/admin/list-users`);
+      const data = response.data;
       
       setAdmins(data.admins);
       setPagination(prev => ({
@@ -125,7 +125,7 @@ const AdminUsers: React.FC = () => {
     }
 
     try {
-      await api.delete(`/api/admin/admin-users/${adminId}`);
+      await api.delete(`/api/admin/delete-user/${adminId}`);
       loadAdmins(); // Reload the list
     } catch (error: any) {
       console.error('Error deleting admin:', error);
@@ -135,7 +135,6 @@ const AdminUsers: React.FC = () => {
 
   const CreateAdminModal = () => {
     const [formData, setFormData] = useState({
-      username: '',
       email: '',
       password: '',
       first_name: '',
@@ -149,11 +148,22 @@ const AdminUsers: React.FC = () => {
       setSubmitting(true);
 
       try {
-        await api.post('/api/admin/admin-users', formData);
+        // Create user via Supabase Auth Admin API
+        const response = await api.post('/api/admin/create-user', {
+          email: formData.email,
+          password: formData.password,
+          email_confirm: true,
+          user_metadata: {
+            role: formData.role,
+            first_name: formData.first_name,
+            last_name: formData.last_name
+          }
+        });
+        
+        alert(`Admin user created successfully! Email: ${formData.email}`);
         setShowCreateModal(false);
         loadAdmins();
         setFormData({
-          username: '',
           email: '',
           password: '',
           first_name: '',
@@ -178,23 +188,24 @@ const AdminUsers: React.FC = () => {
           <form onSubmit={handleSubmit} className="modal-form">
             <div className="form-row">
               <div className="form-group">
-                <label>Username *</label>
-                <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
-                  required
-                  minLength={3}
-                  maxLength={50}
-                />
-              </div>
-              <div className="form-group">
                 <label>Email *</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   required
+                  placeholder="admin@shortlistai.com"
+                />
+              </div>
+              <div className="form-group">
+                <label>Password *</label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  required
+                  minLength={8}
+                  placeholder="Minimum 8 characters"
                 />
               </div>
             </div>
@@ -217,16 +228,6 @@ const AdminUsers: React.FC = () => {
               </div>
             </div>
             <div className="form-row">
-              <div className="form-group">
-                <label>Password *</label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  required
-                  minLength={8}
-                />
-              </div>
               <div className="form-group">
                 <label>Role *</label>
                 <select

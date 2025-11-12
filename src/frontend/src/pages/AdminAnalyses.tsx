@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@hooks/AdminAuthContext';
 import api from '@services/api';
+import { exportAnalysesToCSV } from '@utils/exportCSV';
 import './AdminCandidates.css';
 
 interface Analysis {
@@ -130,8 +131,13 @@ const AdminAnalyses: React.FC = () => {
         <div className="candidates-section">
           <div className="section-header">
             <h2>Analyses ({pagination.total})</h2>
-            <div className="pagination-info">
-              Showing {pagination.offset + 1}-{Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total}
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)', alignItems: 'center' }}>
+              <button onClick={() => exportAnalysesToCSV(analyses)} className="btn-secondary" style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
+                Export CSV
+              </button>
+              <div className="pagination-info">
+                Showing {pagination.offset + 1}-{Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total}
+              </div>
             </div>
           </div>
 
