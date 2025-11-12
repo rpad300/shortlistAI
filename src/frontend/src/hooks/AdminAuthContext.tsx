@@ -1,0 +1,111 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import api from '@services/api';
+
+interface AdminUser {
+  username: string;
+  role: string;
+  authenticated: boolean;
+}
+
+interface AdminAuthContextType {
+  user: AdminUser | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  isAuthenticated: boolean;
+  isSuperAdmin: boolean;
+}
+
+const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
+
+export const useAdminAuth = () => {
+  const context = useContext(AdminAuthContext);
+  if (context === undefined) {
+    throw new Error('useAdminAuth must be used within an AdminAuthProvider');
+  }
+  return context;
+};
+
+interface AdminAuthProviderProps {
+  children: ReactNode;
+}
+
+export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<AdminUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check if user is authenticated on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Set token in API headers
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      // Verify token with backend
+      const response = await api.get('/api/admin/me');
+      setUser(response.data);
+    } catch (error) {
+      // Token is invalid, remove it
+      localStorage.removeItem('admin_token');
+      delete api.defaults.headers.common['Authorization'];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await api.post('/api/admin/login', {
+        email,
+        password
+      });
+
+      const { access_token } = response.data;
+      
+      // Store token
+      localStorage.setItem('admin_token', access_token);
+      
+      // Set token in API headers
+      api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      
+      // Get user info
+      const userResponse = await api.get('/api/admin/me');
+      setUser(userResponse.data);
+      
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('admin_token');
+    delete api.defaults.headers.common['Authorization'];
+    setUser(null);
+  };
+
+  const value = {
+    user,
+    loading,
+    login,
+    logout,
+    isAuthenticated: !!user,
+    isSuperAdmin: user?.role === 'super_admin'
+  };
+
+  return (
+    <AdminAuthContext.Provider value={value}>
+      {children}
+    </AdminAuthContext.Provider>
+  );
+};

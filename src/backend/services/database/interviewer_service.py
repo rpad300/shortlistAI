@@ -4,7 +4,7 @@ Interviewer database service.
 Handles CRUD operations for interviewers table.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from uuid import UUID
 from datetime import datetime
 from database import get_supabase_client
@@ -196,6 +196,34 @@ class InterviewerService:
         except Exception as e:
             logger.error(f"Error getting interviewer by ID: {e}")
             return None
+    
+    async def list_all(
+        self,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        List all interviewers (for Admin use).
+        
+        Args:
+            limit: Maximum number of results
+            offset: Offset for pagination
+            
+        Returns:
+            List of interviewer dicts
+        """
+        try:
+            result = self.client.table(self.table)\
+                .select("*")\
+                .order("created_at", desc=True)\
+                .range(offset, offset + limit - 1)\
+                .execute()
+            
+            return result.data or []
+            
+        except Exception as e:
+            logger.error(f"Error listing interviewers: {e}")
+            return []
 
 
 # Global service instance

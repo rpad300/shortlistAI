@@ -136,6 +136,68 @@ class AnalysisService:
         except Exception as e:
             logger.error(f"Error getting analyses for job posting: {e}")
             return []
+    
+    async def list_all(
+        self,
+        mode: Optional[str] = None,
+        provider: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        List all analyses with optional filtering (for Admin use).
+        
+        Args:
+            mode: Optional filter by 'interviewer' or 'candidate'
+            provider: Optional filter by AI provider
+            limit: Maximum number of results
+            offset: Offset for pagination
+            
+        Returns:
+            List of analysis dicts
+        """
+        try:
+            query = self.client.table(self.table).select("*")
+            
+            if mode:
+                query = query.eq("mode", mode)
+            
+            if provider:
+                query = query.eq("provider", provider)
+            
+            query = query.order("created_at", desc=True)\
+                .range(offset, offset + limit - 1)
+            
+            result = query.execute()
+            
+            return result.data or []
+            
+        except Exception as e:
+            logger.error(f"Error listing analyses: {e}")
+            return []
+    
+    async def get_analyses_by_candidate(self, candidate_id: UUID) -> List[Dict[str, Any]]:
+        """
+        Get all analyses for a specific candidate.
+        
+        Args:
+            candidate_id: Candidate UUID
+            
+        Returns:
+            List of analysis dicts for the candidate
+        """
+        try:
+            result = self.client.table(self.table)\
+                .select("*")\
+                .eq("candidate_id", str(candidate_id))\
+                .order("created_at", desc=True)\
+                .execute()
+            
+            return result.data or []
+            
+        except Exception as e:
+            logger.error(f"Error getting analyses for candidate: {e}")
+            return []
 
 
 # Global service instance

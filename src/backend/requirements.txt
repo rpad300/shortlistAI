@@ -4,7 +4,7 @@ uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 
 # Database
-supabase>=2.10.0  # Updated to support new API keys (sb_secret_*, sb_publishable_*)
+supabase>=2.11.0  # Updated to support new API keys (sb_secret_*, sb_publishable_*)
 # psycopg2-binary==2.9.9  # Removed - not needed with Supabase client
 # sqlalchemy==2.0.25  # Removed - not needed with Supabase client
 

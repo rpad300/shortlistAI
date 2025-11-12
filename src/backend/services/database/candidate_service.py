@@ -231,6 +231,52 @@ class CandidateService:
         except Exception as e:
             logger.error(f"Error listing candidates: {e}")
             return []
+    
+    async def get_cvs_by_candidate(self, candidate_id: UUID) -> List[Dict[str, Any]]:
+        """
+        Get all CVs for a specific candidate.
+        
+        Args:
+            candidate_id: Candidate UUID
+            
+        Returns:
+            List of CV dicts for the candidate
+        """
+        try:
+            result = self.client.table("cvs")\
+                .select("*")\
+                .eq("candidate_id", str(candidate_id))\
+                .order("created_at", desc=True)\
+                .execute()
+            
+            return result.data or []
+            
+        except Exception as e:
+            logger.error(f"Error getting CVs for candidate: {e}")
+            return []
+    
+    async def get_analyses_by_candidate(self, candidate_id: UUID) -> List[Dict[str, Any]]:
+        """
+        Get all analyses for a specific candidate.
+        
+        Args:
+            candidate_id: Candidate UUID
+            
+        Returns:
+            List of analysis dicts for the candidate
+        """
+        try:
+            result = self.client.table("analyses")\
+                .select("*")\
+                .eq("candidate_id", str(candidate_id))\
+                .order("created_at", desc=True)\
+                .execute()
+            
+            return result.data or []
+            
+        except Exception as e:
+            logger.error(f"Error getting analyses for candidate: {e}")
+            return []
 
 
 # Global service instance

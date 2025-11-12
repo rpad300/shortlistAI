@@ -77,6 +77,7 @@ export const Layout: React.FC<LayoutProps> = ({
                     <li><a href="/legal/terms">{t('legal.terms')}</a></li>
                     <li><a href="/legal/privacy">{t('legal.privacy')}</a></li>
                     <li><a href="/legal/cookies">{t('legal.cookies')}</a></li>
+                    <li><a href="/admin/login" className="admin-link">{t('footer.admin')}</a></li>
                   </ul>
                 </div>
 

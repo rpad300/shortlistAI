@@ -4,7 +4,7 @@ Job Posting database service.
 Handles CRUD operations for job_postings table.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from uuid import UUID
 from database import get_supabase_client
 import logging
@@ -160,6 +160,34 @@ class JobPostingService:
         except Exception as e:
             logger.error(f"Error updating weights and blockers: {e}")
             return False
+    
+    async def list_all(
+        self,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        List all job postings (for Admin use).
+        
+        Args:
+            limit: Maximum number of results
+            offset: Offset for pagination
+            
+        Returns:
+            List of job posting dicts
+        """
+        try:
+            result = self.client.table(self.table)\
+                .select("*")\
+                .order("created_at", desc=True)\
+                .range(offset, offset + limit - 1)\
+                .execute()
+            
+            return result.data or []
+            
+        except Exception as e:
+            logger.error(f"Error listing job postings: {e}")
+            return []
 
 
 # Global service instance

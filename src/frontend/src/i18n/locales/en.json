@@ -165,6 +165,7 @@
     "company": "Company",
     "legal": "Legal",
     "languages": "Languages",
+    "admin": "Admin",
     "copyright": "© 2025 ShortlistAI. All rights reserved.",
     "powered": "Powered by AI: Gemini, OpenAI, Claude, Kimi, Minimax"
   },
