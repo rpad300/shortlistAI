@@ -333,6 +333,7 @@ async def step2_job_posting(
         ai_service = get_ai_analysis_service()
         
         # Normalize job posting to extract structured requirements with AI
+        # Note: First normalization without company_name (it will be extracted from the result)
         logger.info(f"Using AI to analyze job posting (provider: {ai_service.ai_manager.default_provider})")
         normalized = await ai_service.normalize_job_posting(final_text, language)
         
@@ -578,6 +579,11 @@ async def get_weighting_suggestions(session_id: UUID):
                 "message": "Job posting text missing. Unable to generate AI recommendations."
             })
         
+        # Extract company name from structured data if available
+        company_name = None
+        if structured_job_posting and isinstance(structured_job_posting, dict):
+            company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
+        
         suggestions = None
         try:
             logger.info(f"Requesting AI weighting suggestions for session {session_id}")
@@ -586,7 +592,8 @@ async def get_weighting_suggestions(session_id: UUID):
                     job_posting_text,
                     structured_job_posting,
                     key_points,
-                    session["data"].get("language", "en")
+                    session["data"].get("language", "en"),
+                    company_name=company_name
                 ),
                 timeout=60  # Increased timeout for large context
             )
@@ -1124,7 +1131,16 @@ async def step6_analysis(session_id: str):
             risks = _normalize_list(data.get("risks"))
             questions = _normalize_list(data.get("custom_questions") or data.get("questions"))
             blocker_flags = _normalize_list(data.get("hard_blocker_violations") or data.get("hard_blocker_flags"))
+            recommendation = data.get("recommendation") or ""  # Brief hiring recommendation from AI
+            intro_pitch = data.get("intro_pitch") or ""  # Candidate intro pitch
+            gap_strategies = _normalize_list(data.get("gap_strategies") or [])  # Strategies to address gaps
+            preparation_tips = _normalize_list(data.get("preparation_tips") or [])  # Study topics for interview
             provider_used = ai_result.get("provider") or ai_result.get("model") or "ai"
+            
+            # Debug: Log what we got from AI
+            logger.info(f"AI result for CV {cv_id}: strengths={len(strengths)}, risks={len(risks)}, questions={len(questions)}, blocker_flags={len(blocker_flags)}, has_recommendation={bool(recommendation)}")
+            if not questions:
+                logger.warning(f"No questions returned from AI for CV {cv_id}. Data keys: {list(data.keys())}")
 
             global_score = sum(
                 categories.get(cat, 0) * weights.get(cat, 1)
@@ -1138,6 +1154,49 @@ async def step6_analysis(session_id: str):
                 or candidate_info.get("filename")
                 or f"Candidate {len(session_results) + 1}"
             )
+
+            # Fetch enrichment data for candidate and company
+            enrichment_data = {}
+            try:
+                from services.database.enrichment_service import (
+                    CompanyEnrichmentService,
+                    CandidateEnrichmentService
+                )
+                
+                # Get company enrichment
+                if company_name:
+                    company_enrichment_service = CompanyEnrichmentService()
+                    company_enrichment = await company_enrichment_service.get_latest(company_name, max_age_days=30)
+                    if company_enrichment:
+                        enrichment_data["company"] = {
+                            "name": company_enrichment.get("company_name"),
+                            "website": company_enrichment.get("website"),
+                            "description": company_enrichment.get("description"),
+                            "industry": company_enrichment.get("industry"),
+                            "size": company_enrichment.get("company_size"),
+                            "location": company_enrichment.get("location"),
+                            "social_media": company_enrichment.get("social_media", {}),
+                            "recent_news": company_enrichment.get("recent_news", []),
+                            "ai_summary": company_enrichment.get("ai_summary")
+                        }
+                
+                # Get candidate enrichment
+                if candidate_uuid:
+                    candidate_enrichment_service = CandidateEnrichmentService()
+                    candidate_enrichment = await candidate_enrichment_service.get_latest(candidate_uuid)
+                    if candidate_enrichment:
+                        enrichment_data["candidate"] = {
+                            "name": candidate_enrichment.get("candidate_name") or candidate_enrichment.get("name"),
+                            "professional_summary": candidate_enrichment.get("professional_summary"),
+                            "linkedin_profile": candidate_enrichment.get("linkedin_profile"),
+                            "github_profile": candidate_enrichment.get("github_profile"),
+                            "portfolio_url": candidate_enrichment.get("portfolio_url"),
+                            "publications": candidate_enrichment.get("publications", []),
+                            "awards": candidate_enrichment.get("awards", []),
+                            "ai_summary": candidate_enrichment.get("ai_summary")
+                        }
+            except Exception as enrichment_err:
+                logger.warning(f"Failed to fetch enrichment data: {enrichment_err}")
 
             # Get report_id from session (if exists)
             report_id = session["data"].get("report_id")
@@ -1170,7 +1229,12 @@ async def step6_analysis(session_id: str):
                 "risks": risks,
                 "questions": questions,
                 "hard_blocker_flags": blocker_flags,
-                "provider": provider_used
+                "recommendation": recommendation,  # Brief hiring recommendation from AI analysis
+                "intro_pitch": intro_pitch,  # Candidate intro pitch
+                "gap_strategies": gap_strategies,  # Strategies to address gaps/risks
+                "preparation_tips": preparation_tips,  # Study topics for interview
+                "provider": provider_used,
+                "enrichment": enrichment_data if enrichment_data else None
             })
 
             if analysis:
@@ -1185,7 +1249,8 @@ async def step6_analysis(session_id: str):
                 candidates_data=session_results,
                 weights=weights,
                 hard_blockers=hard_blockers,
-                language=language
+                language=language,
+                company_name=company_name
             )
             if executive_recommendation:
                 logger.info("Executive recommendation generated successfully")
@@ -1349,6 +1414,7 @@ async def step7_results(
                 "total_candidates": len(fallback_results),
                 "results": fallback_results,
                 "executive_recommendation": report.get("executive_recommendation"),
+                "hard_blockers": report.get("hard_blockers", []),  # Include hard blockers from report
                 "message": f"Recovered {len(fallback_results)} candidates from report {report_code}.",
                 "report_id": report.get("id"),
                 "report_code": report.get("report_code"),
@@ -1366,6 +1432,12 @@ async def step7_results(
         results = session["data"].get("analysis_results")
         executive_recommendation = session["data"].get("executive_recommendation")
         
+        # Extract company name from structured job posting
+        company_name = None
+        structured_job_posting = session["data"].get("structured_job_posting")
+        if structured_job_posting and isinstance(structured_job_posting, dict):
+            company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
+        
         if results:
             # SORT by global_score DESCENDING (best candidates first)
             sorted_results = sorted(
@@ -1374,12 +1446,124 @@ async def step7_results(
                 reverse=True
             )
             
+            # Fetch enrichment data for all candidates and ensure all required fields
+            from services.database.enrichment_service import (
+                CompanyEnrichmentService,
+                CandidateEnrichmentService
+            )
+            company_enrichment_service = CompanyEnrichmentService()
+            candidate_enrichment_service = CandidateEnrichmentService()
+            
+            # Get company enrichment once (same for all candidates)
+            company_enrichment_data = None
+            if company_name:
+                company_enrichment = await company_enrichment_service.get_latest(company_name, max_age_days=30)
+                if company_enrichment:
+                    company_enrichment_data = {
+                        "name": company_enrichment.get("company_name"),
+                        "website": company_enrichment.get("website"),
+                        "description": company_enrichment.get("description"),
+                        "industry": company_enrichment.get("industry"),
+                        "size": company_enrichment.get("company_size"),
+                        "location": company_enrichment.get("location"),
+                        "social_media": company_enrichment.get("social_media", {}),
+                        "recent_news": company_enrichment.get("recent_news", []),
+                        "ai_summary": company_enrichment.get("ai_summary")
+                    }
+            
+            # Ensure all required fields are present for each result
+            for result in sorted_results:
+                # Ensure summary is a dict (not None)
+                if not result.get("summary") or not isinstance(result.get("summary"), dict):
+                    result["summary"] = {}
+                # Ensure candidate_label exists
+                if not result.get("candidate_label"):
+                    summary = result.get("summary", {})
+                    result["candidate_label"] = (
+                        summary.get("full_name") 
+                        or summary.get("current_role")
+                        or result.get("file_name")
+                        or "Candidate"
+                    )
+                # Ensure all list fields are arrays
+                if not isinstance(result.get("strengths"), list):
+                    result["strengths"] = []
+                if not isinstance(result.get("risks"), list):
+                    result["risks"] = []
+                if not isinstance(result.get("questions"), list):
+                    result["questions"] = []
+                if not isinstance(result.get("hard_blocker_flags"), list):
+                    result["hard_blocker_flags"] = []
+                # Ensure categories is a dict
+                if not isinstance(result.get("categories"), dict):
+                    result["categories"] = {}
+                # Ensure global_score is a number
+                if result.get("global_score") is None:
+                    result["global_score"] = 0
+                # Ensure recommendation exists (can be empty string)
+                if "recommendation" not in result:
+                    result["recommendation"] = ""
+                # Ensure intro_pitch exists (can be empty string)
+                if "intro_pitch" not in result:
+                    result["intro_pitch"] = ""
+                # Ensure gap_strategies is a list
+                if not isinstance(result.get("gap_strategies"), list):
+                    result["gap_strategies"] = []
+                # Ensure preparation_tips is a list
+                if not isinstance(result.get("preparation_tips"), list):
+                    result["preparation_tips"] = []
+                
+                # Fetch or update enrichment data for this candidate
+                enrichment_data = result.get("enrichment") or {}
+                try:
+                    candidate_id = result.get("candidate_id")
+                    if candidate_id:
+                        candidate_enrichment = await candidate_enrichment_service.get_latest(UUID(candidate_id))
+                        if candidate_enrichment:
+                            enrichment_data["candidate"] = {
+                                "name": candidate_enrichment.get("candidate_name") or candidate_enrichment.get("name"),
+                                "professional_summary": candidate_enrichment.get("professional_summary"),
+                                "linkedin_profile": candidate_enrichment.get("linkedin_profile"),
+                                "github_profile": candidate_enrichment.get("github_profile"),
+                                "portfolio_url": candidate_enrichment.get("portfolio_url"),
+                                "publications": candidate_enrichment.get("publications", []),
+                                "awards": candidate_enrichment.get("awards", []),
+                                "ai_summary": candidate_enrichment.get("ai_summary"),
+                                "result_count": candidate_enrichment.get("result_count", 0)
+                            }
+                except Exception as enrichment_err:
+                    logger.warning(f"Failed to fetch candidate enrichment for step7: {enrichment_err}")
+                
+                # Add company enrichment if available
+                if company_enrichment_data:
+                    enrichment_data["company"] = company_enrichment_data
+                
+                # Set enrichment (can be empty dict if no data)
+                result["enrichment"] = enrichment_data if enrichment_data else None
+            
             logger.info("Returning %d analysis results from session cache for %s", len(sorted_results), session_id)
+            if sorted_results:
+                first_result = sorted_results[0]
+                logger.info("Step7 first result fields: analysis_id=%s, candidate_id=%s, candidate_label=%s, global_score=%s, strengths_count=%d, risks_count=%d, questions_count=%d, has_enrichment=%s",
+                    first_result.get("analysis_id"),
+                    first_result.get("candidate_id"),
+                    first_result.get("candidate_label"),
+                    first_result.get("global_score"),
+                    len(first_result.get("strengths", [])),
+                    len(first_result.get("risks", [])),
+                    len(first_result.get("questions", [])),
+                    "yes" if first_result.get("enrichment") else "no"
+                )
+            
+            # Get hard blockers from session
+            hard_blockers = session["data"].get("hard_blockers", [])
+            
             return JSONResponse({
                 "status": "success",
                 "total_candidates": len(sorted_results),
                 "results": sorted_results,
                 "executive_recommendation": executive_recommendation,
+                "hard_blockers": hard_blockers,  # Include hard blockers (must-have requirements) in response
                 "message": f"Analysis complete for {len(sorted_results)} candidates.",
                 "report_code": report_code_in_session,
                 "source": "session"
@@ -1438,6 +1622,7 @@ async def step7_results(
             "total_candidates": len(sorted_results),
             "results": sorted_results,
             "executive_recommendation": executive_recommendation,
+            "hard_blockers": hard_blockers,  # Include hard blockers (must-have requirements) in response
             "message": f"Analysis complete for {len(sorted_results)} candidates.",
             "report_code": report_code_in_session,
             "source": "session-db"

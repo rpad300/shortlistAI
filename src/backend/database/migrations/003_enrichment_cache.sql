@@ -274,3 +274,4 @@ BEGIN
     RAISE NOTICE 'Created helper functions: get_latest_company_enrichment, get_latest_candidate_enrichment, invalidate_old_enrichments';
 END $$;
 
+

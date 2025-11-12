@@ -1347,3 +1347,183 @@ A **implementação do sistema de gestão de prompts está 100% COMPLETA**!
 **Status**: ✅ IMPLEMENTAÇÃO COMPLETA - Sistema de Prompts 100% + Brave Search Enrichment Prompts 100%  
 **Git**: ✅ Commit a9dca5a - 21 files, 6529 insertions  
 **Próxima Ação**: ✅ Brave Search prompts inseridas via MCP - Sistema completo e funcional!
+
+---
+
+## 2025-11-12 (Parte 5): Otimização de Prompts com Enrichment Context - COMPLETO 🎯
+
+### 🎯 Objetivo
+
+Otimizar todas as prompts das outras categorias para considerar o `enrichment_context` onde fizer sentido, melhorando a qualidade e precisão das análises AI com dados enriquecidos de empresas e candidatos.
+
+### ✅ IMPLEMENTAÇÃO COMPLETA
+
+#### PARTE 1: Prompts Otimizadas ✅ 100%
+
+**3 prompts atualizadas para usar enrichment context:**
+
+1. **`job_posting_normalization`** (categoria: `job_analysis`)
+   - ✅ Adicionado `enrichment_context` como variável opcional
+   - ✅ Usa dados da empresa para melhorar normalização
+   - ✅ Identifica terminologia específica da empresa, padrões da indústria, tamanho/tipo da empresa
+
+2. **`weighting_recommendation`** (categoria: `job_analysis`)
+   - ✅ Adicionado `enrichment_context` como variável opcional
+   - ✅ Considera indústria, tamanho e cultura da empresa ao recomendar pesos
+   - ✅ Exemplo: startups priorizam skills técnicos, enterprises valorizam experiência e soft skills
+
+3. **`executive_recommendation`** (categoria: `reporting`)
+   - ✅ Adicionado `enrichment_context` como variável opcional
+   - ✅ Usa dados da empresa e perfis profissionais dos candidatos
+   - ✅ Adapta recomendações à cultura da empresa e fit do candidato
+
+#### PARTE 2: Código Backend Atualizado ✅ 100%
+
+**Arquivos modificados:**
+
+1. **`src/backend/services/ai_analysis.py`**
+   - ✅ `recommend_weighting_and_blockers()` - adicionado parâmetro `company_name`
+   - ✅ `normalize_job_posting()` - adicionado parâmetro `company_name`
+   - ✅ `generate_executive_recommendation()` - adicionado parâmetro `company_name`
+   - ✅ Todas as funções buscam enrichment automaticamente quando `company_name` está disponível
+   - ✅ Formatação do enrichment context usando métodos existentes
+
+2. **`src/backend/routers/interviewer.py`**
+   - ✅ `step3_normalize()` - extrai `company_name` e passa para `normalize_job_posting()`
+   - ✅ `get_weighting_suggestions()` - extrai `company_name` e passa para `recommend_weighting_and_blockers()`
+   - ✅ `step6_analysis()` - passa `company_name` para `generate_executive_recommendation()`
+
+3. **`src/backend/routers/candidate.py`**
+   - ✅ `step3_normalize()` - atualizado para usar enrichment (após normalização inicial)
+
+#### PARTE 3: Database Atualizado ✅ 100%
+
+**Prompts atualizadas no banco de dados:**
+
+```sql
+-- 3 prompts atualizadas com:
+-- - enrichment_context adicionado às variáveis
+-- - Descrições melhoradas explicando uso do enrichment
+-- - Admin notes detalhadas sobre quando e como usar
+```
+
+**Variáveis atualizadas:**
+- `job_posting_normalization`: `["job_posting_text", "enrichment_context"]`
+- `weighting_recommendation`: `["job_posting", "structured_job_posting", "key_points", "enrichment_context", "language"]`
+- `executive_recommendation`: `["job_posting_summary", "candidate_count", "candidates_summary", "weights", "hard_blockers", "enrichment_context", "language"]`
+
+#### PARTE 4: Seed Script Atualizado ✅ 100%
+
+**`src/backend/scripts/seed_prompts.py`**
+- ✅ Variáveis atualizadas para incluir `enrichment_context`
+- ✅ Descrições melhoradas explicando benefícios do enrichment
+- ✅ Admin notes detalhadas sobre uso e variáveis
+
+#### PARTE 5: Fallback Prompts Atualizadas ✅ 100%
+
+**`src/backend/services/ai/prompts.py`**
+- ✅ `JOB_POSTING_NORMALIZATION_PROMPT` - adicionado `{enrichment_context}`
+- ✅ `WEIGHTING_RECOMMENDATION_PROMPT` - adicionado `{enrichment_context}`
+- ✅ `EXECUTIVE_RECOMMENDATION_PROMPT` - adicionado `{enrichment_context}`
+
+### 🔄 Fluxo de Funcionamento
+
+```
+1. Router recebe request com job posting
+   ↓
+2. Extrai company_name do structured_job_posting (se disponível)
+   ↓
+3. Chama método AI service (normalize/recommend/generate)
+   ↓
+4. AI service verifica se company_name existe
+   ↓
+5. Se sim: busca enrichment via CompanyEnrichmentService
+   ↓
+6. Formata enrichment context usando _format_company_enrichment()
+   ↓
+7. Passa enrichment_context para prompt template
+   ↓
+8. AI usa enrichment para melhorar análise/recomendação
+```
+
+### ✨ Benefícios
+
+1. **Normalização Mais Precisa**
+   - Identifica terminologia específica da empresa
+   - Reconhece padrões da indústria
+   - Infere tamanho/tipo da empresa quando não mencionado
+
+2. **Recomendações de Peso Personalizadas**
+   - Startups: prioriza skills técnicos
+   - Enterprises: valoriza experiência e soft skills
+   - Adapta-se à cultura e necessidades da empresa
+
+3. **Recomendações Executivas Mais Informadas**
+   - Considera cultura da empresa
+   - Avalia fit cultural do candidato
+   - Usa dados profissionais dos candidatos para insights
+
+### 📊 Estatísticas
+
+**Arquivos Modificados:**
+- 3 arquivos backend (services + routers)
+- 1 arquivo seed script
+- 1 arquivo prompts fallback
+- 3 prompts no banco de dados
+
+**Linhas de Código:**
+- ~150 linhas adicionadas/modificadas
+
+**Prompts Otimizadas:**
+- 3 prompts (job_posting_normalization, weighting_recommendation, executive_recommendation)
+
+**Variáveis Adicionadas:**
+- `enrichment_context` (opcional) em 3 prompts
+
+### 🔧 Como Funciona
+
+**Exemplo: Weighting Recommendation**
+
+```python
+# Antes (sem enrichment)
+weights = await ai_service.recommend_weighting_and_blockers(
+    job_posting_text, structured_job_posting, key_points, language
+)
+
+# Depois (com enrichment)
+weights = await ai_service.recommend_weighting_and_blockers(
+    job_posting_text, structured_job_posting, key_points, language,
+    company_name="Google"  # Opcional - busca enrichment automaticamente
+)
+```
+
+**O que acontece:**
+1. Se `company_name` for fornecido, busca enrichment da empresa
+2. Formata enrichment context com dados da empresa (indústria, tamanho, cultura)
+3. Passa para prompt: "Considerando que esta é uma empresa de tecnologia grande..."
+4. AI ajusta recomendações baseado no contexto da empresa
+
+### ✨ Conclusão PARTE 5
+
+A **otimização das prompts com enrichment context está 100% COMPLETA**!
+
+✅ **3 Prompts Otimizadas**: job_posting_normalization, weighting_recommendation, executive_recommendation  
+✅ **Código Backend**: Todos os métodos atualizados para buscar e passar enrichment  
+✅ **Database**: Prompts atualizadas com novas variáveis e descrições  
+✅ **Seed Script**: Atualizado para refletir mudanças  
+✅ **Fallback Prompts**: Atualizadas para incluir enrichment_context  
+✅ **Routers**: Extraem e passam company_name automaticamente  
+
+**Sistema completo de prompts otimizado com enrichment context pronto para produção!** 🚀
+
+**Ficheiros Totais Modificados**: 5 arquivos  
+**Linhas de Código**: ~150 linhas  
+**Prompts Otimizadas**: 3 prompts  
+**Status**: ✅ COMPLETO E FUNCIONAL
+
+---
+
+**Última Atualização**: 12 Novembro 2025, 20:00  
+**Por**: AI Prompts Optimization Team  
+**Status**: ✅ IMPLEMENTAÇÃO COMPLETA - Otimização de Prompts com Enrichment Context 100%  
+**Git**: ✅ Commit pendente - Otimização de prompts com enrichment context

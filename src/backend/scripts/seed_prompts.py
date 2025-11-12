@@ -52,32 +52,32 @@ DEFAULT_PROMPTS = [
     {
         "prompt_key": "job_posting_normalization",
         "name": "Job Posting Normalization",
-        "description": "Normalizes and structures job posting data including requirements, skills, responsibilities, and company information.",
+        "description": "Normalizes and structures job posting data including requirements, skills, responsibilities, and company information. Uses company enrichment data to enhance normalization accuracy when company name is available.",
         "content": JOB_POSTING_NORMALIZATION_PROMPT,
         "category": "job_analysis",
-        "variables": ["job_posting_text"],
+        "variables": ["job_posting_text", "enrichment_context"],
         "language": "en",
         "model_preferences": {
             "temperature": 0.3,
             "max_tokens": 2000,
             "preferred_provider": "gemini"
         },
-        "admin_notes": "Used to standardize job posting data for analysis. Requires JSON output."
+        "admin_notes": "Used to standardize job posting data for analysis. Uses enrichment_context to improve normalization accuracy. When company enrichment data is available, it helps identify company-specific terminology, industry standards, and company size/type. Variables: job_posting_text (required), enrichment_context (optional)."
     },
     {
         "prompt_key": "weighting_recommendation",
         "name": "Weighting Recommendation",
-        "description": "Recommends category weights and hard blockers based on job requirements and interviewer input.",
+        "description": "Recommends category weights and hard blockers based on job requirements and interviewer input. Uses company enrichment data to tailor recommendations based on company industry, size, and culture.",
         "content": WEIGHTING_RECOMMENDATION_PROMPT,
         "category": "job_analysis",
-        "variables": ["job_posting", "structured_job_posting", "key_points", "language"],
+        "variables": ["job_posting", "structured_job_posting", "key_points", "enrichment_context", "language"],
         "language": "en",
         "model_preferences": {
             "temperature": 0.5,
             "max_tokens": 1500,
             "preferred_provider": "gemini"
         },
-        "admin_notes": "Weights must sum to 100. Uses interviewer's key points as primary input."
+        "admin_notes": "Weights must sum to 100. Uses enrichment_context to consider company information when recommending weights. For example, startups may prioritize technical skills more, while enterprises may value experience and soft skills. Variables: job_posting (required), structured_job_posting (optional), key_points (required), enrichment_context (optional), language (required)."
     },
     {
         "prompt_key": "cv_summary",
@@ -151,7 +151,7 @@ DEFAULT_PROMPTS = [
     {
         "prompt_key": "executive_recommendation",
         "name": "Executive Recommendation",
-        "description": "Creates executive summary and hiring recommendation for top candidates.",
+        "description": "Creates executive summary and hiring recommendation for top candidates. Uses company and candidate enrichment data to provide more informed recommendations based on company culture, industry, and candidate professional background.",
         "content": EXECUTIVE_RECOMMENDATION_PROMPT,
         "category": "reporting",
         "variables": [
@@ -160,6 +160,7 @@ DEFAULT_PROMPTS = [
             "candidates_summary",
             "weights",
             "hard_blockers",
+            "enrichment_context",
             "language"
         ],
         "language": "en",
@@ -168,7 +169,7 @@ DEFAULT_PROMPTS = [
             "max_tokens": 2500,
             "preferred_provider": "gemini"
         },
-        "admin_notes": "High-level summary for decision makers. Should be clear and actionable."
+        "admin_notes": "High-level summary for decision makers. Uses enrichment_context to consider company information and candidate professional profiles when making recommendations. This helps tailor recommendations to company culture and candidate fit. Variables: job_posting_summary (required), candidate_count (required), candidates_summary (required), weights (required), hard_blockers (required), enrichment_context (optional), language (required)."
     },
     {
         "prompt_key": "brave_company_search",

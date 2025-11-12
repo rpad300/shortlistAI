@@ -239,10 +239,14 @@ async def step2_job_posting(
             ai_service = get_ai_analysis_service()
             
             logger.info("Using AI to extract structured data from job posting")
+            # First normalization without company_name (chicken-egg problem)
             structured_job_posting = await ai_service.normalize_job_posting(final_text, language)
             
-            if structured_job_posting:
-                logger.info(f"Extracted company: {structured_job_posting.get('company', 'N/A')}")
+            # Extract company name from normalized result for future use
+            company_name = None
+            if structured_job_posting and isinstance(structured_job_posting, dict):
+                company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
+                logger.info(f"Extracted company: {company_name or 'N/A'}")
         except Exception as norm_err:
             logger.warning(f"Job posting normalization failed: {norm_err}")
             # Continue without structured data - not critical

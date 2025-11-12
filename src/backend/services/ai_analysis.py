@@ -38,18 +38,36 @@ class AIAnalysisService:
         job_posting_text: str,
         structured_job_posting: Optional[Dict[str, Any]],
         key_points: Optional[str],
-        language: str = "en"
+        language: str = "en",
+        company_name: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Recommend category weights, hard blockers, and nice-to-have requirements.
+        
+        Args:
+            job_posting_text: Raw job posting text
+            structured_job_posting: Structured job posting data
+            key_points: Key requirements from interviewer
+            language: Response language
+            company_name: Company name for enrichment (optional)
         """
         try:
-            template = get_prompt("weighting_recommendation")
+            template = await get_prompt("weighting_recommendation")
+            
+            # Get company enrichment if company name is available
+            enrichment_context = ""
+            if company_name:
+                company_data = await self._get_company_enrichment(company_name)
+                if company_data:
+                    formatted = self._format_company_enrichment(company_data)
+                    if formatted:
+                        enrichment_context = formatted
             
             variables = {
                 "job_posting": job_posting_text or "No job posting text provided.",
                 "structured_job_posting": json.dumps(structured_job_posting, indent=2, ensure_ascii=False) if structured_job_posting else "Not available",
                 "key_points": key_points or "Not provided",
+                "enrichment_context": enrichment_context,
                 "language": language
             }
             
@@ -103,7 +121,7 @@ class AIAnalysisService:
         """
         try:
             # Get prompt template
-            template = get_prompt("interviewer_analysis")
+            template = await get_prompt("interviewer_analysis")
             
             # Build enrichment context
             enrichment_context = await self._build_enrichment_context(
@@ -176,7 +194,7 @@ class AIAnalysisService:
         """
         try:
             # Get prompt template
-            template = get_prompt("candidate_analysis")
+            template = await get_prompt("candidate_analysis")
             
             # Build enrichment context using available data
             enrichment_context = await self._build_enrichment_context(
@@ -237,7 +255,7 @@ class AIAnalysisService:
             Structured CV data dict
         """
         try:
-            template = get_prompt("cv_extraction")
+            template = await get_prompt("cv_extraction")
             
             ai_request = AIRequest(
                 prompt_type=PromptType.CV_EXTRACTION,
@@ -266,7 +284,7 @@ class AIAnalysisService:
         Generate a structured summary for a CV.
         """
         try:
-            template = get_prompt("cv_summary")
+            template = await get_prompt("cv_summary")
 
             ai_request = AIRequest(
                 prompt_type=PromptType.CV_SUMMARY,
@@ -296,7 +314,8 @@ class AIAnalysisService:
     async def normalize_job_posting(
         self,
         job_posting_text: str,
-        language: str = "en"
+        language: str = "en",
+        company_name: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Extract structured data from job posting.
@@ -304,17 +323,28 @@ class AIAnalysisService:
         Args:
             job_posting_text: Raw job posting text
             language: Language of the posting
+            company_name: Company name for enrichment (optional)
             
         Returns:
             Structured job posting data dict
         """
         try:
-            template = get_prompt("job_posting_normalization")
+            template = await get_prompt("job_posting_normalization")
+            
+            # Get company enrichment if company name is available
+            enrichment_context = ""
+            if company_name:
+                company_data = await self._get_company_enrichment(company_name)
+                if company_data:
+                    formatted = self._format_company_enrichment(company_data)
+                    if formatted:
+                        enrichment_context = formatted
             
             # 🔍 DEBUG: Log exactly what we're sending
             logger.info("=" * 100)
             logger.info("🔍 JOB POSTING NORMALIZATION REQUEST")
             logger.info(f"Language: {language}")
+            logger.info(f"Company: {company_name or 'Not provided'}")
             logger.info(f"Job Posting Length: {len(job_posting_text)} chars")
             logger.info("-" * 100)
             logger.info("TEMPLATE:")
@@ -328,7 +358,10 @@ class AIAnalysisService:
             ai_request = AIRequest(
                 prompt_type=PromptType.JOB_POSTING_NORMALIZATION,
                 template=template,
-                variables={"job_posting_text": job_posting_text},
+                variables={
+                    "job_posting_text": job_posting_text,
+                    "enrichment_context": enrichment_context
+                },
                 language=language,
                 temperature=0.3,
                 max_tokens=1024
@@ -352,7 +385,8 @@ class AIAnalysisService:
         candidates_data: List[Dict[str, Any]],
         weights: Dict[str, float],
         hard_blockers: List[str],
-        language: str = "en"
+        language: str = "en",
+        company_name: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Generate an executive recommendation summary for hiring decision.
@@ -363,6 +397,7 @@ class AIAnalysisService:
             weights: Category weights used in evaluation
             hard_blockers: Hard blocker rules
             language: Response language
+            company_name: Company name for enrichment (optional)
             
         Returns:
             Executive recommendation with top candidate and insights
@@ -391,7 +426,16 @@ class AIAnalysisService:
             
             candidates_summary = "\n\n".join(candidates_summary_list)
             
-            template = get_prompt("executive_recommendation")
+            # Get company enrichment if company name is available
+            enrichment_context = ""
+            if company_name:
+                company_data = await self._get_company_enrichment(company_name)
+                if company_data:
+                    formatted = self._format_company_enrichment(company_data)
+                    if formatted:
+                        enrichment_context = formatted
+            
+            template = await get_prompt("executive_recommendation")
             
             variables = {
                 "job_posting_summary": job_posting_summary,
@@ -399,6 +443,7 @@ class AIAnalysisService:
                 "candidates_summary": candidates_summary,
                 "weights": json.dumps(weights, indent=2),
                 "hard_blockers": "\n".join(f"- {b}" for b in hard_blockers) if hard_blockers else "None specified",
+                "enrichment_context": enrichment_context,
                 "language": language
             }
             

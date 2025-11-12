@@ -132,3 +132,4 @@ def get_company_research_service() -> CompanyResearchService:
         _company_research_service = CompanyResearchService()
     return _company_research_service
 
+

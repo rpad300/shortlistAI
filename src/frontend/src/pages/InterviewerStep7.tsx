@@ -30,6 +30,34 @@ interface CandidateResult {
   risks: string[];
   questions: string[];
   hard_blocker_flags: string[];
+  recommendation?: string;  // Brief hiring recommendation from AI
+  intro_pitch?: string;  // Candidate intro pitch
+  gap_strategies?: string[];  // Strategies to address gaps/risks
+  preparation_tips?: string[];  // Study topics for interview
+  enrichment?: {
+    company?: {
+      name?: string;
+      website?: string;
+      description?: string;
+      industry?: string;
+      size?: string;
+      location?: string;
+      social_media?: Record<string, string>;
+      recent_news?: Array<Record<string, any>>;
+      ai_summary?: string;
+    };
+    candidate?: {
+      name?: string;
+      professional_summary?: string;
+      linkedin_profile?: string;
+      github_profile?: string;
+      portfolio_url?: string;
+      publications?: Array<Record<string, string>>;
+      awards?: string[];
+      ai_summary?: string;
+      result_count?: number;
+    };
+  };
 }
 
 interface ExecutiveRecommendation {
@@ -48,6 +76,7 @@ const InterviewerStep7: React.FC = () => {
   const [results, setResults] = useState<CandidateResult[]>([]);
   const [executiveRec, setExecutiveRec] = useState<ExecutiveRecommendation | null>(null);
   const [reportCode, setReportCode] = useState<string | null>(null);
+  const [hardBlockers, setHardBlockers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null);
@@ -71,6 +100,7 @@ const InterviewerStep7: React.FC = () => {
         const response = await interviewerAPI.step7(sessionId, savedReportCode || undefined);
         setResults(response.data.results || []);
         setExecutiveRec(response.data.executive_recommendation || null);
+        setHardBlockers(response.data.hard_blockers || []);
         if (response.data.report_code) {
           setReportCode(response.data.report_code);
           sessionStorage.setItem('interviewer_report_code', response.data.report_code);
@@ -115,8 +145,14 @@ const InterviewerStep7: React.FC = () => {
   }
   
   return (
-    <div className="step-container">
-      <div className="step-content" style={{ maxWidth: '1200px' }}>
+    <div className="step-container" style={{ padding: 'var(--spacing-md)', minHeight: '100vh' }}>
+      <div className="step-content" style={{ 
+        maxWidth: '1400px', 
+        width: '100%',
+        overflow: 'visible',
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word'
+      }}>
         <h1>{t('interviewer.step7_title')}</h1>
         <p className="step-subtitle">Ranked candidates for your position</p>
         
@@ -173,19 +209,26 @@ const InterviewerStep7: React.FC = () => {
               <div style={{ 
                 marginBottom: 'var(--spacing-lg)', 
                 lineHeight: '1.6',
-                whiteSpace: 'pre-wrap'
+                whiteSpace: 'pre-wrap',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
               }}>
                 <h3>Summary</h3>
-                <p>{executiveRec.executive_summary}</p>
+                <p style={{ margin: 0 }}>{executiveRec.executive_summary}</p>
               </div>
             )}
             
             {executiveRec.key_insights && executiveRec.key_insights.length > 0 && (
               <div>
                 <h3>Key Insights</h3>
-                <ul style={{ lineHeight: '1.8' }}>
+                <ul style={{ 
+                  lineHeight: '1.8',
+                  paddingLeft: 'var(--spacing-lg)',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
+                }}>
                   {executiveRec.key_insights.map((insight, idx) => (
-                    <li key={idx}>{insight}</li>
+                    <li key={idx} style={{ marginBottom: 'var(--spacing-xs)' }}>{insight}</li>
                   ))}
                 </ul>
               </div>
@@ -193,12 +236,41 @@ const InterviewerStep7: React.FC = () => {
           </div>
         )}
         
+        {/* Hard Blockers Section */}
+        {hardBlockers.length > 0 && (
+          <div className="form-section" style={{ 
+            backgroundColor: 'var(--color-bg-secondary)', 
+            padding: 'var(--spacing-lg)', 
+            borderRadius: 'var(--radius-lg)',
+            marginBottom: 'var(--spacing-xl)',
+            border: '2px solid var(--color-error)'
+          }}>
+            <h2 style={{ color: 'var(--color-error)', marginTop: 0 }}>
+              🚫 Hard Blockers (Must-Have Requirements)
+            </h2>
+            <ul style={{ 
+              paddingLeft: 'var(--spacing-lg)',
+              lineHeight: '1.8',
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word'
+            }}>
+              {hardBlockers.map((blocker, idx) => (
+                <li key={idx} style={{ marginBottom: 'var(--spacing-xs)' }}>{blocker}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
         {/* Ranking Table */}
         <div className="form-section">
           <h2>Candidate Ranking ({results.length} total)</h2>
           
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ overflowX: 'auto', marginBottom: 'var(--spacing-lg)' }}>
+            <table style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse',
+              minWidth: '600px'
+            }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--color-bg-secondary)', textAlign: 'left' }}>
                   <th style={{ padding: 'var(--spacing-md)', borderBottom: '2px solid var(--color-border)' }}>Rank</th>
@@ -211,13 +283,24 @@ const InterviewerStep7: React.FC = () => {
                 {results.map((result, idx) => (
                   <tr key={result.analysis_id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <td style={{ padding: 'var(--spacing-md)', fontWeight: 'bold' }}>#{idx + 1}</td>
-                    <td style={{ padding: 'var(--spacing-md)' }}>
+                    <td style={{ 
+                      padding: 'var(--spacing-md)',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                      maxWidth: '300px'
+                    }}>
                       <div>
                         <strong>
                           {result.summary?.full_name || result.candidate_label || `Candidate ${idx + 1}`}
                         </strong>
                         {result.summary?.current_role && (
-                          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                          <div style={{ 
+                            fontSize: 'var(--font-size-sm)', 
+                            color: 'var(--color-text-secondary)', 
+                            marginTop: '2px',
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word'
+                          }}>
                             {result.summary.current_role}
                           </div>
                         )}
@@ -261,7 +344,14 @@ const InterviewerStep7: React.FC = () => {
         
         {/* Detailed View */}
         {selectedCandidate !== null && results[selectedCandidate] && (
-          <div className="form-section" style={{ backgroundColor: 'var(--color-bg-secondary)', padding: 'var(--spacing-xl)', borderRadius: 'var(--radius-lg)' }}>
+          <div className="form-section" style={{ 
+            backgroundColor: 'var(--color-bg-secondary)', 
+            padding: 'var(--spacing-xl)', 
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'visible',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word'
+          }}>
             <h2>
               {results[selectedCandidate].summary?.full_name || 
                results[selectedCandidate].candidate_label || 
@@ -310,30 +400,241 @@ const InterviewerStep7: React.FC = () => {
             
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
               <h3 style={{ color: 'var(--color-success)' }}>✓ Strengths</h3>
-              <ul>
+              <ul style={{ 
+                paddingLeft: 'var(--spacing-lg)',
+                lineHeight: '1.8',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
+              }}>
                 {results[selectedCandidate].strengths.map((s, i) => (
-                  <li key={i}>{s}</li>
+                  <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{s}</li>
                 ))}
               </ul>
             </div>
             
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
               <h3 style={{ color: 'var(--color-warning)' }}>⚠️ Risks & Gaps</h3>
-              <ul>
+              <ul style={{ 
+                paddingLeft: 'var(--spacing-lg)',
+                lineHeight: '1.8',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
+              }}>
                 {results[selectedCandidate].risks.map((r, i) => (
-                  <li key={i}>{r}</li>
+                  <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{r}</li>
                 ))}
               </ul>
             </div>
             
-            <div>
-              <h3>❓ Custom Interview Questions</h3>
-              <ol>
+            {results[selectedCandidate].hard_blocker_flags && results[selectedCandidate].hard_blocker_flags.length > 0 && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ color: 'var(--color-error)' }}>🚫 Hard Blocker Violations</h3>
+                <ul style={{ 
+                  paddingLeft: 'var(--spacing-lg)',
+                  lineHeight: '1.8',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
+                }}>
+                  {results[selectedCandidate].hard_blocker_flags.map((flag, i) => (
+                    <li key={i} style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--color-error)' }}>{flag}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+              <h3>❓ Suggested Interview Questions</h3>
+              <ol style={{ 
+                paddingLeft: 'var(--spacing-lg)',
+                lineHeight: '1.8',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
+              }}>
                 {results[selectedCandidate].questions.map((q, i) => (
                   <li key={i} style={{ marginBottom: 'var(--spacing-sm)' }}>{q}</li>
                 ))}
               </ol>
             </div>
+            
+            {results[selectedCandidate].intro_pitch && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ color: 'var(--color-accent-primary)' }}>🎤 Intro Pitch</h3>
+                <p style={{ 
+                  padding: 'var(--spacing-md)', 
+                  backgroundColor: 'var(--color-bg-primary)', 
+                  borderRadius: 'var(--radius-md)',
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  lineHeight: '1.6'
+                }}>
+                  {results[selectedCandidate].intro_pitch}
+                </p>
+              </div>
+            )}
+            
+            {results[selectedCandidate].gap_strategies && results[selectedCandidate].gap_strategies.length > 0 && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ color: 'var(--color-accent-primary)' }}>💡 Strategies to Address Gaps & Risks</h3>
+                <ul style={{ 
+                  paddingLeft: 'var(--spacing-lg)',
+                  lineHeight: '1.8',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
+                }}>
+                  {results[selectedCandidate].gap_strategies.map((strategy, i) => (
+                    <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{strategy}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {results[selectedCandidate].preparation_tips && results[selectedCandidate].preparation_tips.length > 0 && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ color: 'var(--color-accent-primary)' }}>📚 Study Topics for Interview</h3>
+                <p style={{ marginBottom: 'var(--spacing-sm)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                  Topics to study to address the identified risks and gaps:
+                </p>
+                <ul style={{ 
+                  paddingLeft: 'var(--spacing-lg)',
+                  lineHeight: '1.8',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
+                }}>
+                  {results[selectedCandidate].preparation_tips.map((tip, i) => (
+                    <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {results[selectedCandidate].recommendation && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ color: 'var(--color-accent-primary)' }}>💡 AI Recommendation</h3>
+                <p style={{ 
+                  padding: 'var(--spacing-md)', 
+                  backgroundColor: 'var(--color-bg-primary)', 
+                  borderRadius: 'var(--radius-md)',
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  lineHeight: '1.6'
+                }}>
+                  {results[selectedCandidate].recommendation}
+                </p>
+              </div>
+            )}
+            
+            {results[selectedCandidate].enrichment && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ color: 'var(--color-accent-primary)' }}>🔍 Enrichment Data (Brave Search)</h3>
+                <div style={{ 
+                  padding: 'var(--spacing-md)', 
+                  backgroundColor: 'var(--color-bg-primary)', 
+                  borderRadius: 'var(--radius-md)',
+                  overflow: 'visible',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
+                }}>
+                  {results[selectedCandidate].enrichment.company && (
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <h4 style={{ fontSize: 'var(--font-size-md)', marginBottom: 'var(--spacing-sm)' }}>Company Information</h4>
+                      {results[selectedCandidate].enrichment.company.name && (
+                        <div><strong>Name:</strong> {results[selectedCandidate].enrichment.company.name}</div>
+                      )}
+                      {results[selectedCandidate].enrichment.company.website && (
+                        <div style={{ wordBreak: 'break-all' }}><strong>Website:</strong> <a href={results[selectedCandidate].enrichment.company.website} target="_blank" rel="noopener noreferrer">{results[selectedCandidate].enrichment.company.website}</a></div>
+                      )}
+                      {results[selectedCandidate].enrichment.company.description && (
+                        <div style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}><strong>Description:</strong> {results[selectedCandidate].enrichment.company.description}</div>
+                      )}
+                      {results[selectedCandidate].enrichment.company.industry && (
+                        <div><strong>Industry:</strong> {results[selectedCandidate].enrichment.company.industry}</div>
+                      )}
+                      {results[selectedCandidate].enrichment.company.size && (
+                        <div><strong>Size:</strong> {results[selectedCandidate].enrichment.company.size}</div>
+                      )}
+                      {results[selectedCandidate].enrichment.company.location && (
+                        <div><strong>Location:</strong> {results[selectedCandidate].enrichment.company.location}</div>
+                      )}
+                      {results[selectedCandidate].enrichment.company.ai_summary && (
+                        <div style={{ 
+                          marginTop: 'var(--spacing-sm)', 
+                          padding: 'var(--spacing-sm)', 
+                          backgroundColor: 'var(--color-bg-secondary)', 
+                          borderRadius: 'var(--radius-sm)',
+                          whiteSpace: 'pre-wrap',
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          lineHeight: '1.6'
+                        }}>
+                          <strong>AI Summary:</strong> {results[selectedCandidate].enrichment.company.ai_summary}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {results[selectedCandidate].enrichment.candidate && (
+                    <div>
+                      <h4 style={{ fontSize: 'var(--font-size-md)', marginBottom: 'var(--spacing-sm)' }}>Candidate Professional Profile</h4>
+                      {results[selectedCandidate].enrichment.candidate.professional_summary && (
+                        <div style={{ wordWrap: 'break-word', overflowWrap: 'break-word', marginBottom: 'var(--spacing-sm)' }}><strong>Summary:</strong> {results[selectedCandidate].enrichment.candidate.professional_summary}</div>
+                      )}
+                      {results[selectedCandidate].enrichment.candidate.linkedin_profile && (
+                        <div style={{ wordBreak: 'break-all', marginBottom: 'var(--spacing-sm)' }}><strong>LinkedIn:</strong> <a href={results[selectedCandidate].enrichment.candidate.linkedin_profile} target="_blank" rel="noopener noreferrer">{results[selectedCandidate].enrichment.candidate.linkedin_profile}</a></div>
+                      )}
+                      {results[selectedCandidate].enrichment.candidate.github_profile && (
+                        <div style={{ wordBreak: 'break-all', marginBottom: 'var(--spacing-sm)' }}><strong>GitHub:</strong> <a href={results[selectedCandidate].enrichment.candidate.github_profile} target="_blank" rel="noopener noreferrer">{results[selectedCandidate].enrichment.candidate.github_profile}</a></div>
+                      )}
+                      {results[selectedCandidate].enrichment.candidate.portfolio_url && (
+                        <div style={{ wordBreak: 'break-all', marginBottom: 'var(--spacing-sm)' }}><strong>Portfolio:</strong> <a href={results[selectedCandidate].enrichment.candidate.portfolio_url} target="_blank" rel="noopener noreferrer">{results[selectedCandidate].enrichment.candidate.portfolio_url}</a></div>
+                      )}
+                      {results[selectedCandidate].enrichment.candidate.publications && results[selectedCandidate].enrichment.candidate.publications.length > 0 && (
+                        <div style={{ marginTop: 'var(--spacing-sm)' }}>
+                          <strong>Publications:</strong>
+                          <ul>
+                            {results[selectedCandidate].enrichment.candidate.publications.map((pub: any, i: number) => (
+                              <li key={i}>
+                                {pub.title && <span>{pub.title}</span>}
+                                {pub.url && <span> - <a href={pub.url} target="_blank" rel="noopener noreferrer">Link</a></span>}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {results[selectedCandidate].enrichment.candidate.awards && results[selectedCandidate].enrichment.candidate.awards.length > 0 && (
+                        <div style={{ marginTop: 'var(--spacing-sm)' }}>
+                          <strong>Awards:</strong>
+                          <ul>
+                            {results[selectedCandidate].enrichment.candidate.awards.map((award: string, i: number) => (
+                              <li key={i}>{award}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {results[selectedCandidate].enrichment.candidate.ai_summary && (
+                        <div style={{ 
+                          marginTop: 'var(--spacing-sm)', 
+                          padding: 'var(--spacing-sm)', 
+                          backgroundColor: 'var(--color-bg-secondary)', 
+                          borderRadius: 'var(--radius-sm)',
+                          whiteSpace: 'pre-wrap',
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          lineHeight: '1.6'
+                        }}>
+                          <strong>AI Summary:</strong> {results[selectedCandidate].enrichment.candidate.ai_summary}
+                        </div>
+                      )}
+                      {results[selectedCandidate].enrichment.candidate.result_count && (
+                        <div style={{ marginTop: 'var(--spacing-sm)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                          Found {results[selectedCandidate].enrichment.candidate.result_count} search results
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
         

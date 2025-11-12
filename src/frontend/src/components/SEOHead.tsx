@@ -150,3 +150,4 @@ export const getFAQSchema = (faqs: Array<{question: string; answer: string}>) =>
 
 export default SEOHead;
 
+

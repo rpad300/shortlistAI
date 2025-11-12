@@ -58,6 +58,8 @@ JOB_POSTING_NORMALIZATION_PROMPT = """You are a recruitment expert. Extract stru
 Job Posting:
 {job_posting_text}
 
+{enrichment_context}
+
 Extract and return ONLY valid JSON:
 {{
   "title": "Job title",
@@ -94,6 +96,8 @@ Structured Job Posting Data (if available):
 
 Key Requirements Highlighted by Interviewer:
 {key_points}
+
+{enrichment_context}
 
 Respond ONLY with valid JSON (no extra text) using this structure in {language}:
 {{
@@ -203,7 +207,17 @@ Analyze this candidate and return ONLY valid JSON in {language}:
     "Question 5"
   ],
   "hard_blocker_violations": ["Blocker 1 if violated"],
-  "recommendation": "Brief hiring recommendation"
+  "recommendation": "Brief hiring recommendation",
+  "intro_pitch": "A 30-second introduction pitch for this candidate to use during interviews",
+  "gap_strategies": [
+    "Strategy 1 to address identified gaps/risks",
+    "Strategy 2 to address identified gaps/risks"
+  ],
+  "preparation_tips": [
+    "Topic 1 to study for the interview",
+    "Topic 2 to study for the interview",
+    "Topic 3 to study for the interview"
+  ]
 }}
 
 Use scores 1-5 where:
@@ -218,7 +232,17 @@ Question design requirements:
 - Begin with verification of every hard blocker (one question per blocker, grouped first).
 - Then ask one question per category, ordered by descending weight importance (technical, experience, soft skills, languages, education). Explicitly mention the target category in each question.
 - Finish with exploratory questions that cover nice-to-have differentiators or potential culture add topics.
-- Every question must be actionable and refer to the candidate’s CV when possible.
+- Every question must be actionable and refer to the candidate's CV when possible.
+
+Gap strategies requirements:
+- Provide concrete strategies the candidate can use to address each identified risk or gap.
+- Focus on actionable steps, not just general advice.
+- Consider how the candidate can leverage their existing strengths to compensate for gaps.
+
+Preparation tips requirements:
+- List specific topics, technologies, or concepts the candidate should study to address the identified risks and gaps.
+- Make tips specific and relevant to the job requirements.
+- Prioritize topics that directly address hard blockers or critical gaps.
 
 Return ONLY the JSON in {language}."""
 
@@ -308,6 +332,8 @@ Evaluation Criteria (weights):
 
 Hard Blockers:
 {hard_blockers}
+
+{enrichment_context}
 
 Write a concise executive recommendation in {language} that:
 1. Identifies the top 1-2 candidates and explains WHY they stand out
