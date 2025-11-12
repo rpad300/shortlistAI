@@ -183,6 +183,17 @@ class CVService:
         except Exception as e:
             logger.error(f"Error updating CV extracted data: {e}")
             return False
+    
+    async def count_all(self) -> int:
+        """Count total number of CVs."""
+        try:
+            result = self.client.table(self.table)\
+                .select("id", count="exact")\
+                .execute()
+            return result.count or 0
+        except Exception as e:
+            logger.error(f"Error counting CVs: {e}")
+            return 0
 
 
 # Global service instance

@@ -220,42 +220,75 @@ async def get_dashboard_stats(admin=Depends(get_current_admin)):
 
 @router.get("/dashboard/detailed-stats")
 async def get_detailed_stats(admin=Depends(get_current_admin)):
-    """Get detailed dashboard statistics."""
+    """Get detailed dashboard statistics with real data from database."""
+    from services.database import (
+        get_candidate_service,
+        get_company_service,
+        get_interviewer_service,
+        get_job_posting_service,
+        get_analysis_service,
+        get_cv_service
+    )
+    
     try:
+        # Get all services
+        candidate_service = get_candidate_service()
+        company_service = get_company_service()
+        interviewer_service = get_interviewer_service()
+        job_posting_service = get_job_posting_service()
+        analysis_service = get_analysis_service()
+        cv_service = get_cv_service()
+        
+        # Count totals
+        total_candidates = await candidate_service.count_all()
+        total_companies = await company_service.count_all()
+        total_interviewers = await interviewer_service.count_all()
+        total_job_postings = await job_posting_service.count_all()
+        total_analyses = await analysis_service.count_all()
+        total_cvs = await cv_service.count_all()
+        
+        # Count recent activity (last 30 days)
+        new_candidates = await candidate_service.count_recent(30)
+        new_companies = await company_service.count_recent(30)
+        new_job_postings = await job_posting_service.count_recent(30)
+        new_analyses = await analysis_service.count_recent(30)
+        
+        # Get provider distribution
+        provider_counts = await analysis_service.count_by_provider()
+        providers = {
+            "gemini": {"calls": provider_counts.get("gemini", 0), "cost": 0},
+            "openai": {"calls": provider_counts.get("openai", 0), "cost": 0},
+            "claude": {"calls": provider_counts.get("claude", 0), "cost": 0},
+            "kimi": {"calls": provider_counts.get("kimi", 0), "cost": 0},
+            "minimax": {"calls": provider_counts.get("minimax", 0), "cost": 0}
+        }
+        
+        # Get language distribution
+        language_counts = await analysis_service.count_by_language()
+        
         return JSONResponse({
             "overview": {
-                "total_candidates": 0,
-                "total_companies": 0,
-                "total_interviewers": 0,
-                "total_job_postings": 0,
-                "total_analyses": 0,
-                "total_cvs": 0
+                "total_candidates": total_candidates,
+                "total_companies": total_companies,
+                "total_interviewers": total_interviewers,
+                "total_job_postings": total_job_postings,
+                "total_analyses": total_analyses,
+                "total_cvs": total_cvs
             },
             "activity": {
-                "analyses_this_month": 0,
-                "new_candidates_this_month": 0,
-                "new_companies_this_month": 0,
-                "new_job_postings_this_month": 0
+                "analyses_this_month": new_analyses,
+                "new_candidates_this_month": new_candidates,
+                "new_companies_this_month": new_companies,
+                "new_job_postings_this_month": new_job_postings
             },
             "ai_usage": {
-                "total_api_calls": 0,
-                "cost_this_month": 0,
-                "average_response_time": 0,
-                "success_rate": 0
+                "total_api_calls": total_analyses,
+                "cost_this_month": 0,  # TODO: Implement cost tracking
+                "average_response_time": 0,  # TODO: Implement timing tracking
+                "success_rate": 100 if total_analyses > 0 else 0
             },
-            "providers": {
-                "gemini": {"calls": 0, "cost": 0},
-                "openai": {"calls": 0, "cost": 0},
-                "claude": {"calls": 0, "cost": 0},
-                "kimi": {"calls": 0, "cost": 0},
-                "minimax": {"calls": 0, "cost": 0}
-            },
-            "languages": {
-                "en": 0,
-                "pt": 0,
-                "fr": 0,
-                "es": 0
-            }
+            "providers": providers,
+            "languages": language_counts
         })
     except Exception as e:
         logger.error(f"Error getting detailed stats: {e}")

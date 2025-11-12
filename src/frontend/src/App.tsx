@@ -26,6 +26,10 @@ import InterviewerStep7 from '@pages/InterviewerStep7';
 import AdminLogin from '@pages/AdminLogin';
 import AdminDashboard from '@pages/AdminDashboard';
 import AdminCandidates from '@pages/AdminCandidates';
+import AdminAnalyses from '@pages/AdminAnalyses';
+import AdminCompanies from '@pages/AdminCompanies';
+import AdminInterviewers from '@pages/AdminInterviewers';
+import AdminJobPostings from '@pages/AdminJobPostings';
 import AdminUsers from '@pages/AdminUsers';
 import LegalTerms from '@pages/LegalTerms';
 import LegalPrivacy from '@pages/LegalPrivacy';
@@ -60,10 +64,10 @@ function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/candidates" element={<AdminCandidates />} />
-          <Route path="/admin/analyses" element={<PlaceholderPage step="Analyses Management" flow="admin" />} />
-          <Route path="/admin/companies" element={<PlaceholderPage step="Companies Management" flow="admin" />} />
-          <Route path="/admin/interviewers" element={<PlaceholderPage step="Interviewers Management" flow="admin" />} />
-          <Route path="/admin/job-postings" element={<PlaceholderPage step="Job Postings Management" flow="admin" />} />
+          <Route path="/admin/analyses" element={<AdminAnalyses />} />
+          <Route path="/admin/companies" element={<AdminCompanies />} />
+          <Route path="/admin/interviewers" element={<AdminInterviewers />} />
+          <Route path="/admin/job-postings" element={<AdminJobPostings />} />
           <Route path="/admin/ai-usage" element={<PlaceholderPage step="AI Usage Logs" flow="admin" />} />
           <Route path="/admin/users" element={<AdminUsers />} />
         </Routes>

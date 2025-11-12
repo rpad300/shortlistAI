@@ -224,6 +224,17 @@ class InterviewerService:
         except Exception as e:
             logger.error(f"Error listing interviewers: {e}")
             return []
+    
+    async def count_all(self) -> int:
+        """Count total number of interviewers."""
+        try:
+            result = self.client.table(self.table)\
+                .select("id", count="exact")\
+                .execute()
+            return result.count or 0
+        except Exception as e:
+            logger.error(f"Error counting interviewers: {e}")
+            return 0
 
 
 # Global service instance

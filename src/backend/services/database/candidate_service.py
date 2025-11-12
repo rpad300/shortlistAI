@@ -277,6 +277,49 @@ class CandidateService:
         except Exception as e:
             logger.error(f"Error getting analyses for candidate: {e}")
             return []
+    
+    async def count_all(self) -> int:
+        """
+        Count total number of candidates.
+        
+        Returns:
+            Total count of candidates
+        """
+        try:
+            result = self.client.table(self.table)\
+                .select("id", count="exact")\
+                .execute()
+            
+            return result.count or 0
+            
+        except Exception as e:
+            logger.error(f"Error counting candidates: {e}")
+            return 0
+    
+    async def count_recent(self, days: int = 30) -> int:
+        """
+        Count candidates created in the last N days.
+        
+        Args:
+            days: Number of days to look back
+            
+        Returns:
+            Count of recent candidates
+        """
+        try:
+            from datetime import datetime, timedelta
+            cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+            
+            result = self.client.table(self.table)\
+                .select("id", count="exact")\
+                .gte("created_at", cutoff)\
+                .execute()
+            
+            return result.count or 0
+            
+        except Exception as e:
+            logger.error(f"Error counting recent candidates: {e}")
+            return 0
 
 
 # Global service instance

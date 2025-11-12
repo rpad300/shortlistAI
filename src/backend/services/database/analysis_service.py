@@ -198,6 +198,65 @@ class AnalysisService:
         except Exception as e:
             logger.error(f"Error getting analyses for candidate: {e}")
             return []
+    
+    async def count_all(self) -> int:
+        """Count total number of analyses."""
+        try:
+            result = self.client.table(self.table)\
+                .select("id", count="exact")\
+                .execute()
+            return result.count or 0
+        except Exception as e:
+            logger.error(f"Error counting analyses: {e}")
+            return 0
+    
+    async def count_recent(self, days: int = 30) -> int:
+        """Count analyses created in the last N days."""
+        try:
+            from datetime import datetime, timedelta
+            cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+            result = self.client.table(self.table)\
+                .select("id", count="exact")\
+                .gte("created_at", cutoff)\
+                .execute()
+            return result.count or 0
+        except Exception as e:
+            logger.error(f"Error counting recent analyses: {e}")
+            return 0
+    
+    async def count_by_provider(self) -> Dict[str, int]:
+        """Count analyses by AI provider."""
+        try:
+            result = self.client.table(self.table)\
+                .select("provider")\
+                .execute()
+            
+            counts = {}
+            for row in (result.data or []):
+                provider = row.get("provider", "unknown")
+                counts[provider] = counts.get(provider, 0) + 1
+            
+            return counts
+        except Exception as e:
+            logger.error(f"Error counting by provider: {e}")
+            return {}
+    
+    async def count_by_language(self) -> Dict[str, int]:
+        """Count analyses by language."""
+        try:
+            result = self.client.table(self.table)\
+                .select("language")\
+                .execute()
+            
+            counts = {}
+            for row in (result.data or []):
+                language = row.get("language", "unknown")
+                counts[language] = counts.get(language, 0) + 1
+            
+            return counts
+        except Exception as e:
+            logger.error(f"Error counting by language: {e}")
+            return {}
 
 
 # Global service instance
