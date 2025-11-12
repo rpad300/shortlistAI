@@ -69,7 +69,12 @@ export const interviewerAPI = {
   step6: (sessionId: string) => api.post(`/api/interviewer/step6?session_id=${sessionId}`, null, {
     timeout: 90000,
   }),
-  step7: (sessionId: string) => api.get(`/api/interviewer/step7/${sessionId}`),
+  step7: (sessionId: string, reportCode?: string) => {
+    const url = reportCode 
+      ? `/api/interviewer/step7/${sessionId}?report_code=${reportCode}`
+      : `/api/interviewer/step7/${sessionId}`;
+    return api.get(url);
+  },
   sendEmail: (sessionId: string, email: string) => 
     api.post('/api/interviewer/step8/email', { session_id: sessionId, recipient_email: email }),
   downloadReport: (sessionId: string) => api.get(`/api/interviewer/step8/report/${sessionId}`, {
