@@ -86,12 +86,6 @@ const AdminLogin: React.FC = () => {
               required
               placeholder="••••••••"
             />
-            
-            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', marginTop: 'var(--spacing-md)' }}>
-              <strong>Default credentials:</strong><br/>
-              Email: admin@shortlistai.com<br/>
-              Password: admin123
-            </div>
           </div>
           
           {error && <div className="error-banner">{error}</div>}
