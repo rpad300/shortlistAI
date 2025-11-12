@@ -7,13 +7,23 @@ routers, and configuration for the CV analysis platform.
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 import os
+import logging
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Configure logging to show ALL levels including DEBUG and INFO
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
+
+# Force all loggers to INFO level
+for logger_name in ['services.ai_analysis', 'services.ai.gemini_provider', 'services.ai.manager']:
+    logging.getLogger(logger_name).setLevel(logging.INFO)
 
 # Create FastAPI app instance
 app = FastAPI(
@@ -33,9 +43,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Gzip compression for responses
-app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Rate limiting middleware
 from middleware.rate_limit import get_rate_limiter

@@ -14,7 +14,7 @@ Handles all steps of the interviewer flow:
 
 import asyncio
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Query
 from fastapi.responses import JSONResponse
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, EmailStr, Field
@@ -981,7 +981,8 @@ async def step6_analysis(session_id: str):
         get_session_service,
         get_job_posting_service,
         get_cv_service,
-        get_analysis_service
+        get_analysis_service,
+        get_report_service
     )
     from services.ai_analysis import get_ai_analysis_service
     from utils import FileProcessor
@@ -1048,6 +1049,8 @@ async def step6_analysis(session_id: str):
 
             ai_result = None
             cv_markdown = FileProcessor.text_to_markdown(extracted_text) if extracted_text else ""
+            
+            # Note: Gemini can handle large CVs (4M tokens), no truncation needed
 
             if not cv_markdown or not job_posting_markdown:
                 logger.error("Missing CV or job posting text for analysis. CV ID: %s", cv_id)
@@ -1210,13 +1213,25 @@ async def step6_analysis(session_id: str):
 
 
 @router.get("/step7/{session_id}")
-async def step7_results(session_id: UUID):
+async def step7_results(
+    session_id: UUID,
+    report_code: Optional[str] = Query(
+        default=None,
+        max_length=50,
+        description="Optional report code to recover results if session expired"
+    )
+):
     """
     Step 7: Display results.
     
     Returns ranked list of candidates with scores and details.
     """
-    from services.database import get_session_service, get_analysis_service
+    from services.database import (
+        get_session_service,
+        get_analysis_service,
+        get_report_service,
+        get_candidate_service
+    )
     
     try:
         session_service = get_session_service()
@@ -1225,7 +1240,90 @@ async def step7_results(session_id: UUID):
         # Validate session
         session = session_service.get_session(session_id)
         if not session:
-            raise HTTPException(status_code=404, detail="Session not found or expired")
+            if not report_code:
+                raise HTTPException(status_code=404, detail="Session not found or expired")
+            
+            # Fallback: load results directly from persistent report
+            report_service = get_report_service()
+            report = await report_service.get_by_code(report_code)
+            
+            if not report:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Session expired and report code not found. Please restart the analysis."
+                )
+            
+            analyses = await report_service.get_analyses_for_report(UUID(report["id"]))
+            
+            if not analyses:
+                raise HTTPException(
+                    status_code=404,
+                    detail="No analysis results found for this report yet."
+                )
+            
+            candidate_service = get_candidate_service()
+            
+            def _ensure_list(value: Any) -> List[Any]:
+                if isinstance(value, list):
+                    return value
+                if isinstance(value, dict):
+                    items = value.get("items")
+                    if isinstance(items, list):
+                        return items
+                    flags = value.get("flags")
+                    if isinstance(flags, list):
+                        return flags
+                    values = value.get("value") or value.get("values")
+                    if isinstance(values, list):
+                        return values
+                if value is None:
+                    return []
+                return [value]
+            
+            fallback_results: List[Dict[str, Any]] = []
+            for idx, analysis in enumerate(analyses, start=1):
+                candidate_label = None
+                try:
+                    candidate = await candidate_service.get_by_id(UUID(analysis["candidate_id"]))
+                    if candidate and candidate.get("name"):
+                        candidate_label = candidate["name"]
+                except Exception as candidate_err:  # pragma: no cover - logging only
+                    logger.warning(
+                        "Failed to load candidate %s for report fallback: %s",
+                        analysis.get("candidate_id"),
+                        candidate_err
+                    )
+                
+                fallback_results.append({
+                    "analysis_id": analysis["id"],
+                    "candidate_id": analysis["candidate_id"],
+                    "candidate_label": candidate_label or f"Candidate {idx}",
+                    "global_score": analysis.get("global_score", 0),
+                    "categories": analysis.get("categories") or {},
+                    "strengths": _ensure_list(analysis.get("strengths")),
+                    "risks": _ensure_list(analysis.get("risks")),
+                    "questions": _ensure_list(analysis.get("questions")),
+                    "hard_blocker_flags": _ensure_list(analysis.get("hard_blocker_flags")),
+                    "provider": analysis.get("provider")
+                })
+            
+            logger.info(
+                "Loaded %d results from persistent report %s for session %s",
+                len(fallback_results),
+                report_code,
+                session_id
+            )
+            
+            return JSONResponse({
+                "status": "success",
+                "total_candidates": len(fallback_results),
+                "results": fallback_results,
+                "executive_recommendation": report.get("executive_recommendation"),
+                "message": f"Recovered {len(fallback_results)} candidates from report {report_code}.",
+                "report_id": report.get("id"),
+                "report_code": report.get("report_code"),
+                "source": "report"
+            })
         
         # Check if analysis is complete
         if not session["data"].get("analysis_complete"):
@@ -1234,6 +1332,7 @@ async def step7_results(session_id: UUID):
                 detail="Analysis not complete. Run step 6 first."
             )
         
+        report_code_in_session = session["data"].get("report_code")
         results = session["data"].get("analysis_results")
         executive_recommendation = session["data"].get("executive_recommendation")
         
@@ -1251,7 +1350,9 @@ async def step7_results(session_id: UUID):
                 "total_candidates": len(sorted_results),
                 "results": sorted_results,
                 "executive_recommendation": executive_recommendation,
-                "message": f"Analysis complete for {len(sorted_results)} candidates."
+                "message": f"Analysis complete for {len(sorted_results)} candidates.",
+                "report_code": report_code_in_session,
+                "source": "session"
             })
         
         # Fallback: query database (legacy)
@@ -1307,7 +1408,9 @@ async def step7_results(session_id: UUID):
             "total_candidates": len(sorted_results),
             "results": sorted_results,
             "executive_recommendation": executive_recommendation,
-            "message": f"Analysis complete for {len(sorted_results)} candidates."
+            "message": f"Analysis complete for {len(sorted_results)} candidates.",
+            "report_code": report_code_in_session,
+            "source": "session-db"
         })
         
     except HTTPException:

@@ -34,6 +34,27 @@ class PDFReportGenerator:
         self.branding.ensure_fonts_registered()
         self._setup_custom_styles()
     
+    def _get_style(self, preferred_name: str, fallback_name: str):
+        """Get style with fallback."""
+        try:
+            return self.styles[preferred_name]
+        except KeyError:
+            return self.styles[fallback_name]
+    
+    def _normalize_list_field(self, value):
+        """Normalize a field that might be a list, dict, or None."""
+        if isinstance(value, list):
+            return value
+        if isinstance(value, dict):
+            # Try common keys for nested lists
+            for key in ("items", "flags", "values", "value"):
+                maybe = value.get(key)
+                if isinstance(maybe, list):
+                    return maybe
+        if value is None:
+            return []
+        return [value]
+    
     def _setup_custom_styles(self):
         """Set up custom paragraph styles with ShortlistAI branding."""
         # Get branded styles
@@ -730,6 +751,231 @@ class PDFReportGenerator:
             return result['candidate_label']
         
         return f"Candidate {idx}"
+    
+    def generate_candidate_report(
+        self,
+        session_data: Dict[str, Any],
+        analysis: Dict[str, Any]
+    ) -> bytes:
+        """
+        Generate comprehensive PDF preparation guide for candidate.
+        
+        Args:
+            session_data: Session data with candidate info
+            analysis: Analysis results with scores, strengths, gaps, strategies
+            
+        Returns:
+            PDF file as bytes
+        """
+        buffer = io.BytesIO()
+        
+        # Create PDF document with branded header/footer
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=inch,
+            leftMargin=inch,
+            topMargin=self.branding.get_header_height() + self.branding.get_content_top_padding(),
+            bottomMargin=inch
+        )
+        
+        # Build content
+        story = []
+        
+        # Title page (same format as interviewer report)
+        story.append(Paragraph(
+            '<font color="#0066FF"><b>Interview Preparation Guide</b></font>',
+            self.styles['CustomTitle']
+        ))
+        story.append(Spacer(1, 0.3 * inch))
+        
+        # Candidate info
+        candidate_data = session_data.get("data", {})
+        candidate_name = candidate_data.get("name", "Candidate")
+        story.append(Paragraph(
+            f"<b>Prepared for:</b> {candidate_name}",
+            self.styles['Heading2']
+        ))
+        story.append(Spacer(1, 0.5 * inch))
+        
+        # Overall Score
+        global_score = analysis.get("global_score", 0)
+        story.append(Paragraph(
+            f"<b>Overall Fit Score:</b> {global_score:.1f}/5.0",
+            self._get_style('BrandedHeading', 'Heading1')
+        ))
+        story.append(Spacer(1, 0.3 * inch))
+        
+        # Category Scores
+        story.append(Paragraph("Category Scores", self._get_style('BrandedHeading', 'Heading1')))
+        story.append(Spacer(1, 0.1 * inch))
+        
+        categories = analysis.get("categories", {})
+        if categories:
+            cat_data = [["Category", "Score"]]
+            for cat, score in categories.items():
+                cat_data.append([cat.replace("_", " ").title(), f"{score}/5"])
+            
+            cat_table = Table(cat_data, colWidths=[4 * inch, 1.5 * inch])
+            cat_table.setStyle(self.branding.create_branded_table_style())
+            story.append(cat_table)
+        
+        story.append(Spacer(1, 0.4 * inch))
+        
+        # Your Strengths
+        story.append(Paragraph("✓ Your Strengths", self._get_style('BrandedHeading', 'Heading1')))
+        story.append(Spacer(1, 0.1 * inch))
+        
+        strengths = self._normalize_list_field(analysis.get("strengths"))
+        for strength in strengths:
+            story.append(Paragraph(
+                f"• {strength}",
+                self._get_style('BrandedBody', 'BodyText')
+            ))
+            story.append(Spacer(1, 0.05 * inch))
+        
+        story.append(Spacer(1, 0.3 * inch))
+        
+        # Areas to Address
+        story.append(Paragraph("⚠ Areas to Address", self._get_style('BrandedHeading', 'Heading1')))
+        story.append(Spacer(1, 0.1 * inch))
+        
+        gaps = self._normalize_list_field(analysis.get("risks"))
+        for gap in gaps:
+            story.append(Paragraph(
+                f"• {gap}",
+                self._get_style('BrandedBody', 'BodyText')
+            ))
+            story.append(Spacer(1, 0.05 * inch))
+        
+        story.append(Spacer(1, 0.3 * inch))
+        story.append(PageBreak())
+        
+        # How to Address Gaps
+        questions_data = analysis.get("questions") or {}
+        gap_strategies = self._normalize_list_field(questions_data.get("gap_strategies"))
+        
+        if gap_strategies:
+            story.append(Paragraph("💡 How to Address Your Gaps", self._get_style('BrandedHeading', 'Heading1')))
+            story.append(Spacer(1, 0.1 * inch))
+            
+            for idx, strategy in enumerate(gap_strategies, 1):
+                if isinstance(strategy, dict):
+                    gap_name = strategy.get("gap", f"Gap {idx}")
+                    how_to = strategy.get("how_to_address", "")
+                    talking_points = self._normalize_list_field(strategy.get("talking_points"))
+                    
+                    story.append(Paragraph(
+                        f"<b>{idx}. {gap_name}</b>",
+                        self._get_style('BrandedSubheading', 'Heading2')
+                    ))
+                    story.append(Spacer(1, 0.05 * inch))
+                    
+                    if how_to:
+                        story.append(Paragraph(how_to, self._get_style('BrandedBody', 'BodyText')))
+                        story.append(Spacer(1, 0.05 * inch))
+                    
+                    if talking_points:
+                        for point in talking_points:
+                            story.append(Paragraph(
+                                f"  → {point}",
+                                self._get_style('BrandedBody', 'BodyText')
+                            ))
+                            story.append(Spacer(1, 0.03 * inch))
+                    
+                    story.append(Spacer(1, 0.15 * inch))
+            
+            story.append(PageBreak())
+        
+        # Likely Interview Questions
+        story.append(Paragraph("❓ Likely Interview Questions", self._get_style('BrandedHeading', 'Heading1')))
+        story.append(Spacer(1, 0.1 * inch))
+        
+        questions = self._normalize_list_field(questions_data.get("items") or analysis.get("questions"))
+        
+        # Try to get separate answers array (new format)
+        answers_array = self._normalize_list_field(analysis.get("answers") or questions_data.get("answers") or [])
+        
+        for idx, question_item in enumerate(questions, 1):
+            # Handle both dict and string formats
+            if isinstance(question_item, dict):
+                question_text = question_item.get("q") or question_item.get("question", "")
+                suggested_answer = question_item.get("a") or question_item.get("answer") or question_item.get("suggested_answer", "")
+                category = question_item.get("category", "")
+            else:
+                question_text = str(question_item)
+                # Try to get answer from parallel answers array
+                suggested_answer = answers_array[idx - 1] if (idx - 1) < len(answers_array) else ""
+                category = ""
+            
+            # Question with category tag
+            if category:
+                story.append(Paragraph(
+                    f"<b>{idx}. [{category.replace('_', ' ').title()}] {question_text}</b>",
+                    self._get_style('BrandedSubheading', 'Heading2')
+                ))
+            else:
+                story.append(Paragraph(
+                    f"<b>{idx}. {question_text}</b>",
+                    self._get_style('BrandedSubheading', 'Heading2')
+                ))
+            
+            story.append(Spacer(1, 0.05 * inch))
+            
+            # Suggested answer if available
+            if suggested_answer:
+                story.append(Paragraph(
+                    f"<i>Suggested approach:</i> {suggested_answer}",
+                    self._get_style('BrandedBodySmall', 'Normal')
+                ))
+            else:
+                story.append(Paragraph(
+                    "<i>Use STAR method: Situation → Task → Action → Result. Quantify your impact.</i>",
+                    self._get_style('BrandedBodySmall', 'Normal')
+                ))
+            
+            story.append(Spacer(1, 0.2 * inch))
+        
+        story.append(Spacer(1, 0.2 * inch))
+        story.append(PageBreak())
+        
+        # Intro Pitch
+        intro_pitch = analysis.get("intro_pitch", "")
+        if intro_pitch:
+            story.append(Paragraph("🎯 Your Intro Pitch", self._get_style('BrandedHeading', 'Heading1')))
+            story.append(Spacer(1, 0.1 * inch))
+            story.append(Paragraph(
+                f'"{intro_pitch}"',
+                self._get_style('BrandedBodyItalic', 'BodyText')
+            ))
+            story.append(Spacer(1, 0.3 * inch))
+        
+        # Preparation Tips/Notes
+        prep_tips = self._normalize_list_field(
+            questions_data.get("notes") or
+            questions_data.get("preparation_tips") or
+            analysis.get("notes") or
+            analysis.get("preparation_tips")
+        )
+        if prep_tips:
+            story.append(Paragraph("📚 Preparation Checklist", self._get_style('BrandedHeading', 'Heading1')))
+            story.append(Spacer(1, 0.1 * inch))
+            
+            for tip in prep_tips:
+                story.append(Paragraph(
+                    f"☐ {tip}",
+                    self._get_style('BrandedBody', 'BodyText')
+                ))
+                story.append(Spacer(1, 0.08 * inch))
+        
+        # Build PDF with branded header/footer (same as interviewer report)
+        doc.build(
+            story,
+            onFirstPage=self._add_branded_page,
+            onLaterPages=self._add_branded_page
+        )
+        
+        return buffer.getvalue()
 
 
 # Global instance

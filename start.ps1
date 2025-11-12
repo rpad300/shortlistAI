@@ -1,122 +1,117 @@
-# ShortlistAI - Script de Início Único
-# Inicia Backend e Frontend em paralelo
+# ShortlistAI - Script de início único (uma consola)
+# Lança Backend (FastAPI) e Frontend (Vite) na mesma janela
+
+$ErrorActionPreference = "Stop"
+
+# Ensure we run from repository root
+Set-Location (Split-Path -Parent $MyInvocation.MyCommand.Path)
 
 Write-Host ""
-Write-Host "╔════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║                                                ║" -ForegroundColor Cyan
-Write-Host "║        🚀 INICIANDO SHORTLISTAI 🚀             ║" -ForegroundColor Green
-Write-Host "║                                                ║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "========================================"
+Write-Host "  Starting ShortlistAI (single console)"
+Write-Host "========================================"
 Write-Host ""
 
-# Matar processos antigos
-Write-Host "🔄 Encerrando processos antigos..." -ForegroundColor Yellow
-taskkill /F /IM python.exe 2>$null | Out-Null
-taskkill /F /IM node.exe 2>$null | Out-Null
+$backendDir = Join-Path (Get-Location) "src\backend"
+$frontendDir = Join-Path (Get-Location) "src\frontend"
+$backendExe = Join-Path $backendDir "venv\Scripts\python.exe"
+$backendMain = Join-Path $backendDir "main.py"
+
+if (-not (Test-Path $backendExe)) {
+    throw "Backend virtualenv not found at $backendExe. Create it with 'python -m venv src\backend\venv'."
+}
+if (-not (Test-Path $backendMain)) {
+    throw "Cannot find main.py in $backendDir."
+}
+
+$npmCommand = (Get-Command "npm.cmd" -ErrorAction Stop).Source
+
+function Stop-Processes {
+    param([string[]] $Names)
+    foreach ($name in $Names) {
+        Get-Process -Name $name -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host ("Stopping leftover process {0} (PID {1})..." -f $_.ProcessName, $_.Id)
+            try {
+                $_.Kill()
+                $_.WaitForExit()
+            } catch {
+                # ignore errors
+            }
+        }
+    }
+}
+
+Stop-Processes @("python", "node")
+Write-Host "Old python/node processes stopped."
+Write-Host ""
+
+function Start-ConsoleProcess {
+    param(
+        [string] $FilePath,
+        [string] $Arguments,
+        [string] $WorkingDirectory,
+        [string] $Label
+    )
+
+    Write-Host ("Starting {0}..." -f $Label)
+
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $FilePath
+    $psi.Arguments = $Arguments
+    $psi.WorkingDirectory = $WorkingDirectory
+    $psi.UseShellExecute = $true  # Changed to TRUE to show console windows
+    $psi.CreateNoWindow = $false
+
+    $process = [System.Diagnostics.Process]::Start($psi)
+    if (-not $process) {
+        throw "Failed to start $Label."
+    }
+
+    Write-Host ("  PID: {0}" -f $process.Id)
+    return $process
+}
+
+$backendProcess = Start-ConsoleProcess $backendExe "main.py" $backendDir "Backend (FastAPI)"
 Start-Sleep -Seconds 2
-Write-Host "✅ Processos antigos encerrados" -ForegroundColor Green
-Write-Host ""
+$frontendProcess = Start-ConsoleProcess $npmCommand "run dev" $frontendDir "Frontend (Vite dev server)"
 
-# Iniciar Backend
-Write-Host "🐍 Iniciando Backend (Python + FastAPI)..." -ForegroundColor Cyan
-$backendPath = "src\backend"
-$backendScript = {
-    param($path)
-    Set-Location $path
-    .\venv\Scripts\activate
-    Write-Host "✅ Backend iniciado em http://localhost:8000" -ForegroundColor Green
-    python main.py
-}
-
-$backendJob = Start-Job -ScriptBlock $backendScript -ArgumentList (Resolve-Path $backendPath)
-Write-Host "✅ Backend a iniciar (Job ID: $($backendJob.Id))" -ForegroundColor Green
 Write-Host ""
-
-# Aguardar backend iniciar
-Write-Host "⏳ Aguardando backend iniciar..." -ForegroundColor Yellow
-Start-Sleep -Seconds 3
-
-# Iniciar Frontend
-Write-Host "⚛️  Iniciando Frontend (React + Vite)..." -ForegroundColor Cyan
-$frontendPath = "src\frontend"
-$frontendScript = {
-    param($path)
-    Set-Location $path
-    Write-Host "✅ Frontend iniciado em http://localhost:3000" -ForegroundColor Green
-    npm run dev
-}
-
-$frontendJob = Start-Job -ScriptBlock $frontendScript -ArgumentList (Resolve-Path $frontendPath)
-Write-Host "✅ Frontend a iniciar (Job ID: $($frontendJob.Id))" -ForegroundColor Green
-Write-Host ""
-
-# Aguardar servidores iniciarem
-Write-Host "⏳ Aguardando servidores iniciarem..." -ForegroundColor Yellow
-Start-Sleep -Seconds 8
-
-# Verificar se estão a correr
-Write-Host ""
-Write-Host "╔════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║                                                ║" -ForegroundColor Green
-Write-Host "║        ✅ SHORTLISTAI INICIADO! ✅              ║" -ForegroundColor Yellow
-Write-Host "║                                                ║" -ForegroundColor Green
-Write-Host "╠════════════════════════════════════════════════╣" -ForegroundColor Green
-Write-Host "║                                                ║" -ForegroundColor Green
-Write-Host "║  Backend:  http://localhost:8000               ║" -ForegroundColor White
-Write-Host "║  Frontend: http://localhost:3000               ║" -ForegroundColor White
-Write-Host "║  API Docs: http://localhost:8000/api/docs      ║" -ForegroundColor White
-Write-Host "║                                                ║" -ForegroundColor Green
-Write-Host "╚════════════════════════════════════════════════╝" -ForegroundColor Green
-Write-Host ""
-Write-Host "📱 ABRE NO BROWSER:" -ForegroundColor Yellow
-Write-Host "   http://localhost:3000" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "🎯 Para parar os servidores:" -ForegroundColor Yellow
-Write-Host "   Ctrl+C neste terminal" -ForegroundColor White
-Write-Host ""
-Write-Host "📊 Logs dos servidores:" -ForegroundColor Yellow
-Write-Host "   Backend Job ID:  $($backendJob.Id)" -ForegroundColor White
-Write-Host "   Frontend Job ID: $($frontendJob.Id)" -ForegroundColor White
-Write-Host ""
-Write-Host "Ver logs: Receive-Job -Id <JobID> -Keep" -ForegroundColor Gray
-Write-Host ""
-
-# Manter script aberto e mostrar logs
-Write-Host "Carrega Ctrl+C para parar ambos os servidores..." -ForegroundColor Yellow
+Write-Host "========================================"
+Write-Host " ShortlistAI running"
+Write-Host " Backend : http://localhost:8000"
+Write-Host " Frontend: http://localhost:3000"
+Write-Host "========================================"
+Write-Host "Press Ctrl+C to stop both servers."
 Write-Host ""
 
 try {
-    # Manter script vivo e mostrar logs periodicamente
     while ($true) {
-        Start-Sleep -Seconds 5
-        
-        # Verificar se jobs ainda estão a correr
-        $backendStatus = (Get-Job -Id $backendJob.Id).State
-        $frontendStatus = (Get-Job -Id $frontendJob.Id).State
-        
-        if ($backendStatus -ne "Running" -or $frontendStatus -ne "Running") {
-            Write-Host ""
-            Write-Host "⚠️  Um dos servidores parou!" -ForegroundColor Red
-            Write-Host "Backend: $backendStatus" -ForegroundColor Yellow
-            Write-Host "Frontend: $frontendStatus" -ForegroundColor Yellow
-            Write-Host ""
-            Write-Host "Logs do Backend:" -ForegroundColor Cyan
-            Receive-Job -Id $backendJob.Id
-            Write-Host ""
-            Write-Host "Logs do Frontend:" -ForegroundColor Cyan
-            Receive-Job -Id $frontendJob.Id
-            break
+        if ($backendProcess.HasExited) {
+            throw "Backend process exited with code $($backendProcess.ExitCode)."
+        }
+        if ($frontendProcess.HasExited) {
+            throw "Frontend process exited with code $($frontendProcess.ExitCode)."
+        }
+        Start-Sleep -Seconds 1
+    }
+} catch {
+    Write-Host ""
+    Write-Host $_ -ForegroundColor Yellow
+} finally {
+    foreach ($proc in @($frontendProcess, $backendProcess)) {
+        if ($proc -and -not $proc.HasExited) {
+            Write-Host ("Stopping {0} (PID {1})..." -f $proc.ProcessName, $proc.Id)
+            try {
+                $proc.Kill()
+                $proc.WaitForExit(5000) | Out-Null
+            } catch {
+                # ignore
+            }
         }
     }
-} finally {
-    # Cleanup quando o script termina
+
+    Stop-Processes @("python", "node")
     Write-Host ""
-    Write-Host "🛑 Parando servidores..." -ForegroundColor Yellow
-    Stop-Job -Id $backendJob.Id -ErrorAction SilentlyContinue
-    Stop-Job -Id $frontendJob.Id -ErrorAction SilentlyContinue
-    Remove-Job -Id $backendJob.Id -ErrorAction SilentlyContinue
-    Remove-Job -Id $frontendJob.Id -ErrorAction SilentlyContinue
-    Write-Host "✅ Servidores parados" -ForegroundColor Green
-    Write-Host ""
+    Write-Host "Servers stopped."
 }
 

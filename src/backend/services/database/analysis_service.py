@@ -72,7 +72,7 @@ class AnalysisService:
                 "global_score": global_score,
                 "strengths": {"items": strengths} if strengths else None,
                 "risks": {"items": risks} if risks else None,
-                "questions": {"items": questions} if questions else None,
+                "questions": questions if isinstance(questions, dict) else ({"items": questions} if questions else None),
                 "intro_pitch": intro_pitch,
                 "hard_blocker_flags": {"flags": hard_blocker_flags} if hard_blocker_flags else None,
                 "language": language,

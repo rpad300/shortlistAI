@@ -54,7 +54,7 @@ Job Posting:
 Extract and return ONLY valid JSON:
 {{
   "title": "Job title",
-  "company": "Company name",
+  "company": "Company name if mentioned",
   "location": "Location",
   "type": "Full-time/Part-time/Contract",
   "experience_level": "Junior/Mid/Senior",
@@ -64,7 +64,12 @@ Extract and return ONLY valid JSON:
   "qualifications": ["Requirement 1", "Requirement 2"],
   "languages": ["Language 1", "Language 2"],
   "salary_range": "If mentioned",
-  "benefits": ["Benefit 1", "Benefit 2"]
+  "benefits": ["Benefit 1", "Benefit 2"],
+  "company_info": {{
+    "industry": "Industry sector if mentioned",
+    "size": "Company size if mentioned (startup, SME, enterprise)",
+    "stage": "Company stage if mentioned (seed, series A, established, public)"
+  }}
 }}
 
 Return ONLY the JSON."""
@@ -209,7 +214,7 @@ Question design requirements:
 Return ONLY the JSON in {language}."""
 
 # Candidate Analysis Prompt  
-CANDIDATE_ANALYSIS_PROMPT = """You are a career coach helping a candidate prepare for an interview.
+CANDIDATE_ANALYSIS_PROMPT = """You are a professional recruiter analyzing a candidate for a job opening.
 
 Job Posting:
 {job_posting}
@@ -217,9 +222,7 @@ Job Posting:
 Candidate CV:
 {cv_text}
 
-Analyze the candidate's fit and provide preparation guidance in {language}.
-
-Return ONLY valid JSON:
+Analyze this candidate and return ONLY valid JSON in {language}:
 {{
   "categories": {{
     "technical_skills": 1-5,
@@ -228,21 +231,45 @@ Return ONLY valid JSON:
     "languages": 1-5,
     "education": 1-5
   }},
-  "strengths": ["Your strength 1", "Your strength 2"],
-  "gaps": ["Gap to address 1", "Gap to address 2"],
-  "likely_questions": [
-    "Question you'll likely be asked 1",
-    "Question you'll likely be asked 2",
-    "Question you'll likely be asked 3"
+  "strengths": ["Strength 1", "Strength 2", "Strength 3", "Strength 4", "Strength 5"],
+  "risks": ["Risk or missing skill 1", "Risk 2", "Risk 3"],
+  "custom_questions": [
+    "Question 1 about technical skills",
+    "Question 2 about experience",
+    "Question 3 about soft skills",
+    "Question 4 about languages",
+    "Question 5 about education",
+    "Question 6 about motivation",
+    "Question 7 about problem solving",
+    "Question 8 additional"
   ],
-  "intro_pitch": "A 2-3 sentence introduction pitch for you to use at the start of the interview",
-  "preparation_tips": [
-    "Specific preparation advice 1",
-    "Specific preparation advice 2"
+  "answers": [
+    "Answer 1 based on CV",
+    "Answer 2 based on CV",
+    "Answer 3 based on CV",
+    "Answer 4 based on CV",
+    "Answer 5 based on CV",
+    "Answer 6 based on CV",
+    "Answer 7 based on CV",
+    "Answer 8 based on CV"
+  ],
+  "recommendation": "Brief summary of fit and readiness",
+  "intro_pitch": "A 30-second introduction pitch for this candidate",
+  "notes": [
+    "Note 1 for success",
+    "Note 2 for success",
+    "Note 3 for success"
   ]
 }}
 
-Be supportive and constructive. Return ONLY the JSON in {language}."""
+Use scores 1-5 where:
+1 = Very weak
+2 = Below expectations
+3 = Meets basic requirements
+4 = Strong fit
+5 = Exceptional fit
+
+Return ONLY the JSON in {language}."""
 
 # Translation Prompt
 TRANSLATION_PROMPT = """Translate the following text from English to {target_language}.

@@ -68,12 +68,23 @@ const InterviewerStep7: React.FC = () => {
       }
       
       try {
-        const response = await interviewerAPI.step7(sessionId);
+        const response = await interviewerAPI.step7(sessionId, savedReportCode || undefined);
         setResults(response.data.results || []);
         setExecutiveRec(response.data.executive_recommendation || null);
+        if (response.data.report_code) {
+          setReportCode(response.data.report_code);
+          sessionStorage.setItem('interviewer_report_code', response.data.report_code);
+        }
       } catch (error: any) {
         console.error('Error fetching results:', error);
-        setError(error.response?.data?.detail || 'Failed to load results');
+        const detail = error.response?.data?.detail;
+        if (detail) {
+          setError(detail);
+        } else if (savedReportCode) {
+          setError('Session expired and the report could not be recovered. Please restart the flow.');
+        } else {
+          setError('Failed to load results. Please restart the flow.');
+        }
       } finally {
         setLoading(false);
       }

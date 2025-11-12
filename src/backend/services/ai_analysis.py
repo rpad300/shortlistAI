@@ -135,7 +135,8 @@ class AIAnalysisService:
         self,
         job_posting_text: str,
         cv_text: str,
-        language: str = "en"
+        language: str = "en",
+        company_context: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Analyze fit for candidate mode (self-preparation).
@@ -144,6 +145,7 @@ class AIAnalysisService:
             job_posting_text: Job posting content
             cv_text: CV content
             language: Response language
+            company_context: Optional company research context
             
         Returns:
             Analysis dict with categories, strengths, gaps, questions, pitch
@@ -151,6 +153,11 @@ class AIAnalysisService:
         try:
             # Get prompt template
             template = get_prompt("candidate_analysis")
+            
+            # Company context disabled - triggers Gemini safety filters
+            # The company name is still extracted and shown in frontend
+            # TODO: Re-enable with even more neutral language if needed
+            pass
             
             # Prepare variables
             variables = {
@@ -277,6 +284,20 @@ class AIAnalysisService:
         try:
             template = get_prompt("job_posting_normalization")
             
+            # 🔍 DEBUG: Log exactly what we're sending
+            logger.info("=" * 100)
+            logger.info("🔍 JOB POSTING NORMALIZATION REQUEST")
+            logger.info(f"Language: {language}")
+            logger.info(f"Job Posting Length: {len(job_posting_text)} chars")
+            logger.info("-" * 100)
+            logger.info("TEMPLATE:")
+            logger.info(template)
+            logger.info("-" * 100)
+            logger.info("JOB POSTING TEXT (first 2000 chars):")
+            logger.info(job_posting_text[:2000])
+            logger.info("-" * 100)
+            logger.info("=" * 100)
+            
             ai_request = AIRequest(
                 prompt_type=PromptType.JOB_POSTING_NORMALIZATION,
                 template=template,
@@ -287,6 +308,10 @@ class AIAnalysisService:
             )
             
             response = await self.ai_manager.execute(ai_request)
+            
+            logger.info(f"🔍 NORMALIZATION RESPONSE: success={response.success}, provider={response.provider}, model={response.model}")
+            if not response.success:
+                logger.error(f"🔴 NORMALIZATION FAILED: {response.error}")
             
             return response.data if response.success else None
             

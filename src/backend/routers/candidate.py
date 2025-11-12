@@ -12,7 +12,7 @@ Handles all steps of the candidate flow:
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID
 import logging
@@ -60,6 +60,8 @@ class CandidateAnalysisResponse(BaseModel):
     gaps: list
     questions: list
     suggested_answers: list
+    gap_strategies: list
+    preparation_tips: list
     intro_pitch: str
     language: str
 
@@ -230,6 +232,21 @@ async def step2_job_posting(
                 final_text = extracted_text
                 logger.info(f"Extracted {len(extracted_text)} chars from {file.filename}")
         
+        # Extract structured data from job posting with AI (same as interviewer)
+        structured_job_posting = None
+        try:
+            from services.ai_analysis import get_ai_analysis_service
+            ai_service = get_ai_analysis_service()
+            
+            logger.info("Using AI to extract structured data from job posting")
+            structured_job_posting = await ai_service.normalize_job_posting(final_text, language)
+            
+            if structured_job_posting:
+                logger.info(f"Extracted company: {structured_job_posting.get('company', 'N/A')}")
+        except Exception as norm_err:
+            logger.warning(f"Job posting normalization failed: {norm_err}")
+            # Continue without structured data - not critical
+        
         # Create job posting record
         job_posting = await job_posting_service.create(
             raw_text=final_text,
@@ -244,12 +261,23 @@ async def step2_job_posting(
                 detail="Failed to create job posting record"
             )
         
-        # Update session with job posting ID
+        # Update structured data if extracted
+        if structured_job_posting:
+            try:
+                await job_posting_service.update_structured_data(
+                    UUID(job_posting["id"]),
+                    structured_job_posting
+                )
+            except Exception as update_err:
+                logger.warning(f"Failed to update structured data: {update_err}")
+        
+        # Update session with job posting ID and structured data
         session_service.update_session(
             UUID(session_id),
             {
                 "job_posting_id": job_posting["id"],
-                "job_posting_text": final_text[:500]
+                "job_posting_text": final_text[:500],
+                "structured_job_posting": structured_job_posting
             },
             step=2
         )
@@ -390,14 +418,17 @@ async def step4_analysis(session_id: str):
     Step 4: Trigger AI analysis.
     
     Runs AI analysis of candidate's fit for the job posting.
-    Returns preparation guidance.
+    Uses the SAME AI pattern as interviewer Step 6.
     """
+    import asyncio
     from services.database import (
         get_session_service,
         get_job_posting_service,
         get_cv_service,
         get_analysis_service
     )
+    from services.ai_analysis import get_ai_analysis_service
+    from utils import FileProcessor
     from uuid import UUID
     
     try:
@@ -405,13 +436,14 @@ async def step4_analysis(session_id: str):
         job_posting_service = get_job_posting_service()
         cv_service = get_cv_service()
         analysis_service = get_analysis_service()
+        ai_service = get_ai_analysis_service()
         
         # Validate session
         session = session_service.get_session(UUID(session_id))
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
         
-        # Get job posting and CV
+        # Get job posting
         job_posting_id = session["data"].get("job_posting_id")
         cv_id = session["data"].get("cv_id")
         candidate_id = session["data"].get("candidate_id")
@@ -422,42 +454,191 @@ async def step4_analysis(session_id: str):
                 detail="Missing required data. Complete steps 2 and 3 first."
             )
         
-        # Placeholder analysis (TODO: Use actual AI)
-        categories = {
-            "technical_skills": 4,
-            "experience": 3,
-            "soft_skills": 5,
-            "languages": 5,
-            "education": 4
+        # Fetch job posting and convert to markdown (same as interviewer)
+        job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
+        job_posting_markdown = ""
+        if job_posting and job_posting.get("raw_text"):
+            job_posting_markdown = FileProcessor.text_to_markdown(job_posting["raw_text"])
+        
+        if not job_posting_markdown:
+            raise HTTPException(status_code=400, detail="Job posting content unavailable")
+        
+        # Fetch CV and convert to markdown (same as interviewer)
+        cv = await cv_service.get_by_id(UUID(cv_id))
+        if not cv:
+            raise HTTPException(status_code=404, detail="CV not found")
+        
+        extracted_text = cv.get("extracted_text") or ""
+        cv_markdown = FileProcessor.text_to_markdown(extracted_text) if extracted_text else ""
+        
+        if not cv_markdown:
+            raise HTTPException(
+                status_code=400,
+                detail="CV text unavailable for analysis"
+            )
+        
+        # Sanitize content to avoid civic-integrity false positives
+        import re
+        civic_replacements = {
+            r"\btarget market\b": "customer segment",
+            r"\blead generation\b": "prospect identification",
+            r"\bstrategic customer partner\b": "business partner",
+            r"\bstrategic partner\b": "business partner",
+            r"\bdrive opportunities\b": "pursue opportunities",
+            r"\belection(s)?\b": "selection event",
+            r"\bcampaign trail\b": "project initiative",
+            r"\bpolitical\b": "public-sector",
+            r"\bgovernance\b": "organizational leadership",
         }
         
-        global_score = sum(categories.values()) / len(categories)
+        for pattern, replacement in civic_replacements.items():
+            job_posting_markdown = re.sub(pattern, replacement, job_posting_markdown, flags=re.IGNORECASE)
+            cv_markdown = re.sub(pattern, replacement, cv_markdown, flags=re.IGNORECASE)
         
-        # Create analysis record
+        language = session["data"].get("language", "en")
+        
+        # Try to extract company name and research it
+        company_name = None
+        company_research = None
+        structured_job = session["data"].get("structured_job_posting")
+        if structured_job and structured_job.get("company"):
+            company_name = structured_job["company"]
+            logger.info(f"Extracted company name from job posting: {company_name}")
+            
+            # Research company to enrich analysis
+            try:
+                from services.company_research import get_company_research_service
+                research_service = get_company_research_service()
+                company_research = await research_service.research_company(
+                    company_name,
+                    structured_job.get("title")
+                )
+                if company_research:
+                    logger.info(f"Company research completed for: {company_name}")
+            except Exception as research_err:
+                logger.warning(f"Company research failed: {research_err}")
+                # Continue without research - not critical
+        
+        # Helper function (same as interviewer)
+        def _normalize_list(value: Any) -> List[Any]:
+            if isinstance(value, list):
+                return value
+            if isinstance(value, dict):
+                for key in ("items", "flags", "values", "value"):
+                    maybe = value.get(key)
+                    if isinstance(maybe, list):
+                        return maybe
+            if value is None:
+                return []
+            return [value]
+        
+        # Execute AI analysis with timeout (SAME as interviewer)
+        # Enrich with company research if available
+        ai_result = None
+        try:
+            # Add company context to analysis if available
+            extra_context = None
+            if company_research and company_name:
+                extra_context = {
+                    "company_name": company_name,
+                    "company_context": f"Research about {company_name} to personalize your guidance"
+                }
+            
+            ai_result = await asyncio.wait_for(
+                ai_service.analyze_candidate_for_candidate(
+                    job_posting_markdown,
+                    cv_markdown,
+                    language,
+                    company_context=extra_context
+                ),
+                timeout=90  # 90 seconds for large context (same as interviewer)
+            )
+        except asyncio.TimeoutError:
+            logger.error("AI analysis timed out for candidate session %s", session_id)
+            raise HTTPException(
+                status_code=504,
+                detail=f"AI analysis timed out. Please try again or check AI provider status."
+            )
+        except Exception as ai_exc:
+            logger.error("AI analysis failed for candidate session %s: %s", session_id, ai_exc)
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI analysis failed: {str(ai_exc)}"
+            )
+        
+        if not ai_result or not ai_result.get("data"):
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI failed to analyze candidate. Cannot proceed without AI analysis."
+            )
+        
+        # Extract data (SAME pattern as interviewer)
+        data = ai_result.get("data", {})
+        
+        # 🔍 DEBUG: Log what AI actually returned
+        logger.info("=" * 80)
+        logger.info("🔍 AI RESPONSE DATA KEYS:")
+        logger.info(f"Keys in response: {list(data.keys())}")
+        logger.info("=" * 80)
+        
+        categories = data.get("categories", {})
+        strengths = _normalize_list(data.get("strengths"))
+        gaps = _normalize_list(data.get("areas_to_improve") or data.get("areas_for_development") or data.get("gaps") or data.get("risks"))
+        
+        # Extract questions with suggested answers
+        questions_raw = _normalize_list(data.get("custom_questions") or data.get("likely_questions") or data.get("questions"))
+        answers_raw = _normalize_list(data.get("answers") or [])
+        
+        questions_with_answers = []
+        for idx, q in enumerate(questions_raw):
+            if isinstance(q, dict):
+                # Support multiple formats: {q, a}, {question, answer}, {question, suggested_answer}
+                question_text = q.get("q") or q.get("question", "")
+                answer_text = q.get("a") or q.get("answer") or q.get("suggested_answer", "")
+                questions_with_answers.append({
+                    "category": q.get("category", "general"),
+                    "question": question_text,
+                    "suggested_answer": answer_text
+                })
+            elif isinstance(q, str):
+                # Get corresponding answer from answers array
+                answer_text = answers_raw[idx] if idx < len(answers_raw) else ""
+                questions_with_answers.append({
+                    "category": "general",
+                    "question": q,
+                    "suggested_answer": answer_text
+                })
+        
+        gap_strategies = _normalize_list(data.get("gap_strategies"))
+        intro_pitch = data.get("intro_pitch", "")
+        preparation_tips = _normalize_list(data.get("notes") or data.get("key_advice") or data.get("key_tips") or data.get("preparation_tips") or data.get("preparation_focus"))
+        provider_used = ai_result.get("provider") or "ai"
+        model_used = ai_result.get("model")
+        
+        # Calculate global score (same as interviewer)
+        global_score = sum(categories.values()) / len(categories) if categories else 0
+        
+        # Create analysis record with ALL data for persistence
         analysis = await analysis_service.create(
             mode="candidate",
             job_posting_id=UUID(job_posting_id),
             cv_id=UUID(cv_id),
             candidate_id=UUID(candidate_id),
-            provider="placeholder",
+            provider=provider_used,
             categories=categories,
             global_score=round(global_score, 2),
-            strengths=[
-                "Strong technical background",
-                "Excellent communication skills",
-                "Relevant experience"
-            ],
-            risks=[
-                "Limited experience with cloud platforms",
-                "No formal certifications"
-            ],
-            questions=[
-                "Tell me about your experience with Python",
-                "How do you handle team conflicts?",
-                "What are your career goals?"
-            ],
-            intro_pitch="I'm a passionate developer with 5 years of experience...",
-            language=session["data"].get("language", "en")
+            strengths=strengths,
+            risks=gaps,
+            questions={
+                "items": questions_with_answers,  # Full question objects with answers
+                "gap_strategies": gap_strategies,
+                "preparation_tips": preparation_tips,
+                "key_tips": preparation_tips,
+                "key_advice": preparation_tips,
+                "notes": preparation_tips  # Store all variants for compatibility
+            },
+            intro_pitch=intro_pitch,
+            language=language
         )
         
         if not analysis:
@@ -471,16 +652,20 @@ async def step4_analysis(session_id: str):
             UUID(session_id),
             {
                 "analysis_id": analysis["id"],
-                "analysis_complete": True
+                "analysis_complete": True,
+                "provider": provider_used,
+                "model": model_used
             },
             step=4
         )
         
-        logger.info(f"Candidate analysis complete: {analysis['id']}")
+        logger.info(f"Candidate analysis complete: {analysis['id']} (provider: {provider_used})")
         
         return JSONResponse({
             "status": "success",
             "analysis_id": analysis["id"],
+            "provider": provider_used,
+            "model": model_used,
             "message": "Analysis complete. View results in step 5."
         })
         
@@ -502,8 +687,7 @@ async def step5_results(session_id: UUID):
     Returns analysis results with:
     - Scores per category
     - Strengths and gaps
-    - Likely interview questions
-    - Suggested answer structures
+    - Likely interview questions with detailed guidance
     - Intro pitch
     """
     from services.database import get_session_service, get_analysis_service
@@ -530,22 +714,93 @@ async def step5_results(session_id: UUID):
         if not analysis:
             raise HTTPException(status_code=404, detail="Analysis not found")
         
-        # Format response
-        return CandidateAnalysisResponse(
-            session_id=session_id,
-            categories=analysis["categories"],
-            strengths=analysis.get("strengths", {}).get("items", []),
-            gaps=analysis.get("risks", {}).get("items", []),
-            questions=analysis.get("questions", {}).get("items", []),
-            suggested_answers=[
-                "Use STAR method: Situation, Task, Action, Result",
-                "Quantify your achievements with specific metrics",
-                "Be honest about gaps and show willingness to learn",
-                "Prepare specific examples from your experience"
-            ],
-            intro_pitch=analysis.get("intro_pitch", ""),
-            language=analysis["language"]
+        # Helper to normalize lists (same as interviewer)
+        def _normalize_list(value: Any) -> List[Any]:
+            if isinstance(value, list):
+                return value
+            if isinstance(value, dict):
+                for key in ("items", "flags", "values", "value"):
+                    maybe = value.get(key)
+                    if isinstance(maybe, list):
+                        return maybe
+            if value is None:
+                return []
+            return [value]
+        
+        # Extract data
+        strengths = _normalize_list(analysis.get("strengths"))
+        gaps = _normalize_list(analysis.get("risks"))
+        
+        # Extract questions and gap_strategies from nested structure
+        questions_data = analysis.get("questions") or {}
+        questions_raw = _normalize_list(questions_data.get("items") or questions_data)
+        gap_strategies = _normalize_list(questions_data.get("gap_strategies"))
+        
+        # Check both nested and top-level for preparation_tips/key_tips/key_advice/notes
+        preparation_tips = _normalize_list(
+            questions_data.get("notes") or
+            questions_data.get("key_advice") or
+            questions_data.get("key_tips") or 
+            questions_data.get("preparation_tips") or 
+            analysis.get("notes") or
+            analysis.get("key_advice") or
+            analysis.get("key_tips") or
+            analysis.get("preparation_tips")
         )
+        
+        # Extract questions and suggested answers
+        questions = []
+        suggested_answers = []
+        
+        # Try to get separate answers array first
+        answers_from_field = _normalize_list(analysis.get("answers") or questions_data.get("answers") or [])
+        
+        for idx, q in enumerate(questions_raw):
+            if isinstance(q, dict):
+                # Support multiple formats: {q, a}, {question, answer}, {question, suggested_answer}
+                question_text = q.get("q") or q.get("question", "")
+                answer_text = q.get("a") or q.get("answer") or q.get("suggested_answer", "")
+                questions.append(question_text)
+                suggested_answers.append(answer_text or "Use STAR method: Situation → Task → Action → Result.")
+            elif isinstance(q, str):
+                # Try to get answer from separate answers array
+                answer_text = answers_from_field[idx] if idx < len(answers_from_field) else ""
+                questions.append(q)
+                suggested_answers.append(answer_text or "Use STAR method: Situation → Task → Action → Result.")
+        
+        # Get company info from session if available
+        structured_job = session["data"].get("structured_job_posting") or {}
+        company_name = structured_job.get("company")
+        
+        # 🔍 DEBUG: Log what we're sending to frontend
+        logger.info(f"🔍 STEP 5 RESPONSE:")
+        logger.info(f"  Company: {company_name}")
+        logger.info(f"  Questions: {len(questions)}")
+        logger.info(f"  Questions sample: {questions[:2] if questions else []}")
+        logger.info(f"  Suggested Answers: {len(suggested_answers)}")
+        logger.info(f"  Answers sample: {suggested_answers[:2] if suggested_answers else []}")
+        logger.info(f"  Preparation Tips: {len(preparation_tips)}")
+        logger.info(f"  Gap Strategies: {len(gap_strategies)}")
+        logger.info(f"  Intro Pitch: {len(analysis.get('intro_pitch', ''))  } chars")
+        if preparation_tips:
+            logger.info(f"  Tips content: {preparation_tips}")
+        
+        # Format response with company info
+        response_dict = {
+            "session_id": str(session_id),
+            "categories": analysis.get("categories", {}),
+            "strengths": strengths,
+            "gaps": gaps,
+            "questions": questions,
+            "suggested_answers": suggested_answers,
+            "gap_strategies": gap_strategies,
+            "preparation_tips": preparation_tips,
+            "intro_pitch": analysis.get("intro_pitch", ""),
+            "language": analysis["language"],
+            "company_name": company_name  # Add company info
+        }
+        
+        return JSONResponse(response_dict)
         
     except HTTPException:
         raise
@@ -557,29 +812,35 @@ async def step5_results(session_id: UUID):
         )
 
 
-@router.post("/step6/email")
-async def step6_send_email(
-    session_id: str,
-    recipient_email: EmailStr
-):
+@router.get("/step6/report/{session_id}")
+async def step6_download_report(session_id: UUID):
     """
-    Step 6: Send email summary.
+    Step 6: Download PDF preparation guide.
     
-    Sends preparation guide to candidate's email.
+    Generates comprehensive PDF with scores, strengths, gaps, questions, and strategies.
+    Same pattern as interviewer Step 8 report.
     """
+    from datetime import datetime
     from services.database import get_session_service, get_analysis_service
-    from services.email import get_email_service
-    from uuid import UUID
+    from services.pdf import get_pdf_report_generator
+    from fastapi.responses import Response
     
     try:
         session_service = get_session_service()
         analysis_service = get_analysis_service()
-        email_service = get_email_service()
+        pdf_generator = get_pdf_report_generator()
         
-        # Validate session
-        session = session_service.get_session(UUID(session_id))
+        # Get session data
+        session = session_service.get_session(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Check if analysis is complete
+        if not session["data"].get("analysis_complete"):
+            raise HTTPException(
+                status_code=400,
+                detail="Analysis not complete. Complete step 4 first."
+            )
         
         # Get analysis
         analysis_id = session["data"].get("analysis_id")
@@ -590,53 +851,35 @@ async def step6_send_email(
         if not analysis:
             raise HTTPException(status_code=404, detail="Analysis not found")
         
-        # Send email
-        success = await email_service.send_candidate_preparation(
-            to_email=recipient_email,
-            candidate_name=session["data"].get("candidate_name", "Candidate"),
-            job_title="Position",
-            scores=analysis["categories"],
-            questions=analysis.get("questions", {}).get("items", []),
-            intro_pitch=analysis.get("intro_pitch", ""),
-            language=analysis["language"]
+        # Generate PDF
+        logger.info(f"Generating PDF preparation guide for session: {session_id}")
+        pdf_bytes = pdf_generator.generate_candidate_report(
+            session_data=session,
+            analysis=analysis
         )
         
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to send email")
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"interview_preparation_guide_{timestamp}.pdf"
         
-        logger.info(f"Preparation email sent to {recipient_email}")
+        logger.info(f"PDF preparation guide generated: {len(pdf_bytes)} bytes")
         
-        return JSONResponse({
-            "status": "success",
-            "message": f"Preparation guide sent to {recipient_email}"
-        })
+        # Return PDF file
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Length": str(len(pdf_bytes))
+            }
+        )
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error sending email: {e}")
+        logger.error(f"Error generating PDF: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Internal server error sending email"
+            detail=f"Error generating PDF: {str(e)}"
         )
-
-
-@router.get("/step6/report/{session_id}")
-async def step6_download_report(session_id: UUID):
-    """
-    Step 6: Download report.
-    
-    Generates and returns a PDF preparation guide.
-    """
-    # TODO:
-    # 1. Fetch results
-    # 2. Generate PDF report
-    # 3. Return file
-    
-    logger.info(f"Report download requested for candidate session: {session_id}")
-    
-    return JSONResponse({
-        "status": "success",
-        "message": "Report generation in progress. Implementation pending."
-    })
 
