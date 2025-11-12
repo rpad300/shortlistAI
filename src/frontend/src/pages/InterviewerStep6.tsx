@@ -7,6 +7,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import { interviewerAPI } from '@services/api';
 import './InterviewerStep1.css';
 
@@ -54,8 +55,9 @@ const InterviewerStep6: React.FC = () => {
   }, [navigate]);
   
   return (
-    <div className="step-container">
-      <div className="step-content">
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content">
         <h1>{t('interviewer.step6_title')}</h1>
         <p className="step-subtitle">AI is analyzing all candidates against your job posting</p>
         
@@ -98,6 +100,7 @@ const InterviewerStep6: React.FC = () => {
         </div>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

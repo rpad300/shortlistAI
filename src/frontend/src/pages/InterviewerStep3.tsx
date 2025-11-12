@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import Textarea from '@components/Textarea';
 import Button from '@components/Button';
 import { interviewerAPI } from '@services/api';
@@ -80,8 +81,9 @@ const InterviewerStep3: React.FC = () => {
   };
   
   return (
-    <div className="step-container">
-      <div className="step-content">
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content">
         <h1>{t('interviewer.step3_title')}</h1>
         <p className="step-subtitle">Review and edit AI-suggested requirements, or add your own</p>
         
@@ -140,6 +142,7 @@ const InterviewerStep3: React.FC = () => {
         </form>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

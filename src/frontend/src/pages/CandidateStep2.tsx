@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import Textarea from '@components/Textarea';
 import FileUpload from '@components/FileUpload';
 import Button from '@components/Button';
@@ -77,8 +78,9 @@ const CandidateStep2: React.FC = () => {
   };
   
   return (
-    <div className="step-container">
-      <div className="step-content">
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content">
         <h1>{t('candidate.step2_title')}</h1>
         <p className="step-subtitle">Provide the job posting you're applying for</p>
         
@@ -138,6 +140,7 @@ const CandidateStep2: React.FC = () => {
         </form>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

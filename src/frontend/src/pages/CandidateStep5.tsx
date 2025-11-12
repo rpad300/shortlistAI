@@ -7,6 +7,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import Button from '@components/Button';
 import { candidateAPI } from '@services/api';
 import './InterviewerStep1.css';
@@ -273,6 +274,7 @@ const CandidateStep5: React.FC = () => {
         </div>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

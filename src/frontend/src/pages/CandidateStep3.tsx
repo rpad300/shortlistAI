@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import FileUpload from '@components/FileUpload';
 import Button from '@components/Button';
 import { candidateAPI } from '@services/api';
@@ -52,8 +53,9 @@ const CandidateStep3: React.FC = () => {
   };
   
   return (
-    <div className="step-container">
-      <div className="step-content">
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content">
         <h1>{t('candidate.step3_title')}</h1>
         <p className="step-subtitle">Upload your CV for analysis</p>
         
@@ -90,6 +92,7 @@ const CandidateStep3: React.FC = () => {
         </form>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

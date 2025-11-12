@@ -5,6 +5,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import Textarea from '@components/Textarea';
 import Button from '@components/Button';
 import StepHelper from '@components/StepHelper';
@@ -373,6 +374,7 @@ const InterviewerStep4: React.FC = () => {
         </form>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

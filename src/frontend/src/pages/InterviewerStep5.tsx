@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import FileUpload from '@components/FileUpload';
 import Button from '@components/Button';
 import StepHelper from '@components/StepHelper';
@@ -83,8 +84,9 @@ const InterviewerStep5: React.FC = () => {
   };
   
   return (
-    <div className="step-container">
-      <div className="step-content">
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content">
         <h1>{t('interviewer.step5_title')}</h1>
         <p className="step-subtitle">Upload all CVs you want to analyze (multiple files supported)</p>
         
@@ -221,6 +223,7 @@ const InterviewerStep5: React.FC = () => {
         </form>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

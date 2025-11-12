@@ -7,6 +7,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import Button from '@components/Button';
 import { interviewerAPI } from '@services/api';
 import './InterviewerStep1.css';
@@ -125,28 +126,33 @@ const InterviewerStep7: React.FC = () => {
   
   if (loading) {
     return (
-      <div className="step-container">
-        <div className="step-content">
-          <p>Loading results...</p>
+      <StepLayout>
+        <div className="step-container">
+          <div className="step-content">
+            <p>Loading results...</p>
+          </div>
         </div>
-      </div>
+      </StepLayout>
     );
   }
   
   if (error || results.length === 0) {
     return (
-      <div className="step-container">
-        <div className="step-content">
-          <div className="error-banner">{error || 'No results found'}</div>
-          <Button onClick={() => navigate('/interviewer/step1')}>Start Over</Button>
+      <StepLayout>
+        <div className="step-container">
+          <div className="step-content">
+            <div className="error-banner">{error || 'No results found'}</div>
+            <Button onClick={() => navigate('/interviewer/step1')}>Start Over</Button>
+          </div>
         </div>
-      </div>
+      </StepLayout>
     );
   }
   
   return (
-    <div className="step-container" style={{ padding: 'var(--spacing-md)', minHeight: '100vh' }}>
-      <div className="step-content" style={{ 
+    <StepLayout>
+      <div className="step-container" style={{ padding: 'var(--spacing-md)', minHeight: '100vh' }}>
+        <div className="step-content" style={{ 
         maxWidth: '1400px', 
         width: '100%',
         overflow: 'visible',
@@ -698,6 +704,7 @@ const InterviewerStep7: React.FC = () => {
         </div>
       </div>
     </div>
+    </StepLayout>
   );
 };
 

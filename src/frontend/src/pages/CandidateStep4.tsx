@@ -7,6 +7,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import StepLayout from '@components/StepLayout';
 import { candidateAPI } from '@services/api';
 import './InterviewerStep1.css';
 
@@ -44,8 +45,9 @@ const CandidateStep4: React.FC = () => {
   }, [navigate]);
   
   return (
-    <div className="step-container">
-      <div className="step-content">
+    <StepLayout>
+      <div className="step-container">
+        <div className="step-content">
         <h1>{t('candidate.step4_title')}</h1>
         <p className="step-subtitle">AI is analyzing your fit for this position</p>
         
@@ -70,6 +72,7 @@ const CandidateStep4: React.FC = () => {
         </div>
       </div>
     </div>
+    </StepLayout>
   );
 };
 
