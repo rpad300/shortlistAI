@@ -32,6 +32,7 @@ import AdminCompanies from '@pages/AdminCompanies';
 import AdminInterviewers from '@pages/AdminInterviewers';
 import AdminJobPostings from '@pages/AdminJobPostings';
 import AdminUsers from '@pages/AdminUsers';
+import AdminPrompts from '@pages/AdminPrompts';
 import LegalTerms from '@pages/LegalTerms';
 import LegalPrivacy from '@pages/LegalPrivacy';
 import './App.css';
@@ -70,6 +71,7 @@ function App() {
           <Route path="/admin/companies" element={<AdminCompanies />} />
           <Route path="/admin/interviewers" element={<AdminInterviewers />} />
           <Route path="/admin/job-postings" element={<AdminJobPostings />} />
+          <Route path="/admin/prompts" element={<AdminPrompts />} />
           <Route path="/admin/ai-usage" element={<PlaceholderPage step="AI Usage Logs" flow="admin" />} />
           <Route path="/admin/users" element={<AdminUsers />} />
         </Routes>

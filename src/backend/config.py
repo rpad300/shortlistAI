@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     minimax_api_key: Optional[str] = Field(default=None, env="MINIMAX_API_KEY")
     minimax_group_id: Optional[str] = Field(default=None, env="MINIMAX_GROUP_ID")
     
+    # Search API
+    brave_search_api_key: Optional[str] = Field(default=None, env="BRAVE_SEARCH_API_KEY")
+    
     # Email Service
     resend_api_key: Optional[str] = Field(default=None, env="RESEND_API_KEY")
     from_email: str = Field(default="noreply@shortlistai.com", env="FROM_EMAIL")

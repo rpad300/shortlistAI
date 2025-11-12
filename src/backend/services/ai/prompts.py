@@ -1,9 +1,16 @@
 """
-Default AI prompts for the platform.
+AI Prompts Management.
 
-These are the initial prompt templates used for various AI tasks.
-In production, these should be stored in the database and managed through Admin UI.
+This module provides access to AI prompts stored in the database.
+Prompts can be managed through the Admin UI (/admin/prompts).
+
+Fallback: If database prompts are not available, default prompts are used.
 """
+
+from typing import Optional, Dict, Any
+import logging
+
+logger = logging.getLogger(__name__)
 
 # CV Extraction Prompt
 CV_EXTRACTION_PROMPT = """You are a CV analysis expert. Extract structured information from the following CV text.
@@ -174,6 +181,8 @@ Hard Blockers:
 Nice To Have (preferred but optional differentiators):
 {nice_to_have}
 
+{enrichment_context}
+
 Analyze this candidate and return ONLY valid JSON in {language}:
 {{
   "categories": {{
@@ -221,6 +230,8 @@ Job Posting:
 
 Candidate CV:
 {cv_text}
+
+{enrichment_context}
 
 Analyze this candidate and return ONLY valid JSON in {language}:
 {{
@@ -322,15 +333,65 @@ Return ONLY valid JSON:
 Return ONLY the JSON in {language}."""
 
 
-def get_prompt(prompt_type: str) -> str:
+async def get_prompt(prompt_type: str, language: str = "en") -> str:
     """
-    Get prompt template by type.
+    Get prompt template by type from database.
+    
+    Falls back to default prompts if database is not available.
+    
+    Args:
+        prompt_type: Type of prompt (cv_extraction, job_posting_normalization, etc.)
+        language: Language code (default: "en")
+        
+    Returns:
+        Prompt template string
+    """
+    # Try to get from database first
+    try:
+        from services.database.prompt_service import get_prompt_service
+        
+        service = get_prompt_service()
+        prompt_data = await service.get_prompt_by_key(
+            prompt_key=prompt_type,
+            language=language
+        )
+        
+        if prompt_data:
+            logger.info(f"Loaded prompt '{prompt_type}' from database (v{prompt_data.get('version')})")
+            return prompt_data.get("content", "")
+    
+    except Exception as e:
+        logger.warning(f"Failed to load prompt from database, using default: {e}")
+    
+    # Fallback to default prompts
+    prompts = {
+        "cv_extraction": CV_EXTRACTION_PROMPT,
+        "job_posting_normalization": JOB_POSTING_NORMALIZATION_PROMPT,
+        "weighting_recommendation": WEIGHTING_RECOMMENDATION_PROMPT,
+        "cv_summary": CV_SUMMARY_PROMPT,
+        "interviewer_analysis": INTERVIEWER_ANALYSIS_PROMPT,
+        "candidate_analysis": CANDIDATE_ANALYSIS_PROMPT,
+        "translation": TRANSLATION_PROMPT,
+        "executive_recommendation": EXECUTIVE_RECOMMENDATION_PROMPT
+    }
+    
+    logger.info(f"Using default prompt for '{prompt_type}'")
+    return prompts.get(prompt_type, "")
+
+
+def get_prompt_sync(prompt_type: str) -> str:
+    """
+    Get prompt template by type (synchronous version for backward compatibility).
     
     Args:
         prompt_type: Type of prompt (cv_extraction, job_posting_normalization, etc.)
         
     Returns:
         Prompt template string
+        
+    Note:
+        This is a synchronous wrapper that uses default prompts.
+        For database prompts, use the async get_prompt() function.
     """
     prompts = {
         "cv_extraction": CV_EXTRACTION_PROMPT,
