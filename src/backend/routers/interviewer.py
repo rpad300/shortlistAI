@@ -982,7 +982,8 @@ async def step6_analysis(session_id: str):
         get_job_posting_service,
         get_cv_service,
         get_analysis_service,
-        get_report_service
+        get_report_service,
+        get_candidate_service,
     )
     from services.ai_analysis import get_ai_analysis_service
     from utils import FileProcessor
@@ -994,6 +995,7 @@ async def step6_analysis(session_id: str):
         cv_service = get_cv_service()
         analysis_service = get_analysis_service()
         ai_service = get_ai_analysis_service()
+        candidate_service = get_candidate_service()
         
         # Validate session
         session = session_service.get_session(UUID(session_id))
@@ -1009,6 +1011,13 @@ async def step6_analysis(session_id: str):
         job_posting_markdown = ""
         if job_posting and job_posting.get("raw_text"):
             job_posting_markdown = FileProcessor.text_to_markdown(job_posting["raw_text"])
+        structured_job_posting = (
+            session["data"].get("structured_job_posting")
+            or (job_posting.get("structured_data") if job_posting else None)
+        )
+        company_name = None
+        if isinstance(structured_job_posting, dict):
+            company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
         
         # Get CV IDs
         cv_ids = session["data"].get("cv_ids", [])
@@ -1046,6 +1055,24 @@ async def step6_analysis(session_id: str):
 
             candidate_info = candidate_lookup.get(cv_id, {})
             extracted_text = cv.get("extracted_text") or ""
+            candidate_uuid: Optional[UUID] = None
+            candidate_name: Optional[str] = None
+            candidate_id_value = candidate_info.get("candidate_id") or cv.get("candidate_id")
+            if candidate_id_value:
+                try:
+                    candidate_uuid = UUID(str(candidate_id_value))
+                    candidate_record = await candidate_service.get_by_id(candidate_uuid)
+                    if candidate_record:
+                        candidate_name = (
+                            candidate_record.get("name")
+                            or candidate_record.get("full_name")
+                            or candidate_record.get("email")
+                        )
+                except Exception as candidate_err:
+                    logger.warning(f"Failed to fetch candidate details for enrichment: {candidate_err}")
+            if not candidate_name:
+                summary_info = candidate_info.get("summary") or {}
+                candidate_name = summary_info.get("full_name") or candidate_info.get("filename")
 
             ai_result = None
             cv_markdown = FileProcessor.text_to_markdown(extracted_text) if extracted_text else ""
@@ -1065,7 +1092,10 @@ async def step6_analysis(session_id: str):
                         weights,
                         hard_blockers,
                         nice_to_have,
-                        language
+                        language,
+                        company_name=company_name,
+                        candidate_id=candidate_uuid,
+                        candidate_name=candidate_name,
                     ),
                     timeout=90  # 90 seconds for large context
                 )

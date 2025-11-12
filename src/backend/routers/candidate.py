@@ -425,7 +425,8 @@ async def step4_analysis(session_id: str):
         get_session_service,
         get_job_posting_service,
         get_cv_service,
-        get_analysis_service
+        get_analysis_service,
+        get_candidate_service,
     )
     from services.ai_analysis import get_ai_analysis_service
     from utils import FileProcessor
@@ -436,6 +437,7 @@ async def step4_analysis(session_id: str):
         job_posting_service = get_job_posting_service()
         cv_service = get_cv_service()
         analysis_service = get_analysis_service()
+        candidate_service = get_candidate_service()
         ai_service = get_ai_analysis_service()
         
         # Validate session
@@ -459,6 +461,12 @@ async def step4_analysis(session_id: str):
         job_posting_markdown = ""
         if job_posting and job_posting.get("raw_text"):
             job_posting_markdown = FileProcessor.text_to_markdown(job_posting["raw_text"])
+        structured_job = session["data"].get("structured_job_posting") or (
+            job_posting.get("structured_data") if job_posting else None
+        )
+        company_name = None
+        if isinstance(structured_job, dict):
+            company_name = structured_job.get("company") or structured_job.get("organization")
         
         if not job_posting_markdown:
             raise HTTPException(status_code=400, detail="Job posting content unavailable")
@@ -476,6 +484,21 @@ async def step4_analysis(session_id: str):
                 status_code=400,
                 detail="CV text unavailable for analysis"
             )
+        
+        try:
+            candidate_uuid = UUID(candidate_id)
+        except (ValueError, TypeError):
+            candidate_uuid = None
+        candidate_record = await candidate_service.get_by_id(candidate_uuid) if candidate_uuid else None
+        candidate_name_value = None
+        if candidate_record:
+            candidate_name_value = (
+                candidate_record.get("name")
+                or candidate_record.get("full_name")
+                or candidate_record.get("email")
+            )
+        if not candidate_name_value:
+            candidate_name_value = session["data"].get("candidate_name")
         
         # Sanitize content to avoid civic-integrity false positives
         import re
@@ -497,28 +520,6 @@ async def step4_analysis(session_id: str):
         
         language = session["data"].get("language", "en")
         
-        # Try to extract company name and research it
-        company_name = None
-        company_research = None
-        structured_job = session["data"].get("structured_job_posting")
-        if structured_job and structured_job.get("company"):
-            company_name = structured_job["company"]
-            logger.info(f"Extracted company name from job posting: {company_name}")
-            
-            # Research company to enrich analysis
-            try:
-                from services.company_research import get_company_research_service
-                research_service = get_company_research_service()
-                company_research = await research_service.research_company(
-                    company_name,
-                    structured_job.get("title")
-                )
-                if company_research:
-                    logger.info(f"Company research completed for: {company_name}")
-            except Exception as research_err:
-                logger.warning(f"Company research failed: {research_err}")
-                # Continue without research - not critical
-        
         # Helper function (same as interviewer)
         def _normalize_list(value: Any) -> List[Any]:
             if isinstance(value, list):
@@ -533,23 +534,17 @@ async def step4_analysis(session_id: str):
             return [value]
         
         # Execute AI analysis with timeout (SAME as interviewer)
-        # Enrich with company research if available
+        # Enrichment context is handled within AI service
         ai_result = None
         try:
-            # Add company context to analysis if available
-            extra_context = None
-            if company_research and company_name:
-                extra_context = {
-                    "company_name": company_name,
-                    "company_context": f"Research about {company_name} to personalize your guidance"
-                }
-            
             ai_result = await asyncio.wait_for(
                 ai_service.analyze_candidate_for_candidate(
                     job_posting_markdown,
                     cv_markdown,
                     language,
-                    company_context=extra_context
+                    candidate_id=candidate_uuid,
+                    candidate_name=candidate_name_value,
+                    company_name=company_name,
                 ),
                 timeout=90  # 90 seconds for large context (same as interviewer)
             )

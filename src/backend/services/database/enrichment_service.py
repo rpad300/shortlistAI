@@ -303,7 +303,8 @@ class CandidateEnrichmentService:
         except Exception as e:
             logger.error(f"Error saving candidate enrichment: {str(e)}")
             return None
-    
+
+
     async def invalidate(self, candidate_id: UUID) -> bool:
         """
         Invalidate all cached enrichments for a candidate.
@@ -366,4 +367,24 @@ class CandidateEnrichmentService:
         except Exception as e:
             logger.error(f"Error fetching candidate enrichment by name: {str(e)}")
             return None
+
+
+_company_enrichment_service_instance: Optional[CompanyEnrichmentService] = None
+_candidate_enrichment_service_instance: Optional[CandidateEnrichmentService] = None
+
+
+def get_company_enrichment_service() -> CompanyEnrichmentService:
+    """Get global company enrichment service instance."""
+    global _company_enrichment_service_instance
+    if _company_enrichment_service_instance is None:
+        _company_enrichment_service_instance = CompanyEnrichmentService()
+    return _company_enrichment_service_instance
+
+
+def get_candidate_enrichment_service() -> CandidateEnrichmentService:
+    """Get global candidate enrichment service instance."""
+    global _candidate_enrichment_service_instance
+    if _candidate_enrichment_service_instance is None:
+        _candidate_enrichment_service_instance = CandidateEnrichmentService()
+    return _candidate_enrichment_service_instance
 
