@@ -1514,32 +1514,51 @@ async def step7_results(
                     result["preparation_tips"] = []
                 
                 # Fetch or update enrichment data for this candidate
-                enrichment_data = result.get("enrichment") or {}
-                try:
-                    candidate_id = result.get("candidate_id")
-                    if candidate_id:
-                        candidate_enrichment = await candidate_enrichment_service.get_latest(UUID(candidate_id))
-                        if candidate_enrichment:
-                            enrichment_data["candidate"] = {
-                                "name": candidate_enrichment.get("candidate_name") or candidate_enrichment.get("name"),
-                                "professional_summary": candidate_enrichment.get("professional_summary"),
-                                "linkedin_profile": candidate_enrichment.get("linkedin_profile"),
-                                "github_profile": candidate_enrichment.get("github_profile"),
-                                "portfolio_url": candidate_enrichment.get("portfolio_url"),
-                                "publications": candidate_enrichment.get("publications", []),
-                                "awards": candidate_enrichment.get("awards", []),
-                                "ai_summary": candidate_enrichment.get("ai_summary"),
-                                "result_count": candidate_enrichment.get("result_count", 0)
-                            }
-                except Exception as enrichment_err:
-                    logger.warning(f"Failed to fetch candidate enrichment for step7: {enrichment_err}")
+                enrichment_data = {}
+                
+                # Check if already has enrichment from step6
+                if result.get("enrichment") and isinstance(result.get("enrichment"), dict):
+                    enrichment_data = result.get("enrichment")
+                    logger.info(f"Candidate {result.get('candidate_id')}: Using enrichment from step6")
+                else:
+                    logger.info(f"Candidate {result.get('candidate_id')}: Fetching enrichment from database")
+                
+                # Fetch candidate enrichment if not already present
+                if "candidate" not in enrichment_data:
+                    try:
+                        candidate_id = result.get("candidate_id")
+                        if candidate_id:
+                            candidate_enrichment = await candidate_enrichment_service.get_latest(UUID(candidate_id))
+                            if candidate_enrichment:
+                                logger.info(f"Found candidate enrichment in database for {candidate_id}")
+                                enrichment_data["candidate"] = {
+                                    "name": candidate_enrichment.get("candidate_name") or candidate_enrichment.get("name"),
+                                    "professional_summary": candidate_enrichment.get("professional_summary"),
+                                    "linkedin_profile": candidate_enrichment.get("linkedin_profile"),
+                                    "github_profile": candidate_enrichment.get("github_profile"),
+                                    "portfolio_url": candidate_enrichment.get("portfolio_url"),
+                                    "publications": candidate_enrichment.get("publications", []),
+                                    "awards": candidate_enrichment.get("awards", []),
+                                    "ai_summary": candidate_enrichment.get("ai_summary"),
+                                    "result_count": candidate_enrichment.get("result_count", 0)
+                                }
+                            else:
+                                logger.warning(f"No candidate enrichment found in database for {candidate_id}")
+                    except Exception as enrichment_err:
+                        logger.warning(f"Failed to fetch candidate enrichment for step7: {enrichment_err}")
                 
                 # Add company enrichment if available
-                if company_enrichment_data:
+                if company_enrichment_data and "company" not in enrichment_data:
                     enrichment_data["company"] = company_enrichment_data
+                    logger.info(f"Added company enrichment for {company_name}")
                 
-                # Set enrichment (can be empty dict if no data)
-                result["enrichment"] = enrichment_data if enrichment_data else None
+                # Always set enrichment (set to None only if truly empty, otherwise keep dict)
+                if enrichment_data and (enrichment_data.get("company") or enrichment_data.get("candidate")):
+                    result["enrichment"] = enrichment_data
+                    logger.info(f"Candidate {result.get('candidate_id')}: enrichment has_company={bool(enrichment_data.get('company'))}, has_candidate={bool(enrichment_data.get('candidate'))}")
+                else:
+                    result["enrichment"] = None
+                    logger.info(f"Candidate {result.get('candidate_id')}: No enrichment data available")
             
             logger.info("Returning %d analysis results from session cache for %s", len(sorted_results), session_id)
             if sorted_results:

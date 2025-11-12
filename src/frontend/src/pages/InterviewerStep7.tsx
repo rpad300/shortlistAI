@@ -525,7 +525,7 @@ const InterviewerStep7: React.FC = () => {
               </div>
             )}
             
-            {results[selectedCandidate].enrichment && (
+            {results[selectedCandidate].enrichment && (results[selectedCandidate].enrichment.company || results[selectedCandidate].enrichment.candidate) && (
               <div style={{ marginBottom: 'var(--spacing-lg)' }}>
                 <h3 style={{ color: 'var(--color-accent-primary)' }}>🔍 Enrichment Data (Brave Search)</h3>
                 <div style={{ 
@@ -536,7 +536,7 @@ const InterviewerStep7: React.FC = () => {
                   wordWrap: 'break-word',
                   overflowWrap: 'break-word'
                 }}>
-                  {results[selectedCandidate].enrichment.company && (
+                  {results[selectedCandidate].enrichment?.company && (
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
                       <h4 style={{ fontSize: 'var(--font-size-md)', marginBottom: 'var(--spacing-sm)' }}>Company Information</h4>
                       {results[selectedCandidate].enrichment.company.name && (
