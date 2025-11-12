@@ -10,6 +10,7 @@ import httpx
 from pydantic import BaseModel
 
 from config import settings
+from services.ai.prompts import get_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ class CompanyEnrichment(BaseModel):
     recent_news: List[Dict[str, str]] = []
     social_media: Dict[str, str] = {}
     raw_results: List[SearchResult] = []
+    ai_summary: Optional[str] = None  # AI-generated summary from Summarizer or Grounding
 
 
 class CandidateEnrichment(BaseModel):
@@ -49,6 +51,7 @@ class CandidateEnrichment(BaseModel):
     publications: List[Dict[str, str]] = []
     awards: List[str] = []
     raw_results: List[SearchResult] = []
+    ai_summary: Optional[str] = None  # AI-generated summary from Summarizer or Grounding
 
 
 class BraveSearchService:
@@ -90,6 +93,7 @@ class BraveSearchService:
         country: str = "US",
         search_lang: str = "en",
         freshness: Optional[str] = None,
+        result_filter: Optional[str] = None,
     ) -> List[SearchResult]:
         """
         Perform web search using Brave Search API.
@@ -100,6 +104,7 @@ class BraveSearchService:
             country: Country code for search results
             search_lang: Language for search results
             freshness: Filter by freshness (e.g., "pd" for past day, "pw" for past week)
+            result_filter: Comma-delimited string of result types (web, infobox, discussions, faq, news, videos)
         
         Returns:
             List of search results
@@ -122,6 +127,10 @@ class BraveSearchService:
         
         if freshness:
             params["freshness"] = freshness
+        
+        # Use result_filter for Rich Search features (infobox, discussions, faq, etc.)
+        if result_filter:
+            params["result_filter"] = result_filter
         
         headers = {
             "Accept": "application/json",
@@ -150,12 +159,172 @@ class BraveSearchService:
                         )
                     )
                 
-                logger.info(f"Brave Search: Found {len(results)} results for '{query}'")
+                # Parse Rich Search results if available (infobox, discussions, faq)
+                # These provide structured data that can enhance enrichment
+                if "infobox" in data:
+                    infobox = data.get("infobox", {})
+                    if infobox.get("results"):
+                        logger.info(f"Brave Search: Found infobox data for '{query}'")
+                
+                if "discussions" in data:
+                    discussions = data.get("discussions", {}).get("results", [])
+                    if discussions:
+                        logger.info(f"Brave Search: Found {len(discussions)} discussion results for '{query}'")
+                
+                if "faq" in data:
+                    faq = data.get("faq", {}).get("results", [])
+                    if faq:
+                        logger.info(f"Brave Search: Found {len(faq)} FAQ results for '{query}'")
+                
+                logger.info(f"Brave Search: Found {len(results)} web results for '{query}'")
                 return results
                 
         except httpx.HTTPError as e:
             logger.error(f"Brave Search API error: {str(e)}")
             raise
+    
+    async def search_news(
+        self,
+        query: str,
+        count: int = 10,
+        country: str = "US",
+        search_lang: str = "en",
+        freshness: Optional[str] = None,
+    ) -> List[SearchResult]:
+        """
+        Perform news search using Brave News Search API endpoint.
+        
+        This is more efficient than using web search with result_filter for news.
+        
+        Args:
+            query: Search query string
+            count: Number of results to return (max 20)
+            country: Country code for search results
+            search_lang: Language for search results
+            freshness: Filter by freshness (e.g., "pd" for past day, "pw" for past week)
+        
+        Returns:
+            List of news search results
+            
+        Raises:
+            httpx.HTTPError: If API request fails
+        """
+        if not self.enabled:
+            logger.warning("Brave Search not enabled. Returning empty results.")
+            return []
+        
+        url = f"{self.BASE_URL}/news/search"
+        
+        params = {
+            "q": query,
+            "count": min(count, 20),
+            "country": country,
+            "search_lang": search_lang,
+        }
+        
+        if freshness:
+            params["freshness"] = freshness
+        
+        headers = {
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip",
+            "X-Subscription-Token": self.api_key,
+        }
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, params=params, headers=headers)
+                response.raise_for_status()
+                
+                data = response.json()
+                results = []
+                
+                # Parse news results
+                news_results = data.get("news", {}).get("results", [])
+                for result in news_results:
+                    results.append(
+                        SearchResult(
+                            title=result.get("title", ""),
+                            url=result.get("url", ""),
+                            description=result.get("description"),
+                            age=result.get("age"),
+                            meta_url=result.get("meta_url"),
+                        )
+                    )
+                
+                logger.info(f"Brave News Search: Found {len(results)} news results for '{query}'")
+                return results
+                
+        except httpx.HTTPError as e:
+            logger.error(f"Brave News Search API error: {str(e)}")
+            raise
+    
+    async def get_ai_summary(
+        self,
+        query: str,
+        use_grounding: bool = True,
+    ) -> Optional[str]:
+        """
+        Get AI-generated summary using Brave AI Grounding or Summarizer API.
+        
+        AI Grounding provides answers backed by verifiable sources on the Web.
+        Summarizer provides summaries of search results.
+        
+        Args:
+            query: Search query string
+            use_grounding: If True, use AI Grounding (default). If False, use Summarizer.
+        
+        Returns:
+            AI-generated summary or None if fails
+        """
+        if not self.enabled:
+            return None
+        
+        try:
+            url = f"{self.BASE_URL}/chat/completions"
+            
+            headers = {
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip",
+                "Content-Type": "application/json",
+                "X-Subscription-Token": self.api_key,
+            }
+            
+            # Use AI Grounding (recommended) or Summarizer
+            model = "brave" if use_grounding else "brave-pro"
+            
+            payload = {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": query
+                    }
+                ],
+                "model": model,
+                "stream": False
+            }
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, json=payload, headers=headers)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                # Extract content from response
+                if "choices" in data and len(data["choices"]) > 0:
+                    content = data["choices"][0].get("message", {}).get("content", "")
+                    if content:
+                        logger.info(f"Brave AI Summary: Generated summary for '{query[:50]}...'")
+                        return content
+                
+                return None
+                
+        except httpx.HTTPError as e:
+            logger.warning(f"Brave AI Summary API error (may require Pro AI plan): {str(e)}")
+            return None
+        except Exception as e:
+            logger.warning(f"Error getting AI summary: {str(e)}")
+            return None
     
     async def enrich_company(
         self,
@@ -182,13 +351,26 @@ class BraveSearchService:
             return None
         
         try:
-            # Build search query
-            query = company_name
-            if additional_context:
-                query += f" {additional_context}"
+            # Build search query using prompt template from database
+            try:
+                template = await get_prompt("brave_company_search", language="en")
+                query = template.format(
+                    company_name=company_name,
+                    additional_context=f" {additional_context}" if additional_context else ""
+                ).strip()
+            except Exception as e:
+                logger.warning(f"Failed to load prompt template, using fallback: {e}")
+                # Fallback to hardcoded query
+                query = company_name
+                if additional_context:
+                    query += f" {additional_context}"
             
-            # Search for company info
-            results = await self.search_web(query, count=10)
+            # Search for company info with Rich Search (infobox for structured company data)
+            results = await self.search_web(
+                query, 
+                count=10,
+                result_filter="web,infobox,discussions"  # Get structured data via Rich Search
+            )
             
             if not results:
                 logger.warning(f"No search results found for company: {company_name}")
@@ -205,10 +387,19 @@ class BraveSearchService:
                 enrichment.website = results[0].url
                 enrichment.description = results[0].description
             
-            # Search for recent news
-            news_query = f"{company_name} news"
-            news_results = await self.search_web(
-                news_query, count=5, freshness="pw"  # Past week
+            # Search for recent news using prompt template
+            try:
+                news_template = await get_prompt("brave_company_news", language="en")
+                news_query = news_template.format(company_name=company_name)
+            except Exception as e:
+                logger.warning(f"Failed to load news prompt template, using fallback: {e}")
+                news_query = f"{company_name} news"
+            
+            # Use dedicated News Search endpoint for better results
+            news_results = await self.search_news(
+                news_query, 
+                count=5, 
+                freshness="pw"  # Past week
             )
             
             enrichment.recent_news = [
@@ -229,6 +420,15 @@ class BraveSearchService:
                     enrichment.social_media["twitter"] = result.url
                 elif "facebook.com" in url_lower:
                     enrichment.social_media["facebook"] = result.url
+            
+            # Optionally get AI summary for richer context
+            try:
+                summary_query = f"Provide a brief summary about {company_name} including industry, size, and recent developments"
+                ai_summary = await self.get_ai_summary(summary_query, use_grounding=True)
+                if ai_summary:
+                    enrichment.ai_summary = ai_summary
+            except Exception as e:
+                logger.debug(f"AI summary not available for company {company_name}: {e}")
             
             logger.info(f"Successfully enriched company: {company_name}")
             return enrichment
@@ -265,13 +465,27 @@ class BraveSearchService:
             return None
         
         try:
-            # Build search query
-            query = candidate_name
-            if additional_keywords:
-                query += " " + " ".join(additional_keywords)
+            # Build search query using prompt template from database
+            try:
+                template = await get_prompt("brave_candidate_search", language="en")
+                additional_keywords_str = " " + " ".join(additional_keywords) if additional_keywords else ""
+                query = template.format(
+                    candidate_name=candidate_name,
+                    additional_keywords=additional_keywords_str
+                ).strip()
+            except Exception as e:
+                logger.warning(f"Failed to load prompt template, using fallback: {e}")
+                # Fallback to hardcoded query
+                query = candidate_name
+                if additional_keywords:
+                    query += " " + " ".join(additional_keywords)
             
-            # Search for candidate info
-            results = await self.search_web(query, count=10)
+            # Search for candidate info with Rich Search
+            results = await self.search_web(
+                query, 
+                count=10,
+                result_filter="web,discussions"  # Get discussions and web results
+            )
             
             if not results:
                 logger.warning(f"No search results found for candidate: {candidate_name}")
@@ -299,8 +513,14 @@ class BraveSearchService:
                     if not enrichment.portfolio_url:  # Take first portfolio-like URL
                         enrichment.portfolio_url = result.url
             
-            # Search for publications
-            pub_query = f"{candidate_name} publication OR paper OR article"
+            # Search for publications using prompt template
+            try:
+                pub_template = await get_prompt("brave_candidate_publications", language="en")
+                pub_query = pub_template.format(candidate_name=candidate_name)
+            except Exception as e:
+                logger.warning(f"Failed to load publications prompt template, using fallback: {e}")
+                pub_query = f"{candidate_name} publication OR paper OR article"
+            
             pub_results = await self.search_web(pub_query, count=5)
             
             enrichment.publications = [
@@ -315,6 +535,15 @@ class BraveSearchService:
                     for keyword in ["scholar", "researchgate", "arxiv", "medium", "blog"]
                 )
             ]
+            
+            # Optionally get AI summary for richer context
+            try:
+                summary_query = f"Provide a brief professional summary about {candidate_name} including skills, experience, and notable achievements"
+                ai_summary = await self.get_ai_summary(summary_query, use_grounding=True)
+                if ai_summary:
+                    enrichment.ai_summary = ai_summary
+            except Exception as e:
+                logger.debug(f"AI summary not available for candidate {candidate_name}: {e}")
             
             logger.info(f"Successfully enriched candidate: {candidate_name}")
             return enrichment
@@ -353,8 +582,20 @@ class BraveSearchService:
             elif days <= 30:
                 freshness = "pm"  # Past month
             
-            query = f"{company_name} news"
-            results = await self.search_web(query, count=count, freshness=freshness)
+            # Use prompt template for news query
+            try:
+                news_template = await get_prompt("brave_company_news", language="en")
+                query = news_template.format(company_name=company_name)
+            except Exception as e:
+                logger.warning(f"Failed to load news prompt template, using fallback: {e}")
+                query = f"{company_name} news"
+            
+            # Use dedicated News Search endpoint for better results
+            results = await self.search_news(
+                query, 
+                count=count, 
+                freshness=freshness
+            )
             
             return [
                 {

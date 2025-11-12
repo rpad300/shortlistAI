@@ -562,6 +562,11 @@ class AIAnalysisService:
             if news_lines:
                 lines.append("Recent News:\n" + "\n".join(news_lines))
 
+        # Include AI summary if available (from Brave AI Grounding/Summarizer)
+        ai_summary = data.get("ai_summary")
+        if ai_summary:
+            lines.append(f"AI Summary: {ai_summary}")
+
         if not lines:
             return ""
         return "COMPANY ENRICHMENT:\n" + "\n".join(lines)
@@ -594,6 +599,11 @@ class AIAnalysisService:
         awards = self._normalize_list_field(data.get("awards"))
         if awards:
             lines.append("Awards:\n" + "\n".join(f"• {item}" for item in awards[:3]))
+
+        # Include AI summary if available (from Brave AI Grounding/Summarizer)
+        ai_summary = data.get("ai_summary")
+        if ai_summary:
+            lines.append(f"AI Summary: {ai_summary}")
 
         if not lines:
             return ""

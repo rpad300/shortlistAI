@@ -169,6 +169,50 @@ DEFAULT_PROMPTS = [
             "preferred_provider": "gemini"
         },
         "admin_notes": "High-level summary for decision makers. Should be clear and actionable."
+    },
+    {
+        "prompt_key": "brave_company_search",
+        "name": "Brave Search - Company Query",
+        "description": "Search query template for enriching company information via Brave Search API. Uses search operators to find: official website, company information, industry details, size, location, and business data. Optimized for comprehensive company data retrieval.",
+        "content": "{company_name}{additional_context} (company OR corporation OR business) (website OR official OR about) (industry OR sector OR location OR headquarters OR employees OR size)",
+        "category": "enrichment",
+        "variables": ["company_name", "additional_context"],
+        "language": "en",
+        "model_preferences": {},
+        "admin_notes": "Template for company search queries. Uses parentheses for grouping and OR operators to find multiple types of company information. Variables: company_name (required), additional_context (optional). Query structure optimized for Brave Search API operators (https://api-dashboard.search.brave.com/app/documentation/web-search/query)."
+    },
+    {
+        "prompt_key": "brave_company_news",
+        "name": "Brave Search - Company News Query",
+        "description": "Search query template for finding recent company news via Brave Search API. Uses search operators to find: latest news, press releases, announcements, and industry updates from recent time periods. Optimized for freshness parameter.",
+        "content": "{company_name} (news OR announcement OR press release OR update OR \"recent news\" OR \"latest news\") (2024 OR 2025 OR recent)",
+        "category": "enrichment",
+        "variables": ["company_name"],
+        "language": "en",
+        "model_preferences": {},
+        "admin_notes": "Template for company news search. Uses OR operators and year filters to find recent news. Should be used with freshness=pw parameter for past week results. Query optimized for news-specific content discovery. Reference: https://api-dashboard.search.brave.com/app/documentation/web-search/query"
+    },
+    {
+        "prompt_key": "brave_candidate_search",
+        "name": "Brave Search - Candidate Query",
+        "description": "Search query template for enriching candidate information via Brave Search API. Uses site: operators to target specific platforms (LinkedIn, GitHub, Medium) and keywords to find professional profiles, portfolios, and background information.",
+        "content": "{candidate_name}{additional_keywords} (site:linkedin.com/in OR site:github.com OR site:medium.com OR \"portfolio\" OR \"professional profile\" OR \"about me\") (software OR developer OR engineer OR professional OR experience OR skills)",
+        "category": "enrichment",
+        "variables": ["candidate_name", "additional_keywords"],
+        "language": "en",
+        "model_preferences": {},
+        "admin_notes": "Template for candidate search queries. Uses site: operators to target specific professional platforms. Variables: candidate_name (required), additional_keywords (optional). Query structure optimized to find professional online presence across multiple platforms. Reference: https://api-dashboard.search.brave.com/app/documentation/web-search/query"
+    },
+    {
+        "prompt_key": "brave_candidate_publications",
+        "name": "Brave Search - Candidate Publications Query",
+        "description": "Search query template for finding candidate publications and research via Brave Search API. Uses site: operators to target academic platforms (Google Scholar, ResearchGate, arXiv, Academia.edu) and keywords to find research papers, articles, and academic work.",
+        "content": "{candidate_name} (site:scholar.google.com OR site:researchgate.net OR site:arxiv.org OR site:academia.edu OR \"research paper\" OR \"academic paper\" OR \"publication\" OR \"journal article\") (research OR study OR paper OR article OR publication)",
+        "category": "enrichment",
+        "variables": ["candidate_name"],
+        "language": "en",
+        "model_preferences": {},
+        "admin_notes": "Template for finding academic publications. Uses site: operators to target academic platforms specifically. Query structure optimized to find research papers, articles, and academic publications across multiple scholarly platforms. Reference: https://api-dashboard.search.brave.com/app/documentation/web-search/query"
     }
 ]
 

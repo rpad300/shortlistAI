@@ -295,6 +295,7 @@ const AdminPrompts: React.FC = () => {
               <option value="candidate_evaluation">Candidate Evaluation</option>
               <option value="translation">Translation</option>
               <option value="reporting">Reporting</option>
+              <option value="enrichment">Enrichment</option>
               <option value="general">General</option>
             </select>
 
@@ -403,6 +404,7 @@ const AdminPrompts: React.FC = () => {
                     <option value="candidate_evaluation">Candidate Evaluation</option>
                     <option value="translation">Translation</option>
                     <option value="reporting">Reporting</option>
+                    <option value="enrichment">Enrichment</option>
                   </select>
                 </div>
 

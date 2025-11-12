@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS ai_prompts (
     
     -- Categorization
     category VARCHAR(50) NOT NULL DEFAULT 'general',
-    -- Categories: cv_extraction, job_analysis, candidate_evaluation, translation, reporting, other
+    -- Categories: cv_extraction, job_analysis, candidate_evaluation, translation, reporting, enrichment, other
     
     -- Version control
     version INTEGER NOT NULL DEFAULT 1,

@@ -773,6 +773,114 @@ A **implementação das 3 partes opcionais está COMPLETA**!
 
 ---
 
+## 2025-11-12 (Parte 4): Brave Search Enrichment Prompts - COMPLETO 🔍
+
+### 🎯 Objetivo
+
+Adicionar prompts configuráveis para as queries do Brave Search, permitindo que os administradores editem as queries de busca usadas para enriquecimento de empresas e candidatos.
+
+### ✅ IMPLEMENTAÇÃO COMPLETA
+
+#### PARTE 1: Novas Prompts Criadas ✅ 100%
+
+**4 novas prompts na categoria `enrichment`:**
+
+1. **`brave_company_search`** - Brave Search - Company Query
+   - Template: `{company_name}{additional_context}`
+   - Variáveis: `company_name`, `additional_context`
+   - Uso: Busca geral de informações da empresa
+
+2. **`brave_company_news`** - Brave Search - Company News Query
+   - Template: `{company_name} news`
+   - Variáveis: `company_name`
+   - Uso: Busca de notícias recentes da empresa
+
+3. **`brave_candidate_search`** - Brave Search - Candidate Query
+   - Template: `{candidate_name}{additional_keywords}`
+   - Variáveis: `candidate_name`, `additional_keywords`
+   - Uso: Busca geral de informações do candidato
+
+4. **`brave_candidate_publications`** - Brave Search - Candidate Publications Query
+   - Template: `{candidate_name} publication OR paper OR article`
+   - Variáveis: `candidate_name`
+   - Uso: Busca de publicações acadêmicas e artigos
+
+#### PARTE 2: Código Atualizado ✅ 100%
+
+**Ficheiros Modificados:**
+
+1. **`src/backend/scripts/seed_prompts.py`**
+   - ✅ Adicionadas 4 novas prompts ao DEFAULT_PROMPTS
+   - ✅ Categoria `enrichment` criada
+
+2. **`src/backend/services/search/brave_search.py`**
+   - ✅ Importado `get_prompt` de `services.ai.prompts`
+   - ✅ `enrich_company()` - Usa `brave_company_search` e `brave_company_news`
+   - ✅ `enrich_candidate()` - Usa `brave_candidate_search` e `brave_candidate_publications`
+   - ✅ `search_company_news()` - Usa `brave_company_news`
+   - ✅ Fallback para queries hardcoded se prompt não estiver disponível
+
+3. **`src/backend/database/migrations/004_ai_prompts.sql`**
+   - ✅ Categoria `enrichment` documentada nos comentários
+
+#### PARTE 3: Database Seed ✅ 100%
+
+**Executado via MCP Supabase:**
+- ✅ 4 prompts inseridas no banco de dados
+- ✅ Todas na categoria `enrichment`
+- ✅ Verificação confirmada: todas ativas e funcionais
+
+**Query de Verificação:**
+```sql
+SELECT prompt_key, name, category, language, is_active 
+FROM ai_prompts 
+WHERE category = 'enrichment'
+ORDER BY prompt_key;
+```
+
+**Resultado:**
+- ✅ `brave_candidate_publications` - Active
+- ✅ `brave_candidate_search` - Active
+- ✅ `brave_company_news` - Active
+- ✅ `brave_company_search` - Active
+
+### 📍 Localização no Backoffice
+
+**Acesso:**
+- URL: `/admin/prompts`
+- Filtrar por categoria: **`enrichment`**
+
+**Prompts Visíveis:**
+- Brave Search - Company Query
+- Brave Search - Company News Query
+- Brave Search - Candidate Query
+- Brave Search - Candidate Publications Query
+
+### 🔄 Fluxo de Funcionamento
+
+1. **Sistema busca prompt do banco** via `get_prompt("brave_company_search")`
+2. **Formata query** usando template com variáveis
+3. **Executa busca** no Brave Search API
+4. **Fallback seguro** se prompt não estiver disponível (usa query hardcoded)
+
+### ✨ Benefícios
+
+- ✅ **Editável via Backoffice** - Sem necessidade de alterar código
+- ✅ **Versionamento** - Histórico de mudanças nas queries
+- ✅ **Testável** - Pode testar diferentes queries facilmente
+- ✅ **Fallback seguro** - Sistema continua funcionando se prompt não existir
+
+### 📊 Estatísticas
+
+- **Ficheiros Modificados**: 3
+- **Novas Prompts**: 4
+- **Linhas de Código Adicionadas**: ~50
+- **Categoria Nova**: `enrichment`
+
+**Status**: ✅ COMPLETO E FUNCIONAL
+
+---
+
 ## 2025-11-12 (Parte 3): AI Prompts Management System - COMPLETO 🤖
 
 ### 🎯 Objetivo
@@ -1234,8 +1342,8 @@ A **implementação do sistema de gestão de prompts está 100% COMPLETA**!
 
 ---
 
-**Última Atualização**: 12 Novembro 2025, 18:50  
+**Última Atualização**: 12 Novembro 2025, 19:30  
 **Por**: AI Prompts Management Team  
-**Status**: ✅ IMPLEMENTAÇÃO COMPLETA - Sistema de Prompts 100% + Brave Search 100%  
+**Status**: ✅ IMPLEMENTAÇÃO COMPLETA - Sistema de Prompts 100% + Brave Search Enrichment Prompts 100%  
 **Git**: ✅ Commit a9dca5a - 21 files, 6529 insertions  
-**Próxima Ação**: Executar migrations (003 e 004) e testar!
+**Próxima Ação**: ✅ Brave Search prompts inseridas via MCP - Sistema completo e funcional!
