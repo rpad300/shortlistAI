@@ -62,22 +62,26 @@ const CandidateStep5: React.FC = () => {
   
   if (loading) {
     return (
-      <div className="step-container">
-        <div className="step-content">
-          <p>Loading results...</p>
+      <StepLayout>
+        <div className="step-container">
+          <div className="step-content">
+            <p>Loading results...</p>
+          </div>
         </div>
-      </div>
+      </StepLayout>
     );
   }
   
   if (error || !results) {
     return (
-      <div className="step-container">
-        <div className="step-content">
-          <div className="error-banner">{error || 'No results found'}</div>
-          <Button onClick={() => navigate('/candidate/step1')}>Start Over</Button>
+      <StepLayout>
+        <div className="step-container">
+          <div className="step-content">
+            <div className="error-banner">{error || 'No results found'}</div>
+            <Button onClick={() => navigate('/candidate/step1')}>Start Over</Button>
+          </div>
         </div>
-      </div>
+      </StepLayout>
     );
   }
   
