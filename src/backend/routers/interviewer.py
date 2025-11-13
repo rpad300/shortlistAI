@@ -1435,10 +1435,73 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 error_msg = f"CV {idx}: Analysis timed out"
                 logger.error(f"AI analysis timed out for CV {cv_id}")
                 errors.append(error_msg)
+                # Still add to results with error info so it appears in step7
+                candidate_info = candidate_lookup.get(cv_id, {})
+                summary = candidate_info.get("summary") or {}
+                candidate_label = (
+                    summary.get("full_name")
+                    or summary.get("current_role")
+                    or candidate_info.get("filename")
+                    or f"Candidate {idx}"
+                )
+                session_results.append({
+                    "analysis_id": None,
+                    "candidate_id": str(cv.get("candidate_id")) if cv else str(cv_id),
+                    "candidate_label": candidate_label,
+                    "file_name": candidate_info.get("filename"),
+                    "summary": summary,
+                    "global_score": 0,
+                    "categories": {},
+                    "strengths": [],
+                    "risks": [error_msg],
+                    "questions": [],
+                    "hard_blocker_flags": [],
+                    "recommendation": "Analysis failed - timeout",
+                    "intro_pitch": "",
+                    "gap_strategies": [],
+                    "preparation_tips": [],
+                    "provider": None,
+                    "enrichment": None,
+                    "error": error_msg
+                })
             except Exception as cv_err:
                 error_msg = f"CV {idx}: {str(cv_err)}"
-                logger.error(f"Error analyzing CV {cv_id}: {cv_err}")
+                logger.error(f"Error analyzing CV {cv_id}: {cv_err}", exc_info=True)
                 errors.append(error_msg)
+                # Still add to results with error info so it appears in step7
+                candidate_info = candidate_lookup.get(cv_id, {})
+                summary = candidate_info.get("summary") or {}
+                candidate_label = (
+                    summary.get("full_name")
+                    or summary.get("current_role")
+                    or candidate_info.get("filename")
+                    or f"Candidate {idx}"
+                )
+                session_results.append({
+                    "analysis_id": None,
+                    "candidate_id": str(cv.get("candidate_id")) if cv else str(cv_id),
+                    "candidate_label": candidate_label,
+                    "file_name": candidate_info.get("filename"),
+                    "summary": summary,
+                    "global_score": 0,
+                    "categories": {},
+                    "strengths": [],
+                    "risks": [error_msg],
+                    "questions": [],
+                    "hard_blocker_flags": [],
+                    "recommendation": f"Analysis failed: {str(cv_err)[:100]}",
+                    "intro_pitch": "",
+                    "gap_strategies": [],
+                    "preparation_tips": [],
+                    "provider": None,
+                    "enrichment": None,
+                    "error": error_msg
+                })
+        
+        # Log summary
+        logger.info(f"✅ Analysis completed: {len(session_results)}/{total_cvs} CVs analyzed successfully for session: {session_id}")
+        if errors:
+            logger.warning(f"⚠️ {len(errors)} CV(s) had errors during analysis: {errors}")
         
         # Generate executive recommendation (LAST STEP - only if we have successful analyses)
         executive_recommendation = None
