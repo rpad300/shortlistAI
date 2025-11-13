@@ -1,6 +1,6 @@
 /**
- * Animated Background - CSS VERSION
- * Pure CSS animations - GUARANTEED to work!
+ * Animated Background - AI Neural Network Style
+ * Small particles with neural network connections - represents data analysis & AI processing
  */
 
 .animated-background {
@@ -12,12 +12,91 @@
   min-height: 100vh;
   z-index: -1;
   overflow: hidden;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
+  background: linear-gradient(180deg, var(--bg-light, #FFFFFF) 0%, var(--surface-light, #F8F9FA) 100%);
   pointer-events: none;
 }
 
+/* Interactive mode - no need to change pointer-events, using document events */
+.animated-background.interactive {
+  /* Keep pointer-events: none to not interfere with page interactions */
+}
+
 [data-theme="dark"] .animated-background {
-  background: linear-gradient(180deg, #0A0A0B 0%, #1A1A1C 100%) !important;
+  background: linear-gradient(180deg, var(--bg-dark, #0A0A0B) 0%, var(--surface-dark, #1A1A1C) 100%) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .animated-background {
+    background: linear-gradient(180deg, var(--bg-dark, #0A0A0B) 0%, var(--surface-dark, #1A1A1C) 100%) !important;
+  }
+}
+
+/* Neural Network Connections Layer */
+.connections-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.connection-line {
+  position: absolute;
+  height: 1px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 102, 255, 0.3) 0%,
+    rgba(0, 102, 255, 0.1) 50%,
+    transparent 100%
+  );
+  animation: pulse-connection 4s ease-in-out infinite;
+  opacity: var(--connection-opacity, 0.3);
+  transition: opacity 0.2s ease-out;
+  /* Combine animation scale with mouse intensity */
+  --anim-scale-x: 1;
+  transform: scaleX(calc(var(--anim-scale-x, 1) * var(--connection-intensity, 1)));
+}
+
+[data-theme="dark"] .connection-line {
+  background: linear-gradient(
+    90deg,
+    rgba(51, 136, 255, 0.4) 0%,
+    rgba(51, 136, 255, 0.15) 50%,
+    transparent 100%
+  );
+}
+
+.connection-line:nth-child(3n) {
+  background: linear-gradient(
+    90deg,
+    rgba(124, 58, 237, 0.3) 0%,
+    rgba(124, 58, 237, 0.1) 50%,
+    transparent 100%
+  );
+}
+
+[data-theme="dark"] .connection-line:nth-child(3n) {
+  background: linear-gradient(
+    90deg,
+    rgba(159, 122, 234, 0.4) 0%,
+    rgba(159, 122, 234, 0.15) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes pulse-connection {
+  0%, 100% {
+    --anim-scale-x: 0;
+    opacity: 0;
+  }
+  20%, 80% {
+    --anim-scale-x: 1;
+    opacity: 1;
+  }
 }
 
 /* Particles Container */
@@ -31,51 +110,80 @@
   z-index: 3;
 }
 
-/* Individual Particle */
+/* Small Particles (Data Points) - 2-5px */
 .particle {
   position: absolute;
-  background: #0066FF;
-  border-radius: 50%;
-  opacity: 0.8;
-  animation: float linear infinite;
-  box-shadow: 0 0 25px rgba(0, 102, 255, 1), 0 0 50px rgba(0, 102, 255, 0.7), 0 0 75px rgba(0, 102, 255, 0.4);
-  filter: blur(0.8px);
+  transform-origin: center;
+  /* Mouse interaction - applied to outer element */
+  --mouse-offset-x: 0px;
+  --mouse-offset-y: 0px;
+  --mouse-scale: 1;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+  /* Apply mouse interaction transform */
+  transform: translate(var(--mouse-offset-x, 0px), var(--mouse-offset-y, 0px)) scale(var(--mouse-scale, 1));
 }
 
-[data-theme="dark"] .particle {
-  background: #3388FF;
-  opacity: 1;
-  box-shadow: 0 0 35px rgba(51, 136, 255, 1), 0 0 70px rgba(51, 136, 255, 0.7), 0 0 100px rgba(51, 136, 255, 0.4);
+/* Inner element handles the base animation and visual styles */
+.particle-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  animation: float-smooth linear infinite;
+  transform-origin: center;
+}
+
+/* Blue particles */
+.particle-blue .particle-inner {
+  background: #0066FF;
+  opacity: 0.6;
+  box-shadow: 0 0 8px rgba(0, 102, 255, 0.8), 0 0 16px rgba(0, 102, 255, 0.4);
   filter: blur(0.5px);
 }
 
-/* Purple particles (every 3rd) */
-.particle:nth-child(3n) {
+[data-theme="dark"] .particle-blue .particle-inner {
+  background: #3388FF;
+  opacity: 0.8;
+  box-shadow: 0 0 12px rgba(51, 136, 255, 1), 0 0 24px rgba(51, 136, 255, 0.6);
+  filter: blur(0.3px);
+}
+
+/* Purple particles */
+.particle-purple .particle-inner {
   background: #7C3AED;
-  box-shadow: 0 0 25px rgba(124, 58, 237, 1), 0 0 50px rgba(124, 58, 237, 0.7), 0 0 75px rgba(124, 58, 237, 0.4);
+  opacity: 0.6;
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.8), 0 0 16px rgba(124, 58, 237, 0.4);
+  filter: blur(0.5px);
 }
 
-[data-theme="dark"] .particle:nth-child(3n) {
+[data-theme="dark"] .particle-purple .particle-inner {
   background: #9F7AEA;
-  box-shadow: 0 0 35px rgba(159, 122, 234, 1), 0 0 70px rgba(159, 122, 234, 0.7), 0 0 100px rgba(159, 122, 234, 0.4);
+  opacity: 0.8;
+  box-shadow: 0 0 12px rgba(159, 122, 234, 1), 0 0 24px rgba(159, 122, 234, 0.6);
+  filter: blur(0.3px);
 }
 
-/* Floating Animation */
-@keyframes float {
+/* Smooth Floating Animation - Subtle movement */
+@keyframes float-smooth {
   0% {
     transform: translate(0, 0) scale(1);
+    opacity: 0.6;
   }
   25% {
-    transform: translate(10px, -20px) scale(1.1);
+    transform: translate(5px, -10px) scale(1.05);
+    opacity: 0.8;
   }
   50% {
-    transform: translate(-5px, -40px) scale(0.9);
+    transform: translate(-3px, -20px) scale(0.95);
+    opacity: 0.7;
   }
   75% {
-    transform: translate(-15px, -20px) scale(1.05);
+    transform: translate(-8px, -10px) scale(1.02);
+    opacity: 0.8;
   }
   100% {
     transform: translate(0, 0) scale(1);
+    opacity: 0.6;
   }
 }
 
@@ -113,7 +221,7 @@
   );
 }
 
-/* Grid Pattern */
+/* Subtle Grid Pattern (Data Structure) */
 .grid-pattern {
   position: absolute;
   top: 0;
@@ -121,18 +229,18 @@
   width: 100%;
   height: 100%;
   background-image: 
-    linear-gradient(rgba(0, 102, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 102, 255, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-  opacity: 0.5;
-  z-index: 2;
+    linear-gradient(rgba(0, 102, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 102, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.4;
+  z-index: 1;
 }
 
 [data-theme="dark"] .grid-pattern {
   background-image: 
-    linear-gradient(rgba(51, 136, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(51, 136, 255, 0.08) 1px, transparent 1px);
-  opacity: 0.3;
+    linear-gradient(rgba(51, 136, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51, 136, 255, 0.05) 1px, transparent 1px);
+  opacity: 0.25;
 }
 
 /* Disable on reduced motion */
@@ -142,9 +250,19 @@
   }
 }
 
-/* Responsive - fewer particles on mobile */
+/* Responsive - fewer particles and connections on mobile */
 @media (max-width: 768px) {
-  .particle:nth-child(n+15) {
+  .particle:nth-child(n+30) {
     display: none;
+  }
+  
+  .connection-line:nth-child(n+10) {
+    display: none;
+  }
+  
+  /* Smaller particles on mobile */
+  .particle {
+    width: 2px !important;
+    height: 2px !important;
   }
 }

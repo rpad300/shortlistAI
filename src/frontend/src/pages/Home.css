@@ -140,6 +140,28 @@ section {
   background: rgba(26, 26, 28, 0.5);
 }
 
+/* Ensure text contrast in Value Prop section - LIGHT MODE (default and explicit) */
+.value-prop-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .value-prop-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .value-prop-section .section-title {
+  color: var(--text-primary-dark, #F9FAFB);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .value-prop-section .section-title {
+    color: var(--text-primary-dark, #F9FAFB);
+  }
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -152,19 +174,71 @@ section {
   padding: 2rem 1rem;
 }
 
+/* Stat numbers - LIGHT MODE (default and explicit) */
 .stat-number {
   font-size: 3.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #0066FF 0%, #7C3AED 100%);
+  margin-bottom: 0.5rem;
+  /* Use darker gradient for better contrast on light background */
+  background: linear-gradient(135deg, #0052CC 0%, #6D28D9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 0.5rem;
+  /* Fallback: solid color if gradient doesn't work */
+  color: var(--color-ai-blue, #0066FF);
 }
 
+/* LIGHT MODE - explicit */
+[data-theme="light"] .stat-number {
+  background: linear-gradient(135deg, #0052CC 0%, #6D28D9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: var(--color-ai-blue, #0066FF);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .stat-number {
+  background: linear-gradient(135deg, #3388FF 0%, #9F7AEA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: var(--color-ai-blue, #3388FF);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stat-number {
+    background: linear-gradient(135deg, #3388FF 0%, #9F7AEA 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: var(--color-ai-blue, #3388FF);
+  }
+}
+
+/* Stat labels - LIGHT MODE (default and explicit) */
 .stat-label {
   font-size: 1rem;
-  color: var(--text-secondary, #6B7280);
+  color: var(--text-primary-light, #111827);
+  font-weight: 500;
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .stat-label {
+  color: var(--text-primary-light, #111827);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .stat-label {
+  color: var(--text-primary-dark, #F9FAFB);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stat-label {
+    color: var(--text-primary-dark, #F9FAFB);
+  }
 }
 
 /* ========================================
@@ -174,6 +248,49 @@ section {
 .features-section {
   background: transparent;
   position: relative;
+}
+
+/* Ensure text contrast in Features section - LIGHT MODE (default and explicit) */
+.features-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .features-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .features-section .section-title {
+  color: var(--text-primary-dark, #F9FAFB);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .features-section .section-title {
+    color: var(--text-primary-dark, #F9FAFB);
+  }
+}
+
+.features-section .section-subtitle {
+  color: var(--text-secondary-light, #6B7280);
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .features-section .section-subtitle {
+  color: var(--text-secondary-light, #6B7280);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .features-section .section-subtitle {
+  color: var(--text-secondary-dark, #9CA3AF);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .features-section .section-subtitle {
+    color: var(--text-secondary-dark, #9CA3AF);
+  }
 }
 
 .features-grid {
@@ -286,6 +403,49 @@ section {
   background: rgba(26, 26, 28, 0.5);
 }
 
+/* Ensure text contrast in How It Works section - LIGHT MODE (default and explicit) */
+.how-it-works-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .how-it-works-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .how-it-works-section .section-title {
+  color: var(--text-primary-dark, #F9FAFB);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .how-it-works-section .section-title {
+    color: var(--text-primary-dark, #F9FAFB);
+  }
+}
+
+.how-it-works-section .section-subtitle {
+  color: var(--text-secondary-light, #6B7280);
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .how-it-works-section .section-subtitle {
+  color: var(--text-secondary-light, #6B7280);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .how-it-works-section .section-subtitle {
+  color: var(--text-secondary-dark, #9CA3AF);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .how-it-works-section .section-subtitle {
+    color: var(--text-secondary-dark, #9CA3AF);
+  }
+}
+
 .steps-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -370,6 +530,28 @@ section {
   position: relative;
 }
 
+/* Ensure text contrast in Benefits section - LIGHT MODE (default and explicit) */
+.benefits-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .benefits-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .benefits-section .section-title {
+  color: var(--text-primary-dark, #F9FAFB);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .benefits-section .section-title {
+    color: var(--text-primary-dark, #F9FAFB);
+  }
+}
+
 .benefits-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -438,6 +620,28 @@ section {
 
 [data-theme="dark"] .use-cases-section {
   background: rgba(26, 26, 28, 0.5);
+}
+
+/* Ensure text contrast in Use Cases section - LIGHT MODE (default and explicit) */
+.use-cases-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .use-cases-section .section-title {
+  color: var(--text-primary-light, #111827);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .use-cases-section .section-title {
+  color: var(--text-primary-dark, #F9FAFB);
+}
+
+/* AUTO MODE - system preference dark */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .use-cases-section .section-title {
+    color: var(--text-primary-dark, #F9FAFB);
+  }
 }
 
 .use-cases-grid {
@@ -523,6 +727,7 @@ section {
   margin-bottom: 1.5rem;
 }
 
+/* Button white on gradient background - OK: high contrast */
 .cta-section .btn-primary {
   background: white;
   color: #0066FF;

@@ -83,34 +83,76 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+/* Hero title - LIGHT MODE (default and explicit) */
 .hero-title {
   font-size: 3.5rem;
   font-weight: 700;
   margin: 0 0 1.5rem 0;
-  background: linear-gradient(135deg, #0066FF 0%, #7C3AED 100%);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  /* Use darker gradient for better contrast on light background */
+  background: linear-gradient(135deg, #0052CC 0%, #6D28D9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  /* Fallback: solid color if gradient doesn't work */
+  color: var(--color-ai-blue, #0066FF);
 }
 
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-title {
+  background: linear-gradient(135deg, #0052CC 0%, #6D28D9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: var(--color-ai-blue, #0066FF);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .hero-title {
+  /* In dark mode, use solid light color for better contrast */
+  color: var(--text-primary-dark, #F9FAFB);
+  -webkit-text-fill-color: var(--text-primary-dark, #F9FAFB);
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+
+/* AUTO MODE - system preference dark */
 @media (prefers-color-scheme: dark) {
-  .hero-title {
+  :root:not([data-theme="light"]) .hero-title {
+    /* In dark mode, use solid light color for better contrast */
     color: var(--text-primary-dark, #F9FAFB);
+    -webkit-text-fill-color: var(--text-primary-dark, #F9FAFB);
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
   }
 }
 
+/* Hero subtitle - LIGHT MODE (default and explicit) */
 .hero-subtitle {
   font-size: 1.25rem;
   font-weight: 400;
   margin: 0;
-  color: var(--text-secondary-light, #6B7280);
+  color: var(--text-primary-light, #111827);
+  /* Use primary text color for better contrast on glassmorphism background */
 }
 
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-subtitle {
+  color: var(--text-primary-light, #111827);
+}
+
+/* DARK MODE - explicit */
+[data-theme="dark"] .hero-subtitle {
+  color: var(--text-primary-dark, #F9FAFB);
+}
+
+/* AUTO MODE - system preference dark */
 @media (prefers-color-scheme: dark) {
-  .hero-subtitle {
-    color: var(--text-secondary-dark, #9CA3AF);
+  :root:not([data-theme="light"]) .hero-subtitle {
+    color: var(--text-primary-dark, #F9FAFB);
   }
 }
 

@@ -347,6 +347,7 @@
   flex-wrap: wrap;
 }
 
+/* Button white on gradient background - OK: high contrast */
 .about-cta-section .btn-primary {
   background: white;
   color: #0066FF;
