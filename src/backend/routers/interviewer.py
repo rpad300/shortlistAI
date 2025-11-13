@@ -863,7 +863,7 @@ async def _run_cv_upload_background(session_id: UUID, files_data: List[Dict[str,
                     }
                 )
                 
-                logger.info(f"Processing CV {idx}/{total_files}: {filename}")
+                logger.info(f"🔄 Processing CV {idx}/{total_files}: {filename} ({len(file_content)} bytes)")
                 
                 # Validate file
                 is_valid, error = FileProcessor.validate_file_type(filename)
@@ -957,6 +957,11 @@ async def _run_cv_upload_background(session_id: UUID, files_data: List[Dict[str,
         
         # Update session with results
         if len(processed_cvs) > 0:
+            # Log summary
+            logger.info(f"✅ Upload completed: {len(processed_cvs)}/{total_files} CVs processed successfully for session: {session_id}")
+            if errors:
+                logger.warning(f"⚠️ {len(errors)} CV(s) failed during upload: {errors}")
+            
             session_service.update_session(
                 session_id,
                 {
@@ -969,16 +974,22 @@ async def _run_cv_upload_background(session_id: UUID, files_data: List[Dict[str,
                     "upload_progress": {
                         "current": total_files,
                         "total": total_files,
-                        "status": f"Completed: {len(processed_cvs)} CV(s) processed",
+                        "status": f"Completed: {len(processed_cvs)}/{total_files} CV(s) processed successfully",
                         "current_filename": None
                     },
-                    "upload_errors": errors if errors else []
+                    "upload_errors": errors if errors else [],
+                    "upload_summary": {
+                        "total_files": total_files,
+                        "processed": len(processed_cvs),
+                        "failed": len(errors),
+                        "errors": errors if errors else []
+                    }
                 },
                 step=5
             )
-            logger.info(f"✅ Upload completed: {len(processed_cvs)} CVs processed for session: {session_id}")
         else:
             # All failed
+            logger.error(f"❌ Upload failed: No CVs processed for session: {session_id}. Errors: {errors}")
             session_service.update_session(
                 session_id,
                 {
@@ -986,13 +997,18 @@ async def _run_cv_upload_background(session_id: UUID, files_data: List[Dict[str,
                     "upload_progress": {
                         "current": 0,
                         "total": total_files,
-                        "status": "Upload failed: No CVs could be processed",
+                        "status": f"Upload failed: No CVs could be processed ({len(errors)} error(s))",
                         "current_filename": None
                     },
-                    "upload_errors": errors
+                    "upload_errors": errors,
+                    "upload_summary": {
+                        "total_files": total_files,
+                        "processed": 0,
+                        "failed": len(errors),
+                        "errors": errors
+                    }
                 }
             )
-            logger.error(f"❌ Upload failed: No CVs processed for session: {session_id}")
         
     except Exception as e:
         logger.error(f"Error in _run_cv_upload_background for session {session_id}: {e}", exc_info=True)
@@ -1060,12 +1076,16 @@ async def step5_upload_cvs(
         for file in files:
             try:
                 file_content = await file.read()
+                if len(file_content) == 0:
+                    logger.warning(f"File {file.filename} is empty, skipping")
+                    continue
                 files_data.append({
                     "filename": file.filename,
                     "content": file_content
                 })
+                logger.info(f"✅ File {file.filename} read successfully ({len(file_content)} bytes)")
             except Exception as e:
-                logger.error(f"Error reading file {file.filename}: {e}")
+                logger.error(f"❌ Error reading file {file.filename}: {e}", exc_info=True)
         
         if len(files_data) == 0:
             raise HTTPException(
@@ -1609,13 +1629,15 @@ async def step5_progress(session_id: UUID):
         is_complete = status == "complete"
         errors = session_data.get("upload_errors", [])
         cv_count = session_data.get("cv_count", 0)
+        upload_summary = session_data.get("upload_summary", {})
         
         return JSONResponse({
             "status": status,
             "complete": is_complete,
             "progress": progress,
             "cv_count": cv_count,
-            "errors": errors if errors else None
+            "errors": errors if errors else None,
+            "summary": upload_summary if upload_summary else None
         })
         
     except HTTPException:

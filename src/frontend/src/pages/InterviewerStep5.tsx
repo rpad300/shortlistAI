@@ -118,17 +118,31 @@ const InterviewerStep5: React.FC = () => {
             clearInterval(pollInterval);
             
             setProcessingProgress(100);
-            setProcessingStatus(`✅ Completed: ${progressData.cv_count || current} CV(s) processed`);
             
-            // Show errors if any
-            if (progressData.errors && progressData.errors.length > 0) {
-              setError(`Some CVs failed: ${progressData.errors.join(', ')}`);
+            // Show detailed summary
+            const summary = progressData.summary || {};
+            const processed = progressData.cv_count || summary.processed || current;
+            const total = summary.total_files || totalFiles || total;
+            const failed = summary.failed || (progressData.errors?.length || 0);
+            
+            if (failed > 0) {
+              setProcessingStatus(`⚠️ Completed: ${processed}/${total} CV(s) processed. ${failed} failed.`);
+              setError(`Some CVs failed: ${progressData.errors?.join(', ') || 'Unknown error'}`);
+            } else {
+              setProcessingStatus(`✅ Completed: ${processed} CV(s) processed successfully`);
             }
             
-            // Navigate to step 6 after short delay
-            setTimeout(() => {
-              navigate('/interviewer/step6');
-            }, 2000);
+            // Navigate to step 6 after short delay (only if at least one CV was processed)
+            if (processed > 0) {
+              setTimeout(() => {
+                navigate('/interviewer/step6');
+              }, 3000); // Give user time to see the summary
+            } else {
+              // No CVs processed - don't navigate, let user see the error
+              setProcessingStatus(`❌ Upload failed: No CVs could be processed`);
+              setIsProcessing(false);
+              setLoading(false);
+            }
           } else if (progressData.status === 'failed') {
             clearInterval(pollInterval);
             
