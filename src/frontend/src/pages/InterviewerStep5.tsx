@@ -62,8 +62,14 @@ const InterviewerStep5: React.FC = () => {
         formData.append('files', file);
       });
       
+      // Calculate estimated time: ~25 seconds per CV (upload + extraction + AI summary)
+      const estimatedSeconds = files.length * 25;
+      const estimatedMinutes = Math.ceil(estimatedSeconds / 60);
+      
       // Update progress message during upload
-      setUploadProgress(`Processing ${files.length} CV(s)... Please wait (this may take a few minutes)`);
+      setUploadProgress(`Processing ${files.length} CV(s)... Estimated time: ${estimatedMinutes} minute(s). Please wait...`);
+      
+      console.log(`[Step5] Starting upload of ${files.length} CV(s), estimated ${estimatedSeconds}s`);
       
       const response = await interviewerAPI.step5(formData);
       
