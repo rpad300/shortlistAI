@@ -128,7 +128,7 @@ const InterviewerStep3: React.FC = () => {
               variant="outline"
               onClick={() => navigate('/interviewer/step2')}
             >
-              {t('common.previous')}
+              {t('common.back')}
             </Button>
             <Button
               type="submit"

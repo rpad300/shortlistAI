@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import StepLayout from '@components/StepLayout';
 import Input from '@components/Input';
@@ -157,7 +157,28 @@ const CandidateStep1: React.FC = () => {
             <Checkbox
               label={
                 <>
-                  {t('forms.consent_terms')}
+                  {(() => {
+                    const text = t('forms.consent_terms');
+                    const termsText = t('legal.terms');
+                    // Extract text before "Terms and Conditions" or equivalent
+                    const regex = /(.*?)(?:Terms and Conditions|Termos e Condições|Términos y Condiciones|Termes et Conditions|$)/i;
+                    const match = text.match(regex);
+                    const prefix = match && match[1] ? match[1].trim() + ' ' : text.replace(termsText, '').trim() + ' ';
+                    return (
+                      <>
+                        {prefix}
+                        <Link 
+                          to="/legal/terms" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="consent-link"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {termsText}
+                        </Link>
+                      </>
+                    );
+                  })()}
                 </>
               }
               checked={consents.consent_terms}
@@ -169,7 +190,28 @@ const CandidateStep1: React.FC = () => {
             <Checkbox
               label={
                 <>
-                  {t('forms.consent_privacy')}
+                  {(() => {
+                    const text = t('forms.consent_privacy');
+                    const privacyText = t('legal.privacy');
+                    // Extract text before "Privacy Policy" or equivalent
+                    const regex = /(.*?)(?:Privacy Policy|Política de Privacidade|Politique de Confidentialité|Política de Privacidad|$)/i;
+                    const match = text.match(regex);
+                    const prefix = match && match[1] ? match[1].trim() + ' ' : text.replace(privacyText, '').trim() + ' ';
+                    return (
+                      <>
+                        {prefix}
+                        <Link 
+                          to="/legal/privacy" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="consent-link"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {privacyText}
+                        </Link>
+                      </>
+                    );
+                  })()}
                 </>
               }
               checked={consents.consent_privacy}

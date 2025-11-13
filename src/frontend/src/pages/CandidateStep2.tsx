@@ -86,24 +86,24 @@ const CandidateStep2: React.FC = () => {
         
         <form onSubmit={handleSubmit} className="step-form">
           <div className="form-section">
-            <div style={{ marginBottom: 'var(--spacing-md)' }}>
+            <div style={{ marginBottom: '1rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
               <label>
                 <input
                   type="radio"
                   checked={!useFile}
                   onChange={() => setUseFile(false)}
-                  style={{ marginRight: 'var(--spacing-sm)' }}
+                  style={{ marginRight: '0.5rem' }}
                 />
-                Paste job posting text
+                {t('forms.paste_job_text')}
               </label>
-              <label style={{ marginLeft: 'var(--spacing-lg)' }}>
+              <label>
                 <input
                   type="radio"
                   checked={useFile}
                   onChange={() => setUseFile(true)}
-                  style={{ marginRight: 'var(--spacing-sm)' }}
+                  style={{ marginRight: '0.5rem' }}
                 />
-                Upload file
+                {t('forms.upload_file')}
               </label>
             </div>
             
@@ -131,7 +131,7 @@ const CandidateStep2: React.FC = () => {
           
           <div className="form-actions">
             <Button type="button" variant="outline" onClick={() => navigate('/candidate/step1')}>
-              {t('common.previous')}
+              {t('common.back')}
             </Button>
             <Button type="submit" variant="primary" loading={loading} disabled={loading}>
               {t('common.next')}

@@ -386,7 +386,7 @@ const InterviewerStep4: React.FC = () => {
           
           <div className="form-actions">
             <Button type="button" variant="outline" onClick={() => navigate('/interviewer/step3')}>
-              {t('common.previous')}
+              {t('common.back')}
             </Button>
             <Button type="submit" variant="primary" loading={loading} disabled={loading}>
               {t('common.next')}

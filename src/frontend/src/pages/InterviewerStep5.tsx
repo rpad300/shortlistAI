@@ -227,66 +227,28 @@ const InterviewerStep5: React.FC = () => {
             />
             
             {files.length > 0 && (
-              <div style={{ marginTop: 'var(--spacing-md)' }}>
-                <div style={{ 
-                  padding: 'var(--spacing-md)', 
-                  backgroundColor: 'var(--color-accent-light)', 
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: 'var(--spacing-md)'
-                }}>
+              <div style={{ marginTop: '1rem' }}>
+                <div className="upload-files-summary">
                   <strong>{files.length} CV(s) ready to upload</strong>
                 </div>
                 
                 {/* List of selected files with remove button */}
-                <div style={{ 
-                  maxHeight: '300px', 
-                  overflowY: 'auto',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: 'var(--spacing-sm)'
-                }}>
+                <div className="upload-files-container">
                   {files.map((file, index) => (
                     <div 
                       key={`${file.name}-${index}`}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: 'var(--spacing-sm)',
-                        marginBottom: 'var(--spacing-xs)',
-                        backgroundColor: 'var(--color-bg-secondary)',
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--color-border)'
-                      }}
+                      className="upload-file-item"
                     >
-                      <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div className="upload-file-info">
                         📄 {file.name}
-                        <span style={{ 
-                          marginLeft: 'var(--spacing-sm)', 
-                          fontSize: 'var(--font-size-xs)', 
-                          color: 'var(--color-text-secondary)' 
-                        }}>
+                        <span>
                           ({(file.size / 1024).toFixed(1)} KB)
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveFile(index)}
-                        style={{
-                          background: 'var(--color-error)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '24px',
-                          height: '24px',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          marginLeft: 'var(--spacing-sm)'
-                        }}
+                        className="upload-file-remove"
                         title="Remove CV"
                       >
                         ✕
@@ -308,7 +270,7 @@ const InterviewerStep5: React.FC = () => {
           
           <div className="form-actions">
             <Button type="button" variant="outline" onClick={() => navigate('/interviewer/step4')}>
-              {t('common.previous')}
+              {t('common.back')}
             </Button>
             <Button
               type="submit"

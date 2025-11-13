@@ -313,19 +313,74 @@ async def step2_job_posting(
             else:
                 logger.warning(f"Could not extract text from file: {error}")
         
-        # Create job posting record
-        job_posting = await job_posting_service.create(
-            raw_text=final_text,
-            company_id=session["data"].get("company_id"),
-            interviewer_id=session["data"].get("interviewer_id"),
-            file_url=file_url,
-            language=session_language
-        )
+        # Validate required data from session
+        interviewer_id = session["data"].get("interviewer_id")
+        if not interviewer_id:
+            logger.error(
+                f"Session {session_id} missing interviewer_id. "
+                f"Session data keys: {list(session.get('data', {}).keys())}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Session missing interviewer_id. Please complete step 1 first."
+            )
         
-        if not job_posting:
+        # Validate job posting text
+        if not final_text or not final_text.strip():
+            logger.error(f"Empty job posting text for session {session_id}")
+            raise HTTPException(
+                status_code=400,
+                detail="Job posting text cannot be empty"
+            )
+        
+        # Create job posting record
+        try:
+            logger.info(
+                f"Creating job posting for session {session_id}: "
+                f"text_length={len(final_text)}, "
+                f"company_id={session['data'].get('company_id')}, "
+                f"interviewer_id={interviewer_id}, "
+                f"language={session_language}"
+            )
+            
+            job_posting = await job_posting_service.create(
+                raw_text=final_text,
+                company_id=session["data"].get("company_id"),
+                interviewer_id=UUID(interviewer_id) if isinstance(interviewer_id, str) else interviewer_id,
+                file_url=file_url,
+                language=session_language
+            )
+            
+            if not job_posting:
+                logger.error(
+                    f"job_posting_service.create() returned None for session: {session_id}. "
+                    f"company_id={session['data'].get('company_id')}, "
+                    f"interviewer_id={interviewer_id}"
+                )
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to create job posting record. Please try again."
+                )
+        except ValueError as ve:
+            # Validation error from service
+            logger.error(
+                f"Validation error creating job posting for session {session_id}: {ve}",
+                exc_info=True
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid job posting data: {str(ve)}"
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(
+                f"Exception in job_posting_service.create() for session {session_id}: {type(e).__name__}: {e}",
+                exc_info=True
+            )
             raise HTTPException(
                 status_code=500,
-                detail="Failed to create job posting record"
+                detail=f"Failed to create job posting record: {str(e)}"
             )
         
         # ALWAYS use AI to extract key points from job posting

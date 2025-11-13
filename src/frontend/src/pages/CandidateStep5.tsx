@@ -88,22 +88,16 @@ const CandidateStep5: React.FC = () => {
   return (
     <StepLayout>
       <div className="step-container">
-        <div className="step-content" style={{ maxWidth: '900px' }}>
+        <div className="step-content" style={{ maxWidth: '1000px' }}>
           <h1>{t('candidate.step5_title')}</h1>
           <p className="step-subtitle">Your personalized interview preparation guide</p>
         
         {results.company_name && (
-          <div style={{
-            padding: 'var(--spacing-md)',
-            backgroundColor: 'var(--color-accent-light)',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: 'var(--spacing-lg)',
-            borderLeft: '4px solid var(--color-accent-primary)'
-          }}>
-            <p style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, marginBottom: 'var(--spacing-xs)' }}>
+          <div className="company-info-banner">
+            <p>
               🏢 Company: {results.company_name}
             </p>
-            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', margin: 0 }}>
+            <p>
               ℹ️ This guide has been personalized for your application to {results.company_name}.
             </p>
           </div>
@@ -111,13 +105,13 @@ const CandidateStep5: React.FC = () => {
         
         <div className="form-section">
           <h2>Your Scores</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-md)' }}>
+          <div className="candidate-scores-grid">
             {Object.entries(results.categories).map(([category, score]) => (
-              <div key={category} style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', color: 'var(--color-accent-primary)' }}>
+              <div key={category} className="candidate-score-card">
+                <div className="candidate-score-value">
                   {score}/5
                 </div>
-                <div style={{ fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-xs)' }}>
+                <div className="candidate-score-label">
                   {category.replace('_', ' ')}
                 </div>
               </div>
@@ -127,9 +121,9 @@ const CandidateStep5: React.FC = () => {
         
         <div className="form-section">
           <h2>Your Strengths</h2>
-          <ul>
+          <ul className="strengths-list">
             {results.strengths.map((strength, idx) => (
-              <li key={idx} style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--color-success)' }}>
+              <li key={idx}>
                 ✓ {strength}
               </li>
             ))}
@@ -138,9 +132,9 @@ const CandidateStep5: React.FC = () => {
         
         <div className="form-section">
           <h2>⚠️ Areas to Address</h2>
-          <ul>
+          <ul className="gaps-list">
             {results.gaps.map((gap, idx) => (
-              <li key={idx} style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--color-warning)' }}>
+              <li key={idx}>
                 {gap}
               </li>
             ))}
@@ -150,27 +144,21 @@ const CandidateStep5: React.FC = () => {
         {results.gap_strategies && results.gap_strategies.length > 0 && (
           <div className="form-section">
             <h2>💡 How to Address Gaps in the Interview</h2>
-            <p style={{ marginBottom: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
+            <p className="skills-legend" style={{ marginBottom: '1rem' }}>
               Don't hide your gaps—address them proactively with these strategies:
             </p>
             {results.gap_strategies.map((strategy, idx) => (
-              <div key={idx} style={{ 
-                marginBottom: 'var(--spacing-lg)', 
-                padding: 'var(--spacing-md)', 
-                backgroundColor: 'var(--color-bg-secondary)', 
-                borderRadius: 'var(--radius-md)',
-                borderLeft: '4px solid var(--color-accent-primary)'
-              }}>
-                <h3 style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--color-accent-primary)' }}>
+              <div key={idx} className="gap-strategy-card">
+                <h3>
                   {strategy.gap}
                 </h3>
-                <p style={{ marginBottom: 'var(--spacing-sm)', fontStyle: 'italic' }}>
+                <p>
                   {strategy.how_to_address}
                 </p>
                 {strategy.talking_points && strategy.talking_points.length > 0 && (
-                  <ul style={{ marginTop: 'var(--spacing-sm)' }}>
+                  <ul>
                     {strategy.talking_points.map((point, pointIdx) => (
-                      <li key={pointIdx} style={{ marginBottom: 'var(--spacing-xs)', fontSize: 'var(--font-size-sm)' }}>
+                      <li key={pointIdx}>
                         → {point}
                       </li>
                     ))}
@@ -183,10 +171,10 @@ const CandidateStep5: React.FC = () => {
         
         <div className="form-section">
           <h2>❓ Likely Interview Questions</h2>
-          <p style={{ marginBottom: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
+          <p className="skills-legend" style={{ marginBottom: '1rem', display: 'block' }}>
             Questions organized by category, with suggested answers based on your CV:
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {results.questions.map((question, idx) => {
               // Parse question if it's a string that might be an object
               let questionText = question;
@@ -202,37 +190,16 @@ const CandidateStep5: React.FC = () => {
               }
               
               return (
-                <div key={idx} style={{
-                  padding: 'var(--spacing-md)',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  borderRadius: 'var(--radius-md)',
-                  borderLeft: '4px solid var(--color-accent-primary)'
-                }}>
+                <div key={idx} className="question-card">
                   {category && (
-                    <div style={{
-                      display: 'inline-block',
-                      padding: '4px 12px',
-                      backgroundColor: 'var(--color-accent-primary)',
-                      color: 'white',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: 'var(--font-size-xs)',
-                      marginBottom: 'var(--spacing-sm)',
-                      textTransform: 'uppercase',
-                      fontWeight: 600
-                    }}>
+                    <div className="question-category-badge">
                       {category.replace('_', ' ')}
                     </div>
                   )}
-                  <h3 style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-primary)' }}>
+                  <h3>
                     {idx + 1}. {questionText}
                   </h3>
-                  <div style={{
-                    padding: 'var(--spacing-sm)',
-                    backgroundColor: 'var(--color-accent-light)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-secondary)'
-                  }}>
+                  <div className="question-suggested-answer">
                     <strong>💡 Suggested Answer:</strong> {suggestedAnswer}
                   </div>
                 </div>
@@ -243,7 +210,7 @@ const CandidateStep5: React.FC = () => {
         
         <div className="form-section">
           <h2>🎯 Your Intro Pitch</h2>
-          <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-accent-light)', borderRadius: 'var(--radius-md)', fontStyle: 'italic' }}>
+          <div className="intro-pitch-card">
             "{results.intro_pitch}"
           </div>
         </div>
@@ -251,9 +218,9 @@ const CandidateStep5: React.FC = () => {
         {results.preparation_tips && results.preparation_tips.length > 0 && (
           <div className="form-section">
             <h2>📚 Preparation Checklist</h2>
-            <ul>
+            <ul className="preparation-checklist">
               {results.preparation_tips.map((tip, idx) => (
-                <li key={idx} style={{ marginBottom: 'var(--spacing-sm)' }}>
+                <li key={idx}>
                   ☐ {tip}
                 </li>
               ))}

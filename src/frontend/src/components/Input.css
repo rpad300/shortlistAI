@@ -1,60 +1,158 @@
 /**
- * Input component styles.
+ * Input component styles - Modern Design
+ * Aligned with home page styling
  */
 
 .input-wrapper {
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
   width: 100%;
 }
 
 .input-label {
   display: block;
-  margin-bottom: var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  /* LIGHT MODE - Dark label */
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .input-label {
+  color: #111827;
+}
+
+@media (prefers-color-scheme: light) {
+  .input-label {
+    color: #111827;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .input-label {
+    color: #F9FAFB;
+  }
+}
+
+[data-theme="dark"] .input-label {
+  color: #F9FAFB;
 }
 
 .input-required {
-  color: var(--color-error);
-  margin-left: var(--spacing-xs);
+  color: #EF4444;
+  margin-left: 0.25rem;
 }
 
 .input-field {
   width: 100%;
-  padding: var(--spacing-md);
-  font-size: var(--font-size-base);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  transition: border-color var(--transition-fast);
+  padding: 0.875rem 1.125rem;
+  font-size: 1rem;
+  /* LIGHT MODE - Modern input styling */
+  border: 1.5px solid rgba(229, 231, 235, 0.8);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  color: #111827;
+  transition: all 0.2s ease;
+  font-weight: 400;
+}
+
+.input-field:hover {
+  border-color: rgba(0, 102, 255, 0.3);
+  background: rgba(255, 255, 255, 1);
 }
 
 .input-field:focus {
   outline: none;
-  border-color: var(--color-accent-primary);
-  box-shadow: 0 0 0 3px var(--color-accent-light);
+  border-color: #0066FF;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 
+    0 0 0 3px rgba(0, 102, 255, 0.1),
+    0 4px 12px rgba(0, 102, 255, 0.15);
+  transform: translateY(-1px);
 }
 
 .input-field:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background-color: var(--color-bg-secondary);
+  background: rgba(248, 249, 250, 0.8);
 }
 
 .input-field.input-error {
-  border-color: var(--color-error);
+  border-color: #EF4444;
+  background: rgba(254, 242, 242, 0.5);
+}
+
+.input-field.input-error:focus {
+  box-shadow: 
+    0 0 0 3px rgba(239, 68, 68, 0.1),
+    0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 .input-error-message {
   display: block;
-  margin-top: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  color: var(--color-error);
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #EF4444;
+  font-weight: 500;
 }
 
 .input-field::placeholder {
-  color: var(--color-text-tertiary);
+  color: #9CA3AF;
+  font-weight: 400;
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .input-field {
+  border-color: rgba(229, 231, 235, 0.8);
+  background: rgba(255, 255, 255, 0.95);
+  color: #111827;
+}
+
+@media (prefers-color-scheme: light) {
+  .input-field {
+    border-color: rgba(229, 231, 235, 0.8);
+    background: rgba(255, 255, 255, 0.95);
+    color: #111827;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .input-field {
+    border-color: rgba(51, 136, 255, 0.3);
+    background: rgba(26, 26, 28, 0.8);
+    color: #F9FAFB;
+  }
+
+  :root:not([data-theme="light"]) .input-field:hover {
+    border-color: rgba(51, 136, 255, 0.5);
+    background: rgba(26, 26, 28, 0.9);
+  }
+
+  :root:not([data-theme="light"]) .input-field:focus {
+    border-color: #3388FF;
+    box-shadow: 
+      0 0 0 3px rgba(51, 136, 255, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+[data-theme="dark"] .input-field {
+  border-color: rgba(51, 136, 255, 0.3);
+  background: rgba(26, 26, 28, 0.8);
+  color: #F9FAFB;
+}
+
+[data-theme="dark"] .input-field:hover {
+  border-color: rgba(51, 136, 255, 0.5);
+  background: rgba(26, 26, 28, 0.9);
+}
+
+[data-theme="dark"] .input-field:focus {
+  border-color: #3388FF;
+  box-shadow: 
+    0 0 0 3px rgba(51, 136, 255, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }
 

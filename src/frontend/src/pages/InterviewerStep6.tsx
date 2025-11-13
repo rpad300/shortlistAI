@@ -160,45 +160,27 @@ const InterviewerStep6: React.FC = () => {
         <h1>{t('interviewer.step6_title')}</h1>
         <p className="step-subtitle">AI is analyzing all candidates against your job posting</p>
         
-        <div style={{ textAlign: 'center', padding: 'var(--spacing-2xl)' }}>
-          <div className="loading-spinner" style={{
-            width: '64px',
-            height: '64px',
-            border: '4px solid var(--color-border)',
-            borderTop: '4px solid var(--color-accent-primary)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto var(--spacing-xl)'
-          }}></div>
+        <div className="analysis-loading-container">
+          <div className="loading-spinner-modern"></div>
           
-          <p style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text-primary)', marginBottom: 'var(--spacing-lg)' }}>
+          <p className="analysis-status-text">
             {status}
           </p>
           
           {/* Progress bar */}
-          <div style={{
-            width: '100%',
-            maxWidth: '400px',
-            height: '8px',
-            backgroundColor: 'var(--color-bg-secondary)',
-            borderRadius: 'var(--radius-md)',
-            overflow: 'hidden',
-            margin: '0 auto'
-          }}>
-            <div style={{
-              width: `${progress}%`,
-              height: '100%',
-              backgroundColor: 'var(--color-accent-primary)',
-              transition: 'width 0.5s ease-in-out'
-            }}></div>
+          <div className="progress-bar-container">
+            <div 
+              className="progress-bar-fill"
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
           
           {totalCvs > 0 && (
-            <p style={{ marginTop: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-              Processing CV {currentCv} of {totalCvs}...
+            <p className="analysis-progress-text">
+              Analyzing CV {currentCv} of {totalCvs}...
             </p>
           )}
-          <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-tertiary)' }}>
+          <p className="analysis-time-text">
             {totalCvs > 0 
               ? `This may take ${Math.ceil(totalCvs * 2)}-${Math.ceil(totalCvs * 5)} minutes for ${totalCvs} CV${totalCvs > 1 ? 's' : ''}...`
               : 'This may take a few minutes for multiple CVs...'}

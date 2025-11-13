@@ -69,8 +69,8 @@ const CandidateStep3: React.FC = () => {
               label="Upload Your CV (PDF, DOCX)"
             />
             
-            <div style={{ marginTop: 'var(--spacing-lg)', padding: 'var(--spacing-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-              <strong>Tip:</strong> Make sure your CV is up-to-date and includes your contact information.
+            <div className="tip-box">
+              <strong>💡 Tip:</strong> Make sure your CV is up-to-date and includes your contact information.
             </div>
           </div>
           
@@ -78,7 +78,7 @@ const CandidateStep3: React.FC = () => {
           
           <div className="form-actions">
             <Button type="button" variant="outline" onClick={() => navigate('/candidate/step2')}>
-              {t('common.previous')}
+              {t('common.back')}
             </Button>
             <Button
               type="submit"

@@ -122,13 +122,29 @@ app.include_router(prompts.router)  # Admin prompts management
 
 if __name__ == "__main__":
     import uvicorn
+    import sys
+    
     port = int(os.getenv("APP_PORT", 8000))
     debug = os.getenv("APP_DEBUG", "False").lower() == "true"
+    
+    # Configure reload settings for Windows compatibility
+    # Limit reload to specific directories to reduce issues with multiprocessing on Windows
+    reload_config = {
+        "reload": debug,
+    }
+    
+    if debug:
+        # Limit reload to backend directory only to reduce false positives
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        reload_config["reload_dirs"] = [backend_dir]
+        reload_config["reload_includes"] = ["*.py"]
+        # Exclude common files that change frequently but don't need reload
+        reload_config["reload_excludes"] = ["*.pyc", "__pycache__", "*.log"]
     
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=debug
+        **reload_config
     )
 

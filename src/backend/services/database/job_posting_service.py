@@ -47,10 +47,30 @@ class JobPostingService:
             
         Returns:
             Created job posting dict or None if failed
+            
+        Raises:
+            ValueError: If constraints are violated (e.g., both interviewer_id and candidate_id are None)
         """
+        # Validate constraint: must have either interviewer_id OR candidate_id, not both, not none
+        if not interviewer_id and not candidate_id:
+            error_msg = "Job posting must have either interviewer_id or candidate_id, but both are None"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        if interviewer_id and candidate_id:
+            error_msg = "Job posting cannot have both interviewer_id and candidate_id"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # Validate raw_text
+        if not raw_text or not raw_text.strip():
+            error_msg = "Job posting raw_text cannot be empty"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
         try:
             job_data = {
-                "raw_text": raw_text,
+                "raw_text": raw_text.strip(),
                 "company_id": str(company_id) if company_id else None,
                 "interviewer_id": str(interviewer_id) if interviewer_id else None,
                 "candidate_id": str(candidate_id) if candidate_id else None,
@@ -58,21 +78,42 @@ class JobPostingService:
                 "key_points": key_points,
                 "weights": weights,
                 "hard_blockers": hard_blockers,
-                "language": language
+                "language": language or "en"
             }
+            
+            logger.info(
+                f"Attempting to create job posting: "
+                f"raw_text_length={len(job_data['raw_text'])}, "
+                f"company_id={job_data['company_id']}, "
+                f"interviewer_id={job_data['interviewer_id']}, "
+                f"candidate_id={job_data['candidate_id']}, "
+                f"language={job_data['language']}"
+            )
             
             result = self.client.table(self.table)\
                 .insert(job_data)\
                 .execute()
             
+            # Check for errors in response
+            if hasattr(result, 'error') and result.error:
+                logger.error(f"Supabase error creating job posting: {result.error}")
+                return None
+            
             if result.data and len(result.data) > 0:
-                logger.info(f"Created job posting: {result.data[0]['id']}")
+                logger.info(f"Successfully created job posting: {result.data[0]['id']}")
                 return result.data[0]
             
+            logger.warning("Insert succeeded but no data returned from Supabase")
             return None
             
+        except ValueError:
+            # Re-raise validation errors
+            raise
         except Exception as e:
-            logger.error(f"Error creating job posting: {e}")
+            logger.error(
+                f"Exception creating job posting: {type(e).__name__}: {e}",
+                exc_info=True
+            )
             return None
     
     async def get_by_id(self, job_posting_id: UUID) -> Optional[Dict[str, Any]]:

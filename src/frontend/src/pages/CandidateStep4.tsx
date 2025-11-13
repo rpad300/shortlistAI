@@ -51,22 +51,14 @@ const CandidateStep4: React.FC = () => {
         <h1>{t('candidate.step4_title')}</h1>
         <p className="step-subtitle">AI is analyzing your fit for this position</p>
         
-        <div style={{ textAlign: 'center', padding: 'var(--spacing-2xl)' }}>
-          <div className="loading-spinner" style={{
-            width: '64px',
-            height: '64px',
-            border: '4px solid var(--color-border)',
-            borderTop: '4px solid var(--color-accent-primary)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto var(--spacing-xl)'
-          }}></div>
+        <div className="analysis-loading-container">
+          <div className="loading-spinner-modern"></div>
           
-          <p style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text-primary)' }}>
+          <p className="analysis-status-text">
             {status}
           </p>
           
-          <p style={{ marginTop: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)' }}>
+          <p className="analysis-time-text">
             This usually takes 10-15 seconds...
           </p>
         </div>
