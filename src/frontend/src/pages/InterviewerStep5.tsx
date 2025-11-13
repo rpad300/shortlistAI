@@ -53,7 +53,7 @@ const InterviewerStep5: React.FC = () => {
     
     setLoading(true);
     setError('');
-    setUploadProgress(`Uploading ${files.length} CVs...`);
+    setUploadProgress(`Uploading ${files.length} CV(s)... This may take ${Math.ceil(files.length * 15 / 60)} minute(s)`);
     
     try {
       const formData = new FormData();
@@ -61,6 +61,9 @@ const InterviewerStep5: React.FC = () => {
       files.forEach(file => {
         formData.append('files', file);
       });
+      
+      // Update progress message during upload
+      setUploadProgress(`Processing ${files.length} CV(s)... Please wait (this may take a few minutes)`);
       
       const response = await interviewerAPI.step5(formData);
       

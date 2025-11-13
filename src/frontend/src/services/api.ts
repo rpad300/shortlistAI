@@ -76,9 +76,16 @@ export const interviewerAPI = {
     timeout: 60000,
   }),
   step4: (data: any) => api.post('/interviewer/step4', data),
-  step5: (data: FormData) => api.post('/interviewer/step5', data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  step5: (data: FormData) => {
+    // Calculate timeout based on number of files (estimate 20 seconds per CV + 30s base)
+    // Get file count from FormData (approximate - count 'files' entries)
+    const fileCount = Array.from(data.entries()).filter(([key]) => key === 'files').length;
+    const timeout = Math.max(60000, (fileCount * 20000) + 30000); // Min 60s, +20s per file
+    return api.post('/interviewer/step5', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: timeout
+    });
+  },
   step6: (sessionId: string) => api.post(`/interviewer/step6?session_id=${sessionId}`, null, {
     timeout: 30000, // Quick response - analysis runs in background
   }),
