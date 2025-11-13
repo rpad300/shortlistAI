@@ -846,10 +846,14 @@ async def step5_upload_cvs(
         
         processed_cvs = []
         errors = []
+        session_data = session.get("data", {})
+        language = session_data.get("language", "en")
         
-        # Process each CV file
+        # Process each CV file SEQUENTIALLY (one at a time to avoid memory/token issues)
         for idx, file in enumerate(files):
             try:
+                logger.info(f"Processing CV {idx+1}/{len(files)}: {file.filename}")
+                
                 # Validate file
                 is_valid, error = FileProcessor.validate_file_type(file.filename)
                 if not is_valid:
@@ -866,6 +870,7 @@ async def step5_upload_cvs(
                     continue
                 
                 # Extract text to try to find email for deduplication
+                # Process ONE file at a time to avoid memory issues
                 success, extracted_text, error = FileProcessor.extract_text(
                     file_content,
                     file.filename
@@ -873,6 +878,7 @@ async def step5_upload_cvs(
                 
                 if not success or not extracted_text:
                     extracted_text = ""
+                    logger.warning(f"No text extracted from {file.filename}")
                 
                 # Generate unique email to avoid duplicates during batch upload
                 generated_email = f"interviewer_session_{session_id}_{idx+1}@shortlistai.test"
@@ -886,18 +892,7 @@ async def step5_upload_cvs(
                     errors.append(f"{file.filename}: Failed to create candidate")
                     continue
                 
-                # Summarize CV with AI (if we have extracted text)
-                summary = None
-                if extracted_text:
-                    summary = await ai_service.summarize_cv(
-                        extracted_text,
-                        file.filename,
-                        session["data"].get("language", "en")
-                    )
-                else:
-                    logger.warning("No extracted text available for %s, skipping AI summary", file.filename)
-                
-                # Upload CV file
+                # Upload CV file FIRST (before AI processing to avoid memory issues)
                 success, file_url, error = await storage_service.upload_cv(
                     file_content,
                     file.filename,
@@ -916,18 +911,45 @@ async def step5_upload_cvs(
                     extracted_text=extracted_text
                 )
                 
-                if cv:
-                    processed_cvs.append({
-                        "cv_id": cv["id"],
-                        "candidate_id": candidate["id"],
-                        "filename": file.filename,
-                        "summary": summary
-                    })
-                    logger.info(f"CV processed: {file.filename} -> {cv['id']}")
+                if not cv:
+                    errors.append(f"{file.filename}: Failed to create CV record")
+                    continue
+                
+                # Summarize CV with AI AFTER upload (if we have extracted text)
+                # Process ONE summary at a time to avoid token/memory limits
+                summary = None
+                if extracted_text:
+                    try:
+                        # Limit text length for summary to avoid token issues
+                        # Use first 5000 chars for summary (full text saved in CV record)
+                        summary_text = extracted_text[:5000] if len(extracted_text) > 5000 else extracted_text
+                        summary = await ai_service.summarize_cv(
+                            summary_text,
+                            file.filename,
+                            language
+                        )
+                        logger.info(f"Summary generated for {file.filename}")
+                    except Exception as summary_error:
+                        logger.warning(f"Failed to generate summary for {file.filename}: {summary_error}")
+                        # Continue without summary - not critical for upload
+                        summary = None
+                else:
+                    logger.warning(f"No extracted text available for {file.filename}, skipping AI summary")
+                
+                processed_cvs.append({
+                    "cv_id": cv["id"],
+                    "candidate_id": candidate["id"],
+                    "filename": file.filename,
+                    "summary": summary
+                })
+                logger.info(f"✅ CV {idx+1}/{len(files)} processed: {file.filename} -> {cv['id']}")
+                
+                # Clear file_content from memory after processing
+                del file_content
                 
             except Exception as e:
                 errors.append(f"{file.filename}: {str(e)}")
-                logger.error(f"Error processing CV {file.filename}: {e}")
+                logger.error(f"Error processing CV {file.filename}: {e}", exc_info=True)
         
         if len(processed_cvs) == 0:
             raise HTTPException(
