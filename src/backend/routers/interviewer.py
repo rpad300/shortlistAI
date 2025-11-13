@@ -1767,17 +1767,31 @@ async def step8_download_report(session_id: UUID):
         
         # Generate PDF
         logger.info(f"Generating PDF report for session: {session_id}")
-        pdf_bytes = pdf_generator.generate_interviewer_report(
-            session_data=session,
-            results=results,
-            executive_recommendation=executive_recommendation
-        )
+        logger.info(f"Session data keys: {list(session.keys())}")
+        logger.info(f"Results count: {len(results) if results else 0}")
+        logger.info(f"Has executive recommendation: {bool(executive_recommendation)}")
         
-        # Generate filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"candidate_analysis_report_{timestamp}.pdf"
-        
-        logger.info(f"PDF report generated successfully: {len(pdf_bytes)} bytes")
+        try:
+            pdf_bytes = pdf_generator.generate_interviewer_report(
+                session_data=session,
+                results=results,
+                executive_recommendation=executive_recommendation
+            )
+            
+            if not pdf_bytes or len(pdf_bytes) == 0:
+                raise ValueError("PDF generation returned empty bytes")
+            
+            # Generate filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"candidate_analysis_report_{timestamp}.pdf"
+            
+            logger.info(f"PDF report generated successfully: {len(pdf_bytes)} bytes")
+        except Exception as pdf_error:
+            logger.error(f"Error in PDF generation: {pdf_error}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error generating PDF report: {str(pdf_error)}"
+            )
         
         # Return PDF file
         return Response(
