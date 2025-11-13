@@ -5,7 +5,7 @@ Handles admin authentication and data management using Supabase native authentic
 Admin users are managed in Supabase Auth with role in user_metadata.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Header, Request
+from fastapi import APIRouter, HTTPException, Depends, Header, Request, Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -430,6 +430,277 @@ async def list_companies(
     except Exception as e:
         logger.error(f"Error listing companies: {e}")
         raise HTTPException(status_code=500, detail="Error retrieving companies")
+
+
+@router.get("/settings/default-ai-provider")
+async def get_default_ai_provider(admin=Depends(get_current_admin)):
+    """Get the default AI provider fallback chain."""
+    from database import get_supabase_client
+    import json
+    
+    try:
+        client = get_supabase_client()
+        result = client.table("app_settings").select("*").eq("setting_key", "default_ai_provider").execute()
+        
+        if result.data and len(result.data) > 0:
+            setting_value = result.data[0]["setting_value"]
+            # Try to parse as JSON (new format)
+            try:
+                fallback_chain = json.loads(setting_value) if isinstance(setting_value, str) else setting_value
+                if isinstance(fallback_chain, list):
+                    return JSONResponse({
+                        "fallback_chain": fallback_chain,
+                        "description": result.data[0].get("description", "")
+                    })
+            except (json.JSONDecodeError, TypeError):
+                # Old format (single provider string)
+                return JSONResponse({
+                    "fallback_chain": [
+                        {"provider": setting_value, "model": None, "order": 1}
+                    ],
+                    "description": result.data[0].get("description", "")
+                })
+        
+        # Return default if not set
+        return JSONResponse({
+            "fallback_chain": [
+                {"provider": "gemini", "model": None, "order": 1}
+            ],
+            "description": "Default AI provider (not configured)"
+        })
+    except Exception as e:
+        logger.error(f"Error getting default AI provider: {e}")
+        raise HTTPException(status_code=500, detail="Error retrieving default AI provider")
+
+
+@router.put("/settings/default-ai-provider")
+async def update_default_ai_provider(
+    fallback_chain: list = Body(...),
+    admin=Depends(get_current_admin)
+):
+    """Update the default AI provider fallback chain.
+    
+    Expected format:
+    [
+        {"provider": "gemini", "model": "gemini-2.5-flash-lite", "order": 1},
+        {"provider": "kimi", "model": "kimi-k2-0905", "order": 2},
+        ...
+    ]
+    """
+    from database import get_supabase_client
+    import json
+    
+    # Validate fallback chain
+    if not isinstance(fallback_chain, list) or len(fallback_chain) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="fallback_chain must be a non-empty array"
+        )
+    
+    valid_providers = ["gemini", "openai", "claude", "kimi", "minimax"]
+    
+    for i, item in enumerate(fallback_chain):
+        if not isinstance(item, dict):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Item {i} must be an object with provider, model, and order"
+            )
+        
+        provider = item.get("provider")
+        if provider not in valid_providers:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid provider '{provider}' at position {i}. Must be one of: {', '.join(valid_providers)}"
+            )
+        
+        if "order" not in item:
+            item["order"] = i + 1
+    
+    # Sort by order
+    fallback_chain = sorted(fallback_chain, key=lambda x: x.get("order", 999))
+    
+    try:
+        client = get_supabase_client()
+        
+        # Check if setting exists
+        existing = client.table("app_settings").select("*").eq("setting_key", "default_ai_provider").execute()
+        
+        logger.info(f"Checking existing setting: found {len(existing.data) if existing.data else 0} record(s)")
+        
+        # Store as JSON string
+        setting_data = {
+            "setting_key": "default_ai_provider",
+            "setting_value": json.dumps(fallback_chain),
+            "description": f"AI provider fallback chain with {len(fallback_chain)} provider(s)"
+        }
+        
+        if existing.data and len(existing.data) > 0:
+            # Update existing - remove setting_key from update data to avoid conflict
+            update_data = {
+                "setting_value": json.dumps(fallback_chain),
+                "description": f"AI provider fallback chain with {len(fallback_chain)} provider(s)"
+            }
+            logger.info("Updating existing setting")
+            result = client.table("app_settings").update(update_data).eq("setting_key", "default_ai_provider").execute()
+        else:
+            # Insert new
+            logger.info("Inserting new setting")
+            result = client.table("app_settings").insert(setting_data).execute()
+        
+        logger.info(f"Default AI provider fallback chain updated by {admin['email']}: {json.dumps(fallback_chain)}")
+        
+        return JSONResponse({
+            "success": True,
+            "fallback_chain": fallback_chain,
+            "message": f"Fallback chain updated with {len(fallback_chain)} provider(s)"
+        })
+    except Exception as e:
+        logger.error(f"Error updating default AI provider: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error updating default AI provider: {str(e)}")
+
+
+@router.get("/settings/available-providers")
+async def get_available_providers(admin=Depends(get_current_admin)):
+    """Get list of available AI providers based on configured API keys."""
+    from config import settings
+    
+    available = []
+    
+    if settings.gemini_api_key:
+        available.append({"name": "gemini", "display_name": "Google Gemini"})
+    if settings.openai_api_key:
+        available.append({"name": "openai", "display_name": "OpenAI"})
+    if settings.anthropic_api_key:
+        available.append({"name": "claude", "display_name": "Anthropic Claude"})
+    if settings.kimi_api_key:
+        available.append({"name": "kimi", "display_name": "Kimi K2"})
+    if settings.minimax_api_key:
+        available.append({"name": "minimax", "display_name": "MiniMax"})
+    
+    return JSONResponse({
+        "providers": available,
+        "total": len(available)
+    })
+
+
+@router.get("/settings/providers/{provider_name}/models")
+async def list_provider_models(
+    provider_name: str,
+    admin=Depends(get_current_admin)
+):
+    """List available models for a specific provider with their token limits."""
+    from services.ai.model_limits import get_max_output_tokens, get_context_window
+    from config import settings
+    import httpx
+    
+    models = []
+    
+    try:
+        if provider_name == "gemini" and settings.gemini_api_key:
+            import google.generativeai as genai
+            genai.configure(api_key=settings.gemini_api_key)
+            for model in genai.list_models():
+                supported_methods = getattr(model, "supported_generation_methods", []) or []
+                if "generateContent" in supported_methods:
+                    model_id = model.name  # Keep full ID with "models/" prefix
+                    display_name = model.name.replace("models/", "").replace("-", " ").title()
+                    max_tokens = get_max_output_tokens(model_id)
+                    context_window = get_context_window(model_id)
+                    models.append({
+                        "id": model_id,
+                        "name": model_id.replace("models/", ""),
+                        "display_name": display_name,
+                        "max_output_tokens": max_tokens,
+                        "context_window": context_window
+                    })
+        
+        elif provider_name == "openai" and settings.openai_api_key:
+            from openai import AsyncOpenAI
+            client = AsyncOpenAI(api_key=settings.openai_api_key)
+            response = await client.models.list()
+            for model in response.data:
+                if "gpt" in model.id.lower():
+                    max_tokens = get_max_output_tokens(model.id)
+                    context_window = get_context_window(model.id)
+                    models.append({
+                        "id": model.id,
+                        "name": model.id,
+                        "display_name": model.id.replace("-", " ").title(),
+                        "max_output_tokens": max_tokens,
+                        "context_window": context_window
+                    })
+        
+        elif provider_name == "kimi" and settings.kimi_api_key:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    "https://kimi-k2.ai/api/v1/models",
+                    headers={
+                        "Authorization": f"Bearer {settings.kimi_api_key}",
+                        "Content-Type": "application/json"
+                    }
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    for model in data.get("data", []):
+                        model_id = model.get("id", "")
+                        max_tokens = get_max_output_tokens(model_id)
+                        context_window = get_context_window(model_id)
+                        models.append({
+                            "id": model_id,
+                            "name": model_id,
+                            "display_name": model_id.replace("-", " ").title(),
+                            "max_output_tokens": max_tokens,
+                            "context_window": context_window
+                        })
+        
+        elif provider_name == "claude" and settings.anthropic_api_key:
+            # Claude models are fixed list
+            claude_models = [
+                "claude-3-5-sonnet-20241022",
+                "claude-3-opus-20240229",
+                "claude-3-sonnet-20240229",
+                "claude-3-haiku-20240307",
+            ]
+            for model_id in claude_models:
+                max_tokens = get_max_output_tokens(model_id)
+                context_window = get_context_window(model_id)
+                models.append({
+                    "id": model_id,
+                    "name": model_id,
+                    "display_name": model_id.replace("-", " ").title(),
+                    "max_output_tokens": max_tokens,
+                    "context_window": context_window
+                })
+        
+        elif provider_name == "minimax" and settings.minimax_api_key:
+            # MiniMax models are fixed list
+            minimax_models = [
+                "abab6.5-chat",
+                "abab6.5s-chat",
+            ]
+            for model_id in minimax_models:
+                max_tokens = get_max_output_tokens(model_id)
+                context_window = get_context_window(model_id)
+                models.append({
+                    "id": model_id,
+                    "name": model_id,
+                    "display_name": model_id.replace(".", " ").replace("-", " ").title(),
+                    "max_output_tokens": max_tokens,
+                    "context_window": context_window
+                })
+        
+        return JSONResponse({
+            "provider": provider_name,
+            "models": models,
+            "total": len(models)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error listing models for {provider_name}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error listing models for {provider_name}: {str(e)}"
+        )
 
 
 @router.get("/interviewers")

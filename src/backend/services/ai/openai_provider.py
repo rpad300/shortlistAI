@@ -56,6 +56,10 @@ class OpenAIProvider(AIProvider):
             # Build complete prompt
             prompt = self.build_prompt(request.template, request.variables)
             
+            # Get maximum tokens for this model
+            from .model_limits import get_max_output_tokens
+            max_tokens = request.max_tokens or get_max_output_tokens(self.model_name)
+            
             # Create chat completion
             response = await self.client.chat.completions.create(
                 model=self.model_name,
@@ -64,7 +68,7 @@ class OpenAIProvider(AIProvider):
                     {"role": "user", "content": prompt}
                 ],
                 temperature=request.temperature or 0.7,
-                max_tokens=request.max_tokens or 2048
+                max_tokens=max_tokens
             )
             
             latency_ms = int((time.time() - start_time) * 1000)

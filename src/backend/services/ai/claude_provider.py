@@ -39,10 +39,14 @@ class ClaudeProvider(AIProvider):
             # Build complete prompt
             prompt = self.build_prompt(request.template, request.variables)
             
+            # Get maximum tokens for this model
+            from .model_limits import get_max_output_tokens
+            max_tokens = request.max_tokens or get_max_output_tokens(self.model_name)
+            
             # Create message
             response = await self.client.messages.create(
                 model=self.model_name,
-                max_tokens=request.max_tokens or 2048,
+                max_tokens=max_tokens,
                 temperature=request.temperature or 0.7,
                 messages=[
                     {"role": "user", "content": prompt}

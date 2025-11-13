@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 # CV Extraction Prompt
 CV_EXTRACTION_PROMPT = """You are a CV analysis expert. Extract structured information from the following CV text.
 
+IMPORTANT: You must respond in {language}. All extracted text, descriptions, and content must be in {language}.
+
 CV Text:
 {cv_text}
 
@@ -55,6 +57,8 @@ Return ONLY the JSON, no additional text."""
 # Job Posting Normalization Prompt
 JOB_POSTING_NORMALIZATION_PROMPT = """You are a recruitment expert. Extract structured information from this job posting.
 
+IMPORTANT: You must respond in {language}. All extracted text, descriptions, and content must be in {language}.
+
 Job Posting:
 {job_posting_text}
 
@@ -85,6 +89,8 @@ Return ONLY the JSON."""
 
 # Weighting Recommendation Prompt
 WEIGHTING_RECOMMENDATION_PROMPT = """You are acting as a lead technical recruiter.
+
+IMPORTANT: You must respond in {language}. All recommendations, explanations, and content must be in {language}.
 
 Use the information below to recommend category weights (that sum to 100%), critical hard blockers, and nice-to-have differentiators for candidate evaluation.
 
@@ -131,6 +137,8 @@ Return ONLY the JSON in {language}."""
 # CV Summary Prompt
 CV_SUMMARY_PROMPT = """You are an expert resume analyst. Summarize the following CV content and extract key identifiers.
 
+IMPORTANT: You must respond in {language}. All summaries, descriptions, and content must be in {language}.
+
 CV File Name: {file_name}
 
 Extract and return ONLY valid JSON:
@@ -165,7 +173,9 @@ Rules:
 Return ONLY the JSON in {language}."""
 
 # Interviewer Analysis Prompt
-INTERVIEWER_ANALYSIS_PROMPT = """You are a professional recruiter analyzing candidates for a job opening.
+INTERVIEWER_ANALYSIS_PROMPT = """You are a professional recruiter analyzing candidates for a job opening. You must perform a meticulous, comprehensive analysis following the detailed structure below.
+
+IMPORTANT: You must respond in {language}. All analysis, descriptions, justifications, questions, and content must be in {language}. Do not use any other language.
 
 Job Posting:
 {job_posting}
@@ -187,8 +197,59 @@ Nice To Have (preferred but optional differentiators):
 
 {enrichment_context}
 
-Analyze this candidate and return ONLY valid JSON in {language}:
+INSTRUCTIONS:
+1. Compare meticulously the candidate's competencies and experiences with the job posting requirements.
+2. Identify strong matches, partial matches, and gaps for this candidate.
+3. Evaluate the overall suitability of the candidate for the position.
+4. Analyze career progression and professional stability.
+5. Identify notable achievements and relevant projects.
+6. Evaluate academic background and professional certifications.
+
+Return ONLY valid JSON in {language} following this EXACT structure:
 {{
+  "profile_summary": "3-4 sentence summary of the candidate's profile",
+  "swot_analysis": {{
+    "strengths": ["Strength 1", "Strength 2", "Strength 3", "Strength 4"],
+    "weaknesses": ["Weakness 1", "Weakness 2", "Weakness 3"],
+    "opportunities": ["Opportunity 1", "Opportunity 2"],
+    "threats": ["Threat 1", "Threat 2"]
+  }},
+  "technical_skills_detailed": [
+    {{
+      "skill": "Skill name",
+      "score": 1-5,
+      "justification": "Detailed explanation citing specific CV evidence"
+    }}
+  ],
+  "soft_skills_detailed": [
+    {{
+      "skill": "Soft skill name",
+      "score": 1-5,
+      "justification": "Detailed explanation with specific CV examples"
+    }}
+  ],
+  "missing_critical_technical_skills": ["Critical skill 1 missing", "Critical skill 2 missing"],
+  "missing_important_soft_skills": ["Important soft skill 1 missing", "Important soft skill 2 missing"],
+  "professional_experience_analysis": {{
+    "relevance_to_position": "Analysis of how experience matches position requirements",
+    "career_progression": "Analysis of career progression trajectory",
+    "professional_stability": "Analysis of job stability and tenure patterns"
+  }},
+  "education_and_certifications": {{
+    "relevance": "Analysis of education relevance to position",
+    "adequacy": "Assessment of whether education meets requirements",
+    "certifications": ["Certification 1", "Certification 2"]
+  }},
+  "notable_achievements": [
+    {{
+      "achievement": "Achievement description",
+      "impact": "Analysis of impact and relevance"
+    }}
+  ],
+  "culture_fit_assessment": {{
+    "score": 1-5,
+    "justification": "Detailed justification of cultural fit assessment"
+  }},
   "categories": {{
     "technical_skills": 1-5,
     "experience": 1-5,
@@ -204,7 +265,9 @@ Analyze this candidate and return ONLY valid JSON in {language}:
     "Question 2",
     "Question 3",
     "Question 4",
-    "Question 5"
+    "Question 5",
+    "Question 6",
+    "Question 7"
   ],
   "hard_blocker_violations": ["Blocker 1 if violated"],
   "recommendation": "Brief hiring recommendation",
@@ -217,37 +280,90 @@ Analyze this candidate and return ONLY valid JSON in {language}:
     "Topic 1 to study for the interview",
     "Topic 2 to study for the interview",
     "Topic 3 to study for the interview"
-  ]
+  ],
+  "score_breakdown": {{
+    "technical_skills": {{
+      "weight_percent": 0-100,
+      "score": 0-100,
+      "justification": "Justification for technical skills score"
+    }},
+    "soft_skills": {{
+      "weight_percent": 0-100,
+      "score": 0-100,
+      "justification": "Justification for soft skills score"
+    }},
+    "professional_experience": {{
+      "weight_percent": 0-100,
+      "score": 0-100,
+      "justification": "Justification for experience score"
+    }},
+    "education_certifications": {{
+      "weight_percent": 0-100,
+      "score": 0-100,
+      "justification": "Justification for education score"
+    }},
+    "culture_fit": {{
+      "weight_percent": 0-100,
+      "score": 0-100,
+      "justification": "Justification for culture fit score"
+    }},
+    "global_score": 0-100,
+    "global_score_justification": "Detailed justification of the global score considering all factors"
+  }}
 }}
 
-Use scores 1-5 where:
+SCORING SCALES (MUST BE EXPLICITLY EXPLAINED):
+
+Technical Skills (Hard Skills) - Scale 1-5:
+1 = Básico (Basic) - Limited knowledge or experience
+2 = Intermediário (Intermediate) - Some practical experience
+3 = Avançado (Advanced) - Solid experience and proficiency
+4 = Proficiente (Proficient) - Strong expertise and depth
+5 = Especialista (Expert) - Exceptional mastery and leadership
+
+Soft Skills (Interpersonal Skills) - Scale 1-5:
+1 = Pouco evidente (Not evident) - No clear demonstration in CV
+2 = Parcialmente demonstrada (Partially demonstrated) - Some indirect evidence
+3 = Adequadamente demonstrada (Adequately demonstrated) - Clear evidence in CV
+4 = Bem demonstrada (Well demonstrated) - Strong evidence with examples
+5 = Fortemente demonstrada (Strongly demonstrated) - Exceptional evidence with multiple examples
+
+Culture Fit - Scale 1-5:
+1 = Pouco adequado (Not suitable) - Poor cultural fit
+2 = Parcialmente adequado (Partially suitable) - Some concerns about fit
+3 = Adequado (Suitable) - Good cultural fit
+4 = Bem adequado (Well suited) - Strong cultural alignment
+5 = Altamente adequado (Highly suitable) - Exceptional cultural match
+
+Categories (Overall) - Scale 1-5:
 1 = Very weak
 2 = Below expectations
 3 = Meets basic requirements
 4 = Strong fit
 5 = Exceptional fit
 
-Question design requirements:
-- Produce a sequenced interview plan (Question 1, Question 2, …).
-- Begin with verification of every hard blocker (one question per blocker, grouped first).
-- Then ask one question per category, ordered by descending weight importance (technical, experience, soft skills, languages, education). Explicitly mention the target category in each question.
-- Finish with exploratory questions that cover nice-to-have differentiators or potential culture add topics.
-- Every question must be actionable and refer to the candidate's CV when possible.
+REQUIREMENTS:
+- All scores must include detailed justifications citing specific CV evidence.
+- Technical skills must be evaluated individually with specific justifications.
+- Soft skills must be inferred from CV content with specific examples.
+- Missing critical skills must be identified if they are crucial for the position.
+- SWOT analysis must be comprehensive and based only on CV information.
+- Professional experience analysis must evaluate relevance, progression, and stability.
+- Education analysis must assess relevance and adequacy.
+- Notable achievements must include impact analysis.
+- Culture fit must be assessed based on available information.
+- Score breakdown must use the weights provided and justify each component.
+- Global score (0-100) must be calculated considering all weighted factors.
+- All candidates with global score below 75 should be flagged for potential exclusion.
+- Questions must cover technical skills, soft skills, and address gaps not evident in CV.
+- All text, analysis, and content must be in {language}.
 
-Gap strategies requirements:
-- Provide concrete strategies the candidate can use to address each identified risk or gap.
-- Focus on actionable steps, not just general advice.
-- Consider how the candidate can leverage their existing strengths to compensate for gaps.
-
-Preparation tips requirements:
-- List specific topics, technologies, or concepts the candidate should study to address the identified risks and gaps.
-- Make tips specific and relevant to the job requirements.
-- Prioritize topics that directly address hard blockers or critical gaps.
-
-Return ONLY the JSON in {language}."""
+Return ONLY the JSON in {language}, no additional text."""
 
 # Candidate Analysis Prompt  
 CANDIDATE_ANALYSIS_PROMPT = """You are a professional recruiter analyzing a candidate for a job opening.
+
+IMPORTANT: You must respond in {language}. All analysis, descriptions, questions, answers, and content must be in {language}. Do not use any other language.
 
 Job Posting:
 {job_posting}
@@ -318,6 +434,8 @@ Translated {target_language} text:"""
 
 # Executive Recommendation Prompt
 EXECUTIVE_RECOMMENDATION_PROMPT = """You are a senior recruitment consultant preparing an executive summary for hiring managers.
+
+IMPORTANT: You must respond in {language}. All recommendations, summaries, insights, and content must be in {language}. Do not use any other language.
 
 Job Position Overview:
 {job_posting_summary}

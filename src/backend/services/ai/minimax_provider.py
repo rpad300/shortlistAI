@@ -47,6 +47,10 @@ class MinimaxProvider(AIProvider):
             # Build complete prompt
             prompt = self.build_prompt(request.template, request.variables)
             
+            # Get maximum tokens for this model
+            from .model_limits import get_max_output_tokens
+            max_tokens = request.max_tokens or get_max_output_tokens(self.model_name)
+            
             # Prepare request payload (Minimax format)
             payload = {
                 "model": self.model_name,
@@ -61,7 +65,7 @@ class MinimaxProvider(AIProvider):
                     }
                 ],
                 "temperature": request.temperature or 0.7,
-                "max_tokens": request.max_tokens or 2048,
+                "max_tokens": max_tokens,
                 "top_p": 0.95
             }
             
@@ -70,7 +74,8 @@ class MinimaxProvider(AIProvider):
                 payload["group_id"] = self.group_id
             
             # Make async HTTP request
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            # Increased timeout for large CV analysis requests
+            async with httpx.AsyncClient(timeout=300.0) as client:
                 response = await client.post(
                     f"{self.api_base}/text/chatcompletion_v2",
                     headers=self.headers,

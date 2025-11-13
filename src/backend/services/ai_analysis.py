@@ -52,7 +52,7 @@ class AIAnalysisService:
             company_name: Company name for enrichment (optional)
         """
         try:
-            template = await get_prompt("weighting_recommendation")
+            template = await get_prompt("weighting_recommendation", language)
             
             # Get company enrichment if company name is available
             enrichment_context = ""
@@ -120,8 +120,8 @@ class AIAnalysisService:
             Analysis dict with categories, scores, strengths, etc.
         """
         try:
-            # Get prompt template
-            template = await get_prompt("interviewer_analysis")
+            # Get prompt template (in the correct language)
+            template = await get_prompt("interviewer_analysis", language)
             
             # Build enrichment context
             enrichment_context = await self._build_enrichment_context(
@@ -130,7 +130,7 @@ class AIAnalysisService:
                 candidate_name=candidate_name,
             )
 
-            # Prepare variables
+            # Prepare variables (no truncation - models support large contexts)
             variables = {
                 "job_posting": job_posting_text,
                 "cv_text": cv_text,
@@ -143,13 +143,15 @@ class AIAnalysisService:
             }
             
             # Create AI request
+            # Use maximum tokens for detailed analysis (analysis can be very large)
+            # The model_limits will provide the max for the model, but we request None to use max
             ai_request = AIRequest(
                 prompt_type=PromptType.INTERVIEWER_ANALYSIS,
                 template=template,
                 variables=variables,
                 language=language,
                 temperature=0.7,
-                max_tokens=2048
+                max_tokens=None  # Will use model's maximum from model_limits
             )
             
             # Execute with AI manager (auto-selects provider and handles fallback)
@@ -194,7 +196,7 @@ class AIAnalysisService:
         """
         try:
             # Get prompt template
-            template = await get_prompt("candidate_analysis")
+            template = await get_prompt("candidate_analysis", language)
             
             # Build enrichment context using available data
             enrichment_context = await self._build_enrichment_context(
@@ -255,7 +257,7 @@ class AIAnalysisService:
             Structured CV data dict
         """
         try:
-            template = await get_prompt("cv_extraction")
+            template = await get_prompt("cv_extraction", language)
             
             ai_request = AIRequest(
                 prompt_type=PromptType.CV_EXTRACTION,
@@ -284,7 +286,7 @@ class AIAnalysisService:
         Generate a structured summary for a CV.
         """
         try:
-            template = await get_prompt("cv_summary")
+            template = await get_prompt("cv_summary", language)
 
             ai_request = AIRequest(
                 prompt_type=PromptType.CV_SUMMARY,
@@ -329,7 +331,7 @@ class AIAnalysisService:
             Structured job posting data dict
         """
         try:
-            template = await get_prompt("job_posting_normalization")
+            template = await get_prompt("job_posting_normalization", language)
             
             # Get company enrichment if company name is available
             enrichment_context = ""
@@ -435,7 +437,7 @@ class AIAnalysisService:
                     if formatted:
                         enrichment_context = formatted
             
-            template = await get_prompt("executive_recommendation")
+            template = await get_prompt("executive_recommendation", language)
             
             variables = {
                 "job_posting_summary": job_posting_summary,

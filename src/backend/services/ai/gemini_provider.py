@@ -110,10 +110,14 @@ class GeminiProvider(AIProvider):
                 logger.info("-" * 80)
             logger.info("=" * 80)
             
+            # Get maximum tokens for this model
+            from .model_limits import get_max_output_tokens
+            max_output_tokens = request.max_tokens or get_max_output_tokens(self.model_name)
+            
             # Configure generation parameters
             generation_config = genai.types.GenerationConfig(
                 temperature=request.temperature or 0.7,
-                max_output_tokens=request.max_tokens or 2048,
+                max_output_tokens=max_output_tokens,
             )
             
             # EXPERIMENTAL: Try WITHOUT safety_settings

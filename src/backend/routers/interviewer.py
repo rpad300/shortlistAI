@@ -231,7 +231,7 @@ async def step1_identification(data: InterviewerIdentification):
 async def step2_job_posting(
     session_id: str = Form(...),
     raw_text: Optional[str] = Form(None),
-    language: str = Form("en"),
+    language: str = Form("en"),  # Keep for backward compatibility, but use session language
     file: Optional[UploadFile] = File(None)
 ):
     """
@@ -264,6 +264,9 @@ async def step2_job_posting(
         session = session_service.get_session(UUID(session_id))
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Use language from session (set in step1), fallback to form parameter
+        session_language = session["data"].get("language", language)
         
         final_text = raw_text or ""
         file_url = None
@@ -316,7 +319,7 @@ async def step2_job_posting(
             company_id=session["data"].get("company_id"),
             interviewer_id=session["data"].get("interviewer_id"),
             file_url=file_url,
-            language=language
+            language=session_language
         )
         
         if not job_posting:
@@ -334,8 +337,8 @@ async def step2_job_posting(
         
         # Normalize job posting to extract structured requirements with AI
         # Note: First normalization without company_name (it will be extracted from the result)
-        logger.info(f"Using AI to analyze job posting (provider: {ai_service.ai_manager.default_provider})")
-        normalized = await ai_service.normalize_job_posting(final_text, language)
+        logger.info(f"Using AI to analyze job posting (provider: {ai_service.ai_manager.default_provider}, language: {session_language})")
+        normalized = await ai_service.normalize_job_posting(final_text, session_language)
         
         if normalized:
             # Build suggested key points from AI analysis
@@ -976,47 +979,29 @@ async def step5_upload_cvs(
         )
 
 
-@router.post("/step6")
-async def step6_analysis(session_id: str):
+async def _run_analysis_background(session_id: UUID, session_service, job_posting_service, cv_service, 
+                                    analysis_service, ai_service, candidate_service, report_service):
     """
-    Step 6: Trigger AI analysis.
-    
-    Runs AI analysis for all uploaded CVs against the job posting.
-    Returns analysis results with rankings.
+    Background task to run AI analysis sequentially for all CVs.
+    Updates progress in session as it goes.
     """
-    from services.database import (
-        get_session_service,
-        get_job_posting_service,
-        get_cv_service,
-        get_analysis_service,
-        get_report_service,
-        get_candidate_service,
-    )
-    from services.ai_analysis import get_ai_analysis_service
-    from utils import FileProcessor
-    from uuid import UUID
-    
     try:
-        session_service = get_session_service()
-        job_posting_service = get_job_posting_service()
-        cv_service = get_cv_service()
-        analysis_service = get_analysis_service()
-        ai_service = get_ai_analysis_service()
-        candidate_service = get_candidate_service()
-        
-        # Validate session
-        session = session_service.get_session(UUID(session_id))
+        # Get session data
+        session = session_service.get_session(session_id)
         if not session:
-            raise HTTPException(status_code=404, detail="Session not found or expired")
+            logger.error(f"Session {session_id} not found in background task")
+            return
         
         # Get job posting
         job_posting_id = session["data"].get("job_posting_id")
         if not job_posting_id:
-            raise HTTPException(status_code=400, detail="Job posting not found")
+            logger.error(f"Job posting not found for session {session_id}")
+            return
         
         job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
         job_posting_markdown = ""
         if job_posting and job_posting.get("raw_text"):
+            from utils import FileProcessor
             job_posting_markdown = FileProcessor.text_to_markdown(job_posting["raw_text"])
         structured_job_posting = (
             session["data"].get("structured_job_posting")
@@ -1028,8 +1013,7 @@ async def step6_analysis(session_id: str):
         
         # Get CV IDs
         cv_ids = session["data"].get("cv_ids", [])
-        if len(cv_ids) == 0:
-            raise HTTPException(status_code=400, detail="No CVs uploaded. Complete step 5 first.")
+        total_cvs = len(cv_ids)
         
         # Get weights and blockers
         weights = session["data"].get("weights", {})
@@ -1038,7 +1022,7 @@ async def step6_analysis(session_id: str):
         key_points = session["data"].get("key_points") or session["data"].get("suggested_key_points", "")
         language = session["data"].get("language", "en")
         candidates_info = session["data"].get("candidates_info", [])
-
+        
         def _normalize_list(value: Any) -> List[Any]:
             if isinstance(value, list):
                 return value
@@ -1054,43 +1038,71 @@ async def step6_analysis(session_id: str):
         analyses = []
         session_results = []
         candidate_lookup = {info["cv_id"]: info for info in candidates_info}
-
-        for cv_id in cv_ids:
-            cv = await cv_service.get_by_id(UUID(cv_id))
-            if not cv:
-                continue
-
-            candidate_info = candidate_lookup.get(cv_id, {})
-            extracted_text = cv.get("extracted_text") or ""
-            candidate_uuid: Optional[UUID] = None
-            candidate_name: Optional[str] = None
-            candidate_id_value = candidate_info.get("candidate_id") or cv.get("candidate_id")
-            if candidate_id_value:
-                try:
-                    candidate_uuid = UUID(str(candidate_id_value))
-                    candidate_record = await candidate_service.get_by_id(candidate_uuid)
-                    if candidate_record:
-                        candidate_name = (
-                            candidate_record.get("name")
-                            or candidate_record.get("full_name")
-                            or candidate_record.get("email")
-                        )
-                except Exception as candidate_err:
-                    logger.warning(f"Failed to fetch candidate details for enrichment: {candidate_err}")
-            if not candidate_name:
-                summary_info = candidate_info.get("summary") or {}
-                candidate_name = summary_info.get("full_name") or candidate_info.get("filename")
-
-            ai_result = None
-            cv_markdown = FileProcessor.text_to_markdown(extracted_text) if extracted_text else ""
-            
-            # Note: Gemini can handle large CVs (4M tokens), no truncation needed
-
-            if not cv_markdown or not job_posting_markdown:
-                logger.error("Missing CV or job posting text for analysis. CV ID: %s", cv_id)
-                continue
-
+        errors = []
+        
+        # Initialize progress
+        session_service.update_session(
+            session_id,
+            {
+                "analysis_status": "running",
+                "analysis_progress": {
+                    "current": 0,
+                    "total": total_cvs,
+                    "status": "Starting analysis..."
+                }
+            }
+        )
+        
+        for idx, cv_id in enumerate(cv_ids, 1):
             try:
+                # Update progress
+                session_service.update_session(
+                    session_id,
+                    {
+                        "analysis_progress": {
+                            "current": idx,
+                            "total": total_cvs,
+                            "status": f"Analyzing CV {idx} of {total_cvs}...",
+                            "current_cv_id": cv_id
+                        }
+                    }
+                )
+                
+                cv = await cv_service.get_by_id(UUID(cv_id))
+                if not cv:
+                    logger.warning(f"CV {cv_id} not found, skipping")
+                    continue
+
+                candidate_info = candidate_lookup.get(cv_id, {})
+                extracted_text = cv.get("extracted_text") or ""
+                candidate_uuid: Optional[UUID] = None
+                candidate_name: Optional[str] = None
+                candidate_id_value = candidate_info.get("candidate_id") or cv.get("candidate_id")
+                if candidate_id_value:
+                    try:
+                        candidate_uuid = UUID(str(candidate_id_value))
+                        candidate_record = await candidate_service.get_by_id(candidate_uuid)
+                        if candidate_record:
+                            candidate_name = (
+                                candidate_record.get("name")
+                                or candidate_record.get("full_name")
+                                or candidate_record.get("email")
+                            )
+                    except Exception as candidate_err:
+                        logger.warning(f"Failed to fetch candidate details for enrichment: {candidate_err}")
+                if not candidate_name:
+                    summary_info = candidate_info.get("summary") or {}
+                    candidate_name = summary_info.get("full_name") or candidate_info.get("filename")
+
+                from utils import FileProcessor
+                cv_markdown = FileProcessor.text_to_markdown(extracted_text) if extracted_text else ""
+
+                if not cv_markdown or not job_posting_markdown:
+                    logger.error(f"Missing CV or job posting text for analysis. CV ID: {cv_id}")
+                    errors.append(f"CV {idx}: Missing text content")
+                    continue
+
+                # Run AI analysis
                 ai_result = await asyncio.wait_for(
                     ai_service.analyze_candidate_for_interviewer(
                         job_posting_markdown,
@@ -1104,206 +1116,383 @@ async def step6_analysis(session_id: str):
                         candidate_id=candidate_uuid,
                         candidate_name=candidate_name,
                     ),
-                    timeout=90  # 90 seconds for large context
+                    timeout=300  # 5 minutes per CV
                 )
+
+                if not ai_result or not ai_result.get("data"):
+                    errors.append(f"CV {idx}: AI failed to analyze")
+                    continue
+
+                data = ai_result.get("data", {})
+                categories = data.get("categories", {})
+                strengths = _normalize_list(data.get("strengths"))
+                risks = _normalize_list(data.get("risks"))
+                questions = _normalize_list(data.get("custom_questions") or data.get("questions"))
+                blocker_flags = _normalize_list(data.get("hard_blocker_violations") or data.get("hard_blocker_flags"))
+                recommendation = data.get("recommendation") or ""
+                intro_pitch = data.get("intro_pitch") or ""
+                gap_strategies = _normalize_list(data.get("gap_strategies") or [])
+                preparation_tips = _normalize_list(data.get("preparation_tips") or [])
+                provider_used = ai_result.get("provider") or ai_result.get("model") or "ai"
+                
+                # Extract detailed analysis fields
+                profile_summary = data.get("profile_summary") or ""
+                swot_analysis = data.get("swot_analysis") or {}
+                technical_skills_detailed = _normalize_list(data.get("technical_skills_detailed") or [])
+                soft_skills_detailed = _normalize_list(data.get("soft_skills_detailed") or [])
+                missing_critical_technical_skills = _normalize_list(data.get("missing_critical_technical_skills") or [])
+                missing_important_soft_skills = _normalize_list(data.get("missing_important_soft_skills") or [])
+                professional_experience_analysis = data.get("professional_experience_analysis") or {}
+                education_and_certifications = data.get("education_and_certifications") or {}
+                notable_achievements = _normalize_list(data.get("notable_achievements") or [])
+                culture_fit_assessment = data.get("culture_fit_assessment") or {}
+                score_breakdown = data.get("score_breakdown") or {}
+                
+                # Use global_score from score_breakdown if available
+                if score_breakdown and score_breakdown.get("global_score") is not None:
+                    global_score = score_breakdown.get("global_score") / 100.0 * 5.0
+                else:
+                    global_score = sum(
+                        categories.get(cat, 0) * weights.get(cat, 1)
+                        for cat in categories.keys()
+                    ) / sum(weights.values()) if weights else sum(categories.values()) / len(categories)
+
+                summary = candidate_info.get("summary") or {}
+                candidate_label = (
+                    summary.get("full_name")
+                    or summary.get("current_role")
+                    or candidate_info.get("filename")
+                    or f"Candidate {len(session_results) + 1}"
+                )
+
+                # Fetch enrichment data
+                enrichment_data = {}
+                try:
+                    from services.database.enrichment_service import (
+                        CompanyEnrichmentService,
+                        CandidateEnrichmentService
+                    )
+                    
+                    if company_name:
+                        company_enrichment_service = CompanyEnrichmentService()
+                        company_enrichment = await company_enrichment_service.get_latest(company_name, max_age_days=30)
+                        if company_enrichment:
+                            enrichment_data["company"] = {
+                                "name": company_enrichment.get("company_name"),
+                                "website": company_enrichment.get("website"),
+                                "description": company_enrichment.get("description"),
+                                "industry": company_enrichment.get("industry"),
+                                "size": company_enrichment.get("company_size"),
+                                "location": company_enrichment.get("location"),
+                                "social_media": company_enrichment.get("social_media", {}),
+                                "recent_news": company_enrichment.get("recent_news", []),
+                                "ai_summary": company_enrichment.get("ai_summary")
+                            }
+                    
+                    if candidate_uuid:
+                        candidate_enrichment_service = CandidateEnrichmentService()
+                        candidate_enrichment = await candidate_enrichment_service.get_latest(candidate_uuid)
+                        if candidate_enrichment:
+                            enrichment_data["candidate"] = {
+                                "name": candidate_enrichment.get("candidate_name") or candidate_enrichment.get("name"),
+                                "professional_summary": candidate_enrichment.get("professional_summary"),
+                                "linkedin_profile": candidate_enrichment.get("linkedin_profile"),
+                                "github_profile": candidate_enrichment.get("github_profile"),
+                                "portfolio_url": candidate_enrichment.get("portfolio_url"),
+                                "publications": candidate_enrichment.get("publications", []),
+                                "awards": candidate_enrichment.get("awards", []),
+                                "ai_summary": candidate_enrichment.get("ai_summary")
+                            }
+                except Exception as enrichment_err:
+                    logger.warning(f"Failed to fetch enrichment data: {enrichment_err}")
+
+                report_id = session["data"].get("report_id")
+                
+                detailed_analysis_data = {
+                    "profile_summary": profile_summary,
+                    "swot_analysis": swot_analysis,
+                    "technical_skills_detailed": technical_skills_detailed,
+                    "soft_skills_detailed": soft_skills_detailed,
+                    "missing_critical_technical_skills": missing_critical_technical_skills,
+                    "missing_important_soft_skills": missing_important_soft_skills,
+                    "professional_experience_analysis": professional_experience_analysis,
+                    "education_and_certifications": education_and_certifications,
+                    "notable_achievements": notable_achievements,
+                    "culture_fit_assessment": culture_fit_assessment,
+                    "score_breakdown": score_breakdown
+                }
+                
+                prompt_id_value = None
+                try:
+                    from services.database.prompt_service import get_prompt_service
+                    prompt_service = get_prompt_service()
+                    prompt_data = await prompt_service.get_prompt_by_key("interviewer_analysis", language)
+                    if prompt_data:
+                        prompt_id_value = UUID(prompt_data["id"])
+                except Exception as prompt_err:
+                    logger.warning(f"Failed to get prompt_id: {prompt_err}")
+                
+                analysis = await analysis_service.create(
+                    mode="interviewer",
+                    job_posting_id=UUID(job_posting_id),
+                    cv_id=UUID(cv_id),
+                    candidate_id=UUID(cv["candidate_id"]),
+                    provider=provider_used,
+                    categories=categories,
+                    global_score=round(global_score, 2),
+                    strengths=strengths,
+                    risks=risks,
+                    questions=questions,
+                    language=language,
+                    hard_blocker_flags=blocker_flags,
+                    report_id=UUID(report_id) if report_id else None,
+                    prompt_id=prompt_id_value,
+                    detailed_analysis=detailed_analysis_data
+                )
+                
+                session_results.append({
+                    "analysis_id": analysis["id"] if analysis else None,
+                    "candidate_id": str(cv["candidate_id"]),
+                    "candidate_label": candidate_label,
+                    "file_name": candidate_info.get("filename"),
+                    "summary": summary,
+                    "global_score": round(global_score, 2),
+                    "categories": categories,
+                    "strengths": strengths,
+                    "risks": risks,
+                    "questions": questions,
+                    "hard_blocker_flags": blocker_flags,
+                    "recommendation": recommendation,
+                    "intro_pitch": intro_pitch,
+                    "gap_strategies": gap_strategies,
+                    "preparation_tips": preparation_tips,
+                    "provider": provider_used,
+                    "enrichment": enrichment_data if enrichment_data else None,
+                    "profile_summary": profile_summary,
+                    "swot_analysis": swot_analysis,
+                    "technical_skills_detailed": technical_skills_detailed,
+                    "soft_skills_detailed": soft_skills_detailed,
+                    "missing_critical_technical_skills": missing_critical_technical_skills,
+                    "missing_important_soft_skills": missing_important_soft_skills,
+                    "professional_experience_analysis": professional_experience_analysis,
+                    "education_and_certifications": education_and_certifications,
+                    "notable_achievements": notable_achievements,
+                    "culture_fit_assessment": culture_fit_assessment,
+                    "score_breakdown": score_breakdown
+                })
+
+                if analysis:
+                    analyses.append(analysis)
+                    
             except asyncio.TimeoutError:
-                logger.error("AI analysis timed out for CV %s", cv_id)
-                raise HTTPException(
-                    status_code=504,
-                    detail=f"AI analysis timed out for CV {cv_id}. Please try again or check AI provider status."
-                )
-            except Exception as ai_exc:
-                logger.error("AI analysis failed for CV %s: %s", cv_id, ai_exc)
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"AI analysis failed for CV {cv_id}: {str(ai_exc)}"
-                )
-
-            if not ai_result or not ai_result.get("data"):
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"AI failed to analyze CV {cv_id}. Cannot proceed without AI analysis."
-                )
-
-            data = ai_result.get("data", {})
-            categories = data.get("categories", {})
-            strengths = _normalize_list(data.get("strengths"))
-            risks = _normalize_list(data.get("risks"))
-            questions = _normalize_list(data.get("custom_questions") or data.get("questions"))
-            blocker_flags = _normalize_list(data.get("hard_blocker_violations") or data.get("hard_blocker_flags"))
-            recommendation = data.get("recommendation") or ""  # Brief hiring recommendation from AI
-            intro_pitch = data.get("intro_pitch") or ""  # Candidate intro pitch
-            gap_strategies = _normalize_list(data.get("gap_strategies") or [])  # Strategies to address gaps
-            preparation_tips = _normalize_list(data.get("preparation_tips") or [])  # Study topics for interview
-            provider_used = ai_result.get("provider") or ai_result.get("model") or "ai"
-            
-            # Debug: Log what we got from AI
-            logger.info(f"AI result for CV {cv_id}: strengths={len(strengths)}, risks={len(risks)}, questions={len(questions)}, blocker_flags={len(blocker_flags)}, has_recommendation={bool(recommendation)}")
-            if not questions:
-                logger.warning(f"No questions returned from AI for CV {cv_id}. Data keys: {list(data.keys())}")
-
-            global_score = sum(
-                categories.get(cat, 0) * weights.get(cat, 1)
-                for cat in categories.keys()
-            ) / sum(weights.values()) if weights else sum(categories.values()) / len(categories)
-
-            summary = candidate_info.get("summary") or {}
-            candidate_label = (
-                summary.get("full_name")
-                or summary.get("current_role")
-                or candidate_info.get("filename")
-                or f"Candidate {len(session_results) + 1}"
-            )
-
-            # Fetch enrichment data for candidate and company
-            enrichment_data = {}
-            try:
-                from services.database.enrichment_service import (
-                    CompanyEnrichmentService,
-                    CandidateEnrichmentService
-                )
-                
-                # Get company enrichment
-                if company_name:
-                    company_enrichment_service = CompanyEnrichmentService()
-                    company_enrichment = await company_enrichment_service.get_latest(company_name, max_age_days=30)
-                    if company_enrichment:
-                        enrichment_data["company"] = {
-                            "name": company_enrichment.get("company_name"),
-                            "website": company_enrichment.get("website"),
-                            "description": company_enrichment.get("description"),
-                            "industry": company_enrichment.get("industry"),
-                            "size": company_enrichment.get("company_size"),
-                            "location": company_enrichment.get("location"),
-                            "social_media": company_enrichment.get("social_media", {}),
-                            "recent_news": company_enrichment.get("recent_news", []),
-                            "ai_summary": company_enrichment.get("ai_summary")
-                        }
-                
-                # Get candidate enrichment
-                if candidate_uuid:
-                    candidate_enrichment_service = CandidateEnrichmentService()
-                    candidate_enrichment = await candidate_enrichment_service.get_latest(candidate_uuid)
-                    if candidate_enrichment:
-                        enrichment_data["candidate"] = {
-                            "name": candidate_enrichment.get("candidate_name") or candidate_enrichment.get("name"),
-                            "professional_summary": candidate_enrichment.get("professional_summary"),
-                            "linkedin_profile": candidate_enrichment.get("linkedin_profile"),
-                            "github_profile": candidate_enrichment.get("github_profile"),
-                            "portfolio_url": candidate_enrichment.get("portfolio_url"),
-                            "publications": candidate_enrichment.get("publications", []),
-                            "awards": candidate_enrichment.get("awards", []),
-                            "ai_summary": candidate_enrichment.get("ai_summary")
-                        }
-            except Exception as enrichment_err:
-                logger.warning(f"Failed to fetch enrichment data: {enrichment_err}")
-
-            # Get report_id from session (if exists)
-            report_id = session["data"].get("report_id")
-            
-            analysis = await analysis_service.create(
-                mode="interviewer",
-                job_posting_id=UUID(job_posting_id),
-                cv_id=UUID(cv_id),
-                candidate_id=UUID(cv["candidate_id"]),
-                provider=provider_used,
-                categories=categories,
-                global_score=round(global_score, 2),
-                strengths=strengths,
-                risks=risks,
-                questions=questions,
-                language=language,
-                hard_blocker_flags=blocker_flags,
-                report_id=UUID(report_id) if report_id else None
-            )
-            
-            session_results.append({
-                "analysis_id": analysis["id"] if analysis else None,
-                "candidate_id": str(cv["candidate_id"]),
-                "candidate_label": candidate_label,
-                "file_name": candidate_info.get("filename"),
-                "summary": summary,
-                "global_score": round(global_score, 2),
-                "categories": categories,
-                "strengths": strengths,
-                "risks": risks,
-                "questions": questions,
-                "hard_blocker_flags": blocker_flags,
-                "recommendation": recommendation,  # Brief hiring recommendation from AI analysis
-                "intro_pitch": intro_pitch,  # Candidate intro pitch
-                "gap_strategies": gap_strategies,  # Strategies to address gaps/risks
-                "preparation_tips": preparation_tips,  # Study topics for interview
-                "provider": provider_used,
-                "enrichment": enrichment_data if enrichment_data else None
-            })
-
-            if analysis:
-                analyses.append(analysis)
+                error_msg = f"CV {idx}: Analysis timed out"
+                logger.error(f"AI analysis timed out for CV {cv_id}")
+                errors.append(error_msg)
+            except Exception as cv_err:
+                error_msg = f"CV {idx}: {str(cv_err)}"
+                logger.error(f"Error analyzing CV {cv_id}: {cv_err}")
+                errors.append(error_msg)
         
-        # Generate executive recommendation (AI summary of results)
+        # Generate executive recommendation (LAST STEP - only if we have successful analyses)
         executive_recommendation = None
-        try:
-            logger.info(f"Generating executive recommendation for session {session_id}")
-            executive_recommendation = await ai_service.generate_executive_recommendation(
-                job_posting_summary=key_points or "Position evaluation",
-                candidates_data=session_results,
-                weights=weights,
-                hard_blockers=hard_blockers,
-                language=language,
-                company_name=company_name
-            )
-            if executive_recommendation:
-                logger.info("Executive recommendation generated successfully")
-            else:
-                logger.warning("Executive recommendation returned None")
-        except Exception as exec_err:
-            logger.error(f"Failed to generate executive recommendation: {exec_err}")
-            # Continue without recommendation - not critical
-        
-        # Update persistent report in database (if exists)
-        report_id = session["data"].get("report_id")
-        if report_id and executive_recommendation:
+        if len(session_results) > 0:
             try:
-                report_service = get_report_service()
-                await report_service.update_executive_recommendation(
-                    UUID(report_id),
-                    executive_recommendation
+                # Update progress to show we're generating executive recommendation
+                session_service.update_session(
+                    session_id,
+                    {
+                        "analysis_progress": {
+                            "current": total_cvs,
+                            "total": total_cvs,
+                            "status": "Generating executive recommendation...",
+                            "errors": errors if errors else None
+                        }
+                    }
                 )
-                # Update candidate count
+                
+                logger.info(f"Generating executive recommendation for session {session_id} with {len(session_results)} candidates")
+                executive_recommendation = await ai_service.generate_executive_recommendation(
+                    job_posting_summary=key_points or "Position evaluation",
+                    candidates_data=session_results,
+                    weights=weights,
+                    hard_blockers=hard_blockers,
+                    language=language,
+                    company_name=company_name
+                )
+                
+                if executive_recommendation:
+                    logger.info("Executive recommendation generated successfully")
+                else:
+                    logger.warning("Executive recommendation returned None")
+            except Exception as exec_err:
+                logger.error(f"Failed to generate executive recommendation: {exec_err}")
+                # Continue without recommendation - not critical for completion
+        else:
+            logger.warning(f"No successful analyses to generate executive recommendation for session {session_id}")
+        
+        # Update persistent report (if exists)
+        report_id = session["data"].get("report_id")
+        if report_id:
+            try:
+                if executive_recommendation:
+                    await report_service.update_executive_recommendation(
+                        UUID(report_id),
+                        executive_recommendation
+                    )
                 await report_service.increment_candidate_count(UUID(report_id), len(analyses))
-                logger.info(f"Updated report {report_id} with executive recommendation")
+                logger.info(f"Updated report {report_id} with {len(analyses)} analyses")
             except Exception as report_err:
                 logger.error(f"Failed to update report: {report_err}")
         
-        # Update session
+        # Mark as complete (LAST STEP)
         session_service.update_session(
-            UUID(session_id),
+            session_id,
             {
                 "analysis_ids": [a["id"] for a in analyses],
                 "analysis_complete": True,
+                "analysis_status": "completed",
                 "analysis_results": session_results,
-                "executive_recommendation": executive_recommendation
+                "executive_recommendation": executive_recommendation,
+                "analysis_progress": {
+                    "current": total_cvs,
+                    "total": total_cvs,
+                    "status": "Analysis complete!",
+                    "errors": errors if errors else None
+                }
             },
             step=6
         )
         
-        logger.info(f"Analysis complete: {len(analyses)} analyses created for session: {session_id}")
+        logger.info(f"Background analysis complete: {len(analyses)} analyses created for session: {session_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in background analysis task: {e}", exc_info=True)
+        # Update session with error
+        try:
+            session = session_service.get_session(session_id)
+            if session:
+                session_service.update_session(
+                    session_id,
+                    {
+                        "analysis_status": "error",
+                        "analysis_progress": {
+                            "status": f"Error: {str(e)}"
+                        }
+                    }
+                )
+        except:
+            pass
+
+
+@router.post("/step6")
+async def step6_analysis(session_id: str):
+    """
+    Step 6: Trigger AI analysis (async).
+    
+    Starts AI analysis for all uploaded CVs in the background.
+    Returns immediately. Use GET /step6/progress/{session_id} to check progress.
+    """
+    from services.database import (
+        get_session_service,
+        get_job_posting_service,
+        get_cv_service,
+        get_analysis_service,
+        get_report_service,
+        get_candidate_service,
+    )
+    from services.ai_analysis import get_ai_analysis_service
+    from uuid import UUID
+    
+    try:
+        session_service = get_session_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Check if analysis is already running
+        if session["data"].get("analysis_status") == "running":
+            return JSONResponse({
+                "status": "already_running",
+                "message": "Analysis is already in progress"
+            })
+        
+        # Get CV IDs
+        cv_ids = session["data"].get("cv_ids", [])
+        if len(cv_ids) == 0:
+            raise HTTPException(status_code=400, detail="No CVs uploaded. Complete step 5 first.")
+        
+        # Get services
+        job_posting_service = get_job_posting_service()
+        cv_service = get_cv_service()
+        analysis_service = get_analysis_service()
+        ai_service = get_ai_analysis_service()
+        candidate_service = get_candidate_service()
+        report_service = get_report_service()
+        
+        # Start background task
+        asyncio.create_task(_run_analysis_background(
+            UUID(session_id),
+            session_service,
+            job_posting_service,
+            cv_service,
+            analysis_service,
+            ai_service,
+            candidate_service,
+            report_service
+        ))
         
         return JSONResponse({
-            "status": "success",
-            "analyses_created": len(analyses),
-            "message": "Analysis complete. View results in step 7.",
-            "results": session_results,
-            "executive_recommendation": executive_recommendation
+            "status": "started",
+            "message": "Analysis started in background",
+            "total_cvs": len(cv_ids)
         })
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in step6_analysis: {e}")
+        logger.error(f"Error starting analysis: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Internal server error during analysis"
+            detail="Internal server error starting analysis"
+        )
+
+
+@router.get("/step6/progress/{session_id}")
+async def step6_progress(session_id: UUID):
+    """
+    Get analysis progress for a session.
+    
+    Returns current progress, status, and completion state.
+    """
+    from services.database import get_session_service
+    
+    try:
+        session_service = get_session_service()
+        session = session_service.get_session(session_id)
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        progress = session["data"].get("analysis_progress", {})
+        status = session["data"].get("analysis_status", "not_started")
+        is_complete = session["data"].get("analysis_complete", False)
+        
+        return JSONResponse({
+            "status": status,
+            "complete": is_complete,
+            "progress": progress,
+            "has_results": bool(session["data"].get("analysis_results"))
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting progress: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error getting progress"
         )
 
 
@@ -1389,6 +1578,7 @@ async def step7_results(
                         candidate_err
                     )
                 
+                detailed_analysis = analysis.get("detailed_analysis") or {}
                 fallback_results.append({
                     "analysis_id": analysis["id"],
                     "candidate_id": analysis["candidate_id"],
@@ -1399,7 +1589,19 @@ async def step7_results(
                     "risks": _ensure_list(analysis.get("risks")),
                     "questions": _ensure_list(analysis.get("questions")),
                     "hard_blocker_flags": _ensure_list(analysis.get("hard_blocker_flags")),
-                    "provider": analysis.get("provider")
+                    "provider": analysis.get("provider"),
+                    # Include detailed analysis fields if available
+                    "profile_summary": detailed_analysis.get("profile_summary"),
+                    "swot_analysis": detailed_analysis.get("swot_analysis", {}),
+                    "technical_skills_detailed": detailed_analysis.get("technical_skills_detailed", []),
+                    "soft_skills_detailed": detailed_analysis.get("soft_skills_detailed", []),
+                    "missing_critical_technical_skills": detailed_analysis.get("missing_critical_technical_skills", []),
+                    "missing_important_soft_skills": detailed_analysis.get("missing_important_soft_skills", []),
+                    "professional_experience_analysis": detailed_analysis.get("professional_experience_analysis", {}),
+                    "education_and_certifications": detailed_analysis.get("education_and_certifications", {}),
+                    "notable_achievements": detailed_analysis.get("notable_achievements", []),
+                    "culture_fit_assessment": detailed_analysis.get("culture_fit_assessment", {}),
+                    "score_breakdown": detailed_analysis.get("score_breakdown", {})
                 })
             
             logger.info(
@@ -1512,6 +1714,335 @@ async def step7_results(
                 # Ensure preparation_tips is a list
                 if not isinstance(result.get("preparation_tips"), list):
                     result["preparation_tips"] = []
+                # Ensure detailed analysis fields exist (can be empty/None)
+                if "profile_summary" not in result:
+                    result["profile_summary"] = ""
+                if "swot_analysis" not in result or not isinstance(result.get("swot_analysis"), dict):
+                    result["swot_analysis"] = {}
+                if not isinstance(result.get("technical_skills_detailed"), list):
+                    result["technical_skills_detailed"] = []
+                if not isinstance(result.get("soft_skills_detailed"), list):
+                    result["soft_skills_detailed"] = []
+                if not isinstance(result.get("missing_critical_technical_skills"), list):
+                    result["missing_critical_technical_skills"] = []
+                if not isinstance(result.get("missing_important_soft_skills"), list):
+                    result["missing_important_soft_skills"] = []
+                if "professional_experience_analysis" not in result or not isinstance(result.get("professional_experience_analysis"), dict):
+                    result["professional_experience_analysis"] = {}
+                if "education_and_certifications" not in result or not isinstance(result.get("education_and_certifications"), dict):
+                    result["education_and_certifications"] = {}
+                if not isinstance(result.get("notable_achievements"), list):
+                    result["notable_achievements"] = []
+                if "culture_fit_assessment" not in result or not isinstance(result.get("culture_fit_assessment"), dict):
+                    result["culture_fit_assessment"] = {}
+                if "score_breakdown" not in result or not isinstance(result.get("score_breakdown"), dict):
+                    result["score_breakdown"] = {}
+                
+                # Fetch or update enrichment data for this candidate
+                enrichment_data = {}
+                
+                # Check if already has enrichment from step6
+                if result.get("enrichment") and isinstance(result.get("enrichment"), dict):
+                    enrichment_data = result.get("enrichment")
+                    logger.info(f"Candidate {result.get('candidate_id')}: Using enrichment from step6")
+                else:
+                    logger.info(f"Candidate {result.get('candidate_id')}: Fetching enrichment from database")
+                
+                # Fetch candidate enrichment if not already present
+                if "candidate" not in enrichment_data:
+                    try:
+                        candidate_id = result.get("candidate_id")
+                        if candidate_id:
+                            candidate_enrichment = await candidate_enrichment_service.get_latest(UUID(candidate_id))
+                            if candidate_enrichment:
+                                logger.info(f"Found candidate enrichment in database for {candidate_id}")
+                                enrichment_data["candidate"] = {
+                                    "name": candidate_enrichment.get("candidate_name") or candidate_enrichment.get("name"),
+                                    "professional_summary": candidate_enrichment.get("professional_summary"),
+                                    "linkedin_profile": candidate_enrichment.get("linkedin_profile"),
+                                    "github_profile": candidate_enrichment.get("github_profile"),
+                                    "portfolio_url": candidate_enrichment.get("portfolio_url"),
+                                    "publications": candidate_enrichment.get("publications", []),
+                                    "awards": candidate_enrichment.get("awards", []),
+                                    "ai_summary": candidate_enrichment.get("ai_summary")
+                                }
+                    except Exception as enrichment_err:
+                        logger.warning(f"Failed to fetch candidate enrichment: {enrichment_err}")
+                
+                # Add company enrichment if available
+                if company_enrichment_data:
+                    enrichment_data["company"] = company_enrichment_data
+                
+                # Update result with enrichment
+                if enrichment_data:
+                    result["enrichment"] = enrichment_data
+            
+            return JSONResponse({
+                "status": "success",
+                "total_candidates": len(sorted_results),
+                "results": sorted_results,
+                "executive_recommendation": executive_recommendation,
+                "hard_blockers": session["data"].get("hard_blockers", []),
+                "report_code": report_code_in_session,
+                "source": "session"
+            })
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="No analysis results found"
+            )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving results: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error retrieving results"
+        )
+
+
+@router.get("/step7/{session_id}")
+async def step7_results(
+    session_id: UUID,
+    report_code: Optional[str] = Query(
+        default=None,
+        max_length=50,
+        description="Optional report code to recover results if session expired"
+    )
+):
+    """
+    Step 7: Display results.
+    
+    Returns ranked list of candidates with scores and details.
+    """
+    from services.database import (
+        get_session_service,
+        get_analysis_service,
+        get_report_service,
+        get_candidate_service
+    )
+    
+    try:
+        session_service = get_session_service()
+        analysis_service = get_analysis_service()
+        
+        # Validate session
+        session = session_service.get_session(session_id)
+        if not session:
+            if not report_code:
+                raise HTTPException(status_code=404, detail="Session not found or expired")
+            
+            # Fallback: load results directly from persistent report
+            report_service = get_report_service()
+            report = await report_service.get_by_code(report_code)
+            
+            if not report:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Session expired and report code not found. Please restart the analysis."
+                )
+            
+            analyses = await report_service.get_analyses_for_report(UUID(report["id"]))
+            
+            if not analyses:
+                raise HTTPException(
+                    status_code=404,
+                    detail="No analysis results found for this report yet."
+                )
+            
+            candidate_service = get_candidate_service()
+            
+            def _ensure_list(value: Any) -> List[Any]:
+                if isinstance(value, list):
+                    return value
+                if isinstance(value, dict):
+                    items = value.get("items")
+                    if isinstance(items, list):
+                        return items
+                    flags = value.get("flags")
+                    if isinstance(flags, list):
+                        return flags
+                    values = value.get("value") or value.get("values")
+                    if isinstance(values, list):
+                        return values
+                if value is None:
+                    return []
+                return [value]
+            
+            fallback_results: List[Dict[str, Any]] = []
+            for idx, analysis in enumerate(analyses, start=1):
+                candidate_label = None
+                try:
+                    candidate = await candidate_service.get_by_id(UUID(analysis["candidate_id"]))
+                    if candidate and candidate.get("name"):
+                        candidate_label = candidate["name"]
+                except Exception as candidate_err:  # pragma: no cover - logging only
+                    logger.warning(
+                        "Failed to load candidate %s for report fallback: %s",
+                        analysis.get("candidate_id"),
+                        candidate_err
+                    )
+                
+                detailed_analysis = analysis.get("detailed_analysis") or {}
+                fallback_results.append({
+                    "analysis_id": analysis["id"],
+                    "candidate_id": analysis["candidate_id"],
+                    "candidate_label": candidate_label or f"Candidate {idx}",
+                    "global_score": analysis.get("global_score", 0),
+                    "categories": analysis.get("categories") or {},
+                    "strengths": _ensure_list(analysis.get("strengths")),
+                    "risks": _ensure_list(analysis.get("risks")),
+                    "questions": _ensure_list(analysis.get("questions")),
+                    "hard_blocker_flags": _ensure_list(analysis.get("hard_blocker_flags")),
+                    "provider": analysis.get("provider"),
+                    # Include detailed analysis fields if available
+                    "profile_summary": detailed_analysis.get("profile_summary"),
+                    "swot_analysis": detailed_analysis.get("swot_analysis", {}),
+                    "technical_skills_detailed": detailed_analysis.get("technical_skills_detailed", []),
+                    "soft_skills_detailed": detailed_analysis.get("soft_skills_detailed", []),
+                    "missing_critical_technical_skills": detailed_analysis.get("missing_critical_technical_skills", []),
+                    "missing_important_soft_skills": detailed_analysis.get("missing_important_soft_skills", []),
+                    "professional_experience_analysis": detailed_analysis.get("professional_experience_analysis", {}),
+                    "education_and_certifications": detailed_analysis.get("education_and_certifications", {}),
+                    "notable_achievements": detailed_analysis.get("notable_achievements", []),
+                    "culture_fit_assessment": detailed_analysis.get("culture_fit_assessment", {}),
+                    "score_breakdown": detailed_analysis.get("score_breakdown", {})
+                })
+            
+            logger.info(
+                "Loaded %d results from persistent report %s for session %s",
+                len(fallback_results),
+                report_code,
+                session_id
+            )
+            
+            return JSONResponse({
+                "status": "success",
+                "total_candidates": len(fallback_results),
+                "results": fallback_results,
+                "executive_recommendation": report.get("executive_recommendation"),
+                "hard_blockers": report.get("hard_blockers", []),  # Include hard blockers from report
+                "message": f"Recovered {len(fallback_results)} candidates from report {report_code}.",
+                "report_id": report.get("id"),
+                "report_code": report.get("report_code"),
+                "source": "report"
+            })
+        
+        # Check if analysis is complete
+        if not session["data"].get("analysis_complete"):
+            raise HTTPException(
+                status_code=400,
+                detail="Analysis not complete. Run step 6 first."
+            )
+        
+        report_code_in_session = session["data"].get("report_code")
+        results = session["data"].get("analysis_results")
+        executive_recommendation = session["data"].get("executive_recommendation")
+        
+        # Extract company name from structured job posting
+        company_name = None
+        structured_job_posting = session["data"].get("structured_job_posting")
+        if structured_job_posting and isinstance(structured_job_posting, dict):
+            company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
+        
+        if results:
+            # SORT by global_score DESCENDING (best candidates first)
+            sorted_results = sorted(
+                results,
+                key=lambda x: x.get('global_score', 0),
+                reverse=True
+            )
+            
+            # Fetch enrichment data for all candidates and ensure all required fields
+            from services.database.enrichment_service import (
+                CompanyEnrichmentService,
+                CandidateEnrichmentService
+            )
+            company_enrichment_service = CompanyEnrichmentService()
+            candidate_enrichment_service = CandidateEnrichmentService()
+            
+            # Get company enrichment once (same for all candidates)
+            company_enrichment_data = None
+            if company_name:
+                company_enrichment = await company_enrichment_service.get_latest(company_name, max_age_days=30)
+                if company_enrichment:
+                    company_enrichment_data = {
+                        "name": company_enrichment.get("company_name"),
+                        "website": company_enrichment.get("website"),
+                        "description": company_enrichment.get("description"),
+                        "industry": company_enrichment.get("industry"),
+                        "size": company_enrichment.get("company_size"),
+                        "location": company_enrichment.get("location"),
+                        "social_media": company_enrichment.get("social_media", {}),
+                        "recent_news": company_enrichment.get("recent_news", []),
+                        "ai_summary": company_enrichment.get("ai_summary")
+                    }
+            
+            # Ensure all required fields are present for each result
+            for result in sorted_results:
+                # Ensure summary is a dict (not None)
+                if not result.get("summary") or not isinstance(result.get("summary"), dict):
+                    result["summary"] = {}
+                # Ensure candidate_label exists
+                if not result.get("candidate_label"):
+                    summary = result.get("summary", {})
+                    result["candidate_label"] = (
+                        summary.get("full_name") 
+                        or summary.get("current_role")
+                        or result.get("file_name")
+                        or "Candidate"
+                    )
+                # Ensure all list fields are arrays
+                if not isinstance(result.get("strengths"), list):
+                    result["strengths"] = []
+                if not isinstance(result.get("risks"), list):
+                    result["risks"] = []
+                if not isinstance(result.get("questions"), list):
+                    result["questions"] = []
+                if not isinstance(result.get("hard_blocker_flags"), list):
+                    result["hard_blocker_flags"] = []
+                # Ensure categories is a dict
+                if not isinstance(result.get("categories"), dict):
+                    result["categories"] = {}
+                # Ensure global_score is a number
+                if result.get("global_score") is None:
+                    result["global_score"] = 0
+                # Ensure recommendation exists (can be empty string)
+                if "recommendation" not in result:
+                    result["recommendation"] = ""
+                # Ensure intro_pitch exists (can be empty string)
+                if "intro_pitch" not in result:
+                    result["intro_pitch"] = ""
+                # Ensure gap_strategies is a list
+                if not isinstance(result.get("gap_strategies"), list):
+                    result["gap_strategies"] = []
+                # Ensure preparation_tips is a list
+                if not isinstance(result.get("preparation_tips"), list):
+                    result["preparation_tips"] = []
+                # Ensure detailed analysis fields exist (can be empty/None)
+                if "profile_summary" not in result:
+                    result["profile_summary"] = ""
+                if "swot_analysis" not in result or not isinstance(result.get("swot_analysis"), dict):
+                    result["swot_analysis"] = {}
+                if not isinstance(result.get("technical_skills_detailed"), list):
+                    result["technical_skills_detailed"] = []
+                if not isinstance(result.get("soft_skills_detailed"), list):
+                    result["soft_skills_detailed"] = []
+                if not isinstance(result.get("missing_critical_technical_skills"), list):
+                    result["missing_critical_technical_skills"] = []
+                if not isinstance(result.get("missing_important_soft_skills"), list):
+                    result["missing_important_soft_skills"] = []
+                if "professional_experience_analysis" not in result or not isinstance(result.get("professional_experience_analysis"), dict):
+                    result["professional_experience_analysis"] = {}
+                if "education_and_certifications" not in result or not isinstance(result.get("education_and_certifications"), dict):
+                    result["education_and_certifications"] = {}
+                if not isinstance(result.get("notable_achievements"), list):
+                    result["notable_achievements"] = []
+                if "culture_fit_assessment" not in result or not isinstance(result.get("culture_fit_assessment"), dict):
+                    result["culture_fit_assessment"] = {}
+                if "score_breakdown" not in result or not isinstance(result.get("score_breakdown"), dict):
+                    result["score_breakdown"] = {}
                 
                 # Fetch or update enrichment data for this candidate
                 enrichment_data = {}
@@ -1612,7 +2143,8 @@ async def step7_results(
             return [value]
 
         for analysis in analyses:
-            results.append({
+            detailed_analysis = analysis.get("detailed_analysis") or {}
+            result = {
                 "analysis_id": analysis["id"],
                 "candidate_id": analysis["candidate_id"],
                 "global_score": analysis["global_score"],
@@ -1621,8 +2153,21 @@ async def step7_results(
                 "risks": _ensure_list(analysis.get("risks")),
                 "questions": _ensure_list(analysis.get("questions")),
                 "hard_blocker_flags": _ensure_list(analysis.get("hard_blocker_flags")),
-                "provider": analysis.get("provider")
-            })
+                "provider": analysis.get("provider"),
+                # Include detailed analysis fields if available
+                "profile_summary": detailed_analysis.get("profile_summary"),
+                "swot_analysis": detailed_analysis.get("swot_analysis", {}),
+                "technical_skills_detailed": detailed_analysis.get("technical_skills_detailed", []),
+                "soft_skills_detailed": detailed_analysis.get("soft_skills_detailed", []),
+                "missing_critical_technical_skills": detailed_analysis.get("missing_critical_technical_skills", []),
+                "missing_important_soft_skills": detailed_analysis.get("missing_important_soft_skills", []),
+                "professional_experience_analysis": detailed_analysis.get("professional_experience_analysis", {}),
+                "education_and_certifications": detailed_analysis.get("education_and_certifications", {}),
+                "notable_achievements": detailed_analysis.get("notable_achievements", []),
+                "culture_fit_assessment": detailed_analysis.get("culture_fit_assessment", {}),
+                "score_breakdown": detailed_analysis.get("score_breakdown", {})
+            }
+            results.append(result)
         
         # SORT by global_score DESCENDING (best candidates first)
         sorted_results = sorted(

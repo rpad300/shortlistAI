@@ -144,6 +144,10 @@ class PDFReportGenerator:
         story.extend(self._build_title_page(session_data))
         story.append(PageBreak())
         
+        # Table of Contents
+        story.extend(self._build_table_of_contents(session_data, results, executive_recommendation))
+        story.append(PageBreak())
+        
         # Job description section
         story.extend(self._build_job_section(session_data))
         story.append(Spacer(1, 0.2*inch))
@@ -303,6 +307,76 @@ class PDFReportGenerator:
                         textColor=colors.HexColor('#9ca3af')
                     )
                 ))
+        
+        return elements
+    
+    def _build_table_of_contents(self, session_data: Dict[str, Any], results: List[Dict[str, Any]], executive_recommendation: Optional[Dict[str, Any]]) -> List:
+        """Build professional table of contents."""
+        elements = []
+        
+        # Title
+        elements.append(Paragraph(
+            "Table of Contents",
+            ParagraphStyle(
+                name='TOCTitle',
+                parent=self.styles['Title'],
+                fontSize=24,
+                textColor=colors.HexColor('#0066FF'),
+                spaceAfter=0.3*inch,
+                alignment=TA_CENTER
+            )
+        ))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # TOC entries with better spacing
+        toc_style = ParagraphStyle(
+            name='TOCEntry',
+            parent=self.styles['Normal'],
+            fontSize=12,
+            leftIndent=0.3*inch,
+            spaceAfter=0.15*inch,
+            textColor=colors.HexColor('#111827')
+        )
+        
+        toc_items = [
+            ("1. Job Position Details", "Overview of the job posting and key requirements"),
+            ("2. Evaluation Criteria", "Weights, hard blockers, and nice-to-have requirements"),
+        ]
+        
+        if executive_recommendation:
+            toc_items.append(("3. Executive Recommendation", "AI-generated summary and top candidate recommendation"))
+            start_num = 4
+        else:
+            start_num = 3
+        
+        toc_items.append((f"{start_num}. Candidate Rankings", f"Ranked list of all {len(results)} candidates"))
+        
+        # Detailed candidate profiles
+        sorted_results = sorted(results, key=lambda x: x.get('global_score', 0), reverse=True)
+        for idx, result in enumerate(sorted_results, 1):
+            name = self._get_candidate_name(result, idx)
+            toc_items.append((f"{start_num + idx}. {name}", f"Detailed analysis and evaluation"))
+        
+        # Build TOC with dots
+        for title, description in toc_items:
+            # Title with dots
+            elements.append(Paragraph(
+                f'<b>{title}</b>',
+                toc_style
+            ))
+            # Description in lighter color
+            desc_style = ParagraphStyle(
+                name='TOCDesc',
+                parent=toc_style,
+                fontSize=10,
+                leftIndent=0.5*inch,
+                textColor=colors.HexColor('#6B7280'),
+                spaceAfter=0.1*inch
+            )
+            elements.append(Paragraph(
+                description,
+                desc_style
+            ))
         
         return elements
     
@@ -505,7 +579,7 @@ class PDFReportGenerator:
         return elements
     
     def _build_candidate_details(self, results: List[Dict[str, Any]]) -> List:
-        """Build detailed candidate profiles."""
+        """Build detailed candidate profiles with all sections from step 7."""
         elements = []
         
         elements.append(Paragraph(
@@ -521,25 +595,74 @@ class PDFReportGenerator:
         )
         
         for idx, result in enumerate(sorted_results, 1):
-            # Keep each candidate on same page if possible
+            # Start new page for each candidate (except first)
+            if idx > 1:
+                elements.append(PageBreak())
+            
             candidate_elements = []
             
             name = self._get_candidate_name(result, idx)
+            # Improved candidate header with better styling
             candidate_elements.append(Paragraph(
                 f"#{idx}: {name}",
-                self.styles['SubSection']
+                ParagraphStyle(
+                    name='CandidateHeader',
+                    parent=self.styles['Heading1'],
+                    fontSize=18,
+                    textColor=colors.HexColor('#0066FF'),
+                    spaceAfter=0.2*inch,
+                    spaceBefore=0.1*inch
+                )
             ))
             
-            # Score and categories
+            # Global Score with better styling
             score = result.get('global_score', 0)
+            score_color = colors.HexColor('#10B981') if score >= 4 else colors.HexColor('#F59E0B') if score >= 3 else colors.HexColor('#EF4444')
             candidate_elements.append(Paragraph(
-                f"<b>Global Score:</b> {score:.1f}/5",
-                self.styles['BodyText']
+                f"<b>Global Score:</b> <font color='{score_color.hexval()}'><b>{score:.1f}/5</b></font>",
+                ParagraphStyle(
+                    name='ScoreDisplay',
+                    parent=self.styles['BodyText'],
+                    fontSize=14,
+                    spaceAfter=0.15*inch
+                )
             ))
+            candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # Profile Summary with KeepTogether to avoid cuts
+            profile_summary = result.get('profile_summary')
+            if profile_summary:
+                summary_section = [
+                    Paragraph(
+                        "<b>📋 Profile Summary</b>",
+                        ParagraphStyle(
+                            name='SectionTitle',
+                            parent=self.styles['Heading2'],
+                            fontSize=14,
+                            textColor=colors.HexColor('#111827'),
+                            spaceAfter=0.1*inch
+                        )
+                    ),
+                    Paragraph(
+                        profile_summary,
+                        ParagraphStyle(
+                            name='SummaryText',
+                            parent=self.styles['BodyJustified'],
+                            fontSize=11,
+                            spaceAfter=0.2*inch,
+                            leading=14
+                        )
+                    )
+                ]
+                candidate_elements.append(KeepTogether(summary_section))
             
             # Categories table
             categories = result.get('categories', {})
             if categories:
+                candidate_elements.append(Paragraph(
+                    "<b>Category Scores:</b>",
+                    self.styles['SubSection']
+                ))
                 cat_data = [['Category', 'Score']]
                 for cat, score in categories.items():
                     cat_data.append([
@@ -550,14 +673,456 @@ class PDFReportGenerator:
                 cat_table = Table(cat_data, colWidths=[2.5*inch, inch])
                 cat_table.setStyle(self.branding.create_branded_table_style(has_header=True))
                 candidate_elements.append(cat_table)
-                candidate_elements.append(Spacer(1, 0.1*inch))
+                candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # SWOT Analysis
+            swot = result.get('swot_analysis', {})
+            if swot:
+                candidate_elements.append(Paragraph(
+                    "<b>📊 Análise SWOT</b>",
+                    self.styles['SubSection']
+                ))
+                
+                # Create SWOT table
+                swot_data = [
+                    ['Forças (Strengths)', 'Fraquezas (Weaknesses)'],
+                    ['Oportunidades (Opportunities)', 'Ameaças (Threats)']
+                ]
+                
+                # Fill strengths
+                strengths = swot.get('strengths', [])
+                strengths_text = '\n'.join([f"• {s}" for s in strengths[:5]])  # Limit to 5 for table
+                if len(strengths) > 5:
+                    strengths_text += f"\n... e mais {len(strengths) - 5}"
+                
+                # Fill weaknesses
+                weaknesses = swot.get('weaknesses', [])
+                weaknesses_text = '\n'.join([f"• {w}" for w in weaknesses[:5]])
+                if len(weaknesses) > 5:
+                    weaknesses_text += f"\n... e mais {len(weaknesses) - 5}"
+                
+                # Fill opportunities
+                opportunities = swot.get('opportunities', [])
+                opp_text = '\n'.join([f"• {o}" for o in opportunities[:5]])
+                if len(opportunities) > 5:
+                    opp_text += f"\n... e mais {len(opportunities) - 5}"
+                
+                # Fill threats
+                threats = swot.get('threats', [])
+                threats_text = '\n'.join([f"• {t}" for t in threats[:5]])
+                if len(threats) > 5:
+                    threats_text += f"\n... e mais {len(threats) - 5}"
+                
+                swot_table = Table([
+                    [
+                        Paragraph(strengths_text, ParagraphStyle(
+                            name='SWOTCell',
+                            parent=self.styles['BodyText'],
+                            fontSize=9,
+                            leftIndent=0
+                        )),
+                        Paragraph(weaknesses_text, ParagraphStyle(
+                            name='SWOTCell',
+                            parent=self.styles['BodyText'],
+                            fontSize=9,
+                            leftIndent=0
+                        ))
+                    ],
+                    [
+                        Paragraph(opp_text, ParagraphStyle(
+                            name='SWOTCell',
+                            parent=self.styles['BodyText'],
+                            fontSize=9,
+                            leftIndent=0
+                        )),
+                        Paragraph(threats_text, ParagraphStyle(
+                            name='SWOTCell',
+                            parent=self.styles['BodyText'],
+                            fontSize=9,
+                            leftIndent=0
+                        ))
+                    ]
+                ], colWidths=[3*inch, 3*inch], rowHeights=[2*inch, 2*inch])
+                
+                swot_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (0, 0), colors.HexColor('#16a34a')),  # Green for strengths
+                    ('TEXTCOLOR', (0, 0), (0, 0), colors.white),
+                    ('BACKGROUND', (1, 0), (1, 0), colors.HexColor('#dc2626')),  # Red for weaknesses
+                    ('TEXTCOLOR', (1, 0), (1, 0), colors.white),
+                    ('BACKGROUND', (0, 1), (0, 1), colors.HexColor('#3b82f6')),  # Blue for opportunities
+                    ('TEXTCOLOR', (0, 1), (0, 1), colors.white),
+                    ('BACKGROUND', (1, 1), (1, 1), colors.HexColor('#f59e0b')),  # Orange for threats
+                    ('TEXTCOLOR', (1, 1), (1, 1), colors.white),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.white),
+                    ('BOX', (0, 0), (-1, -1), 1, colors.white),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ]))
+                
+                candidate_elements.append(swot_table)
+                candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # Technical Skills Detailed
+            tech_skills = result.get('technical_skills_detailed', [])
+            if tech_skills:
+                candidate_elements.append(Paragraph(
+                    "<b>🔧 Avaliação de Competências Técnicas (Hard Skills)</b>",
+                    self.styles['SubSection']
+                ))
+                candidate_elements.append(Paragraph(
+                    "Legenda: 1 = Básico, 2 = Intermediário, 3 = Avançado, 4 = Proficiente, 5 = Especialista",
+                    ParagraphStyle(
+                        name='Legend',
+                        parent=self.styles['BodyText'],
+                        fontSize=9,
+                        textColor=colors.HexColor('#6b7280'),
+                        spaceAfter=6
+                    )
+                ))
+                
+                tech_data = [['Competência', 'Pontuação', 'Justificação']]
+                for skill in tech_skills:
+                    tech_data.append([
+                        skill.get('skill', ''),
+                        f"{skill.get('score', 0)}/5",
+                        skill.get('justification', '')[:200] + ('...' if len(skill.get('justification', '')) > 200 else '')
+                    ])
+                
+                tech_table = Table(tech_data, colWidths=[1.5*inch, 0.8*inch, 3.7*inch])
+                tech_table.setStyle(self.branding.create_branded_table_style(has_header=True))
+                candidate_elements.append(tech_table)
+                
+                # Missing critical technical skills
+                missing_tech = result.get('missing_critical_technical_skills', [])
+                if missing_tech:
+                    candidate_elements.append(Spacer(1, 0.1*inch))
+                    candidate_elements.append(Paragraph(
+                        "<b>⚠️ Competências Técnicas em Falta:</b>",
+                        ParagraphStyle(
+                            name='Warning',
+                            parent=self.styles['BodyText'],
+                            textColor=colors.HexColor('#f59e0b'),
+                            spaceAfter=4
+                        )
+                    ))
+                    for skill in missing_tech:
+                        candidate_elements.append(Paragraph(
+                            f"• {skill}",
+                            ParagraphStyle(
+                                name='MissingSkill',
+                                parent=self.styles['BodyText'],
+                                leftIndent=15,
+                                fontSize=10
+                            )
+                        ))
+                
+                candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # Soft Skills Detailed
+            soft_skills = result.get('soft_skills_detailed', [])
+            if soft_skills:
+                candidate_elements.append(Paragraph(
+                    "<b>🤝 Avaliação de Competências Interpessoais (Soft Skills)</b>",
+                    self.styles['SubSection']
+                ))
+                candidate_elements.append(Paragraph(
+                    "Legenda: 1 = Pouco evidente, 2 = Parcialmente demonstrada, 3 = Adequadamente demonstrada, 4 = Bem demonstrada, 5 = Fortemente demonstrada",
+                    ParagraphStyle(
+                        name='Legend',
+                        parent=self.styles['BodyText'],
+                        fontSize=9,
+                        textColor=colors.HexColor('#6b7280'),
+                        spaceAfter=6
+                    )
+                ))
+                
+                soft_data = [['Competência', 'Pontuação', 'Justificação']]
+                for skill in soft_skills:
+                    soft_data.append([
+                        skill.get('skill', ''),
+                        f"{skill.get('score', 0)}/5",
+                        skill.get('justification', '')[:200] + ('...' if len(skill.get('justification', '')) > 200 else '')
+                    ])
+                
+                soft_table = Table(soft_data, colWidths=[1.5*inch, 0.8*inch, 3.7*inch])
+                soft_table.setStyle(self.branding.create_branded_table_style(has_header=True))
+                candidate_elements.append(soft_table)
+                
+                # Missing important soft skills
+                missing_soft = result.get('missing_important_soft_skills', [])
+                if missing_soft:
+                    candidate_elements.append(Spacer(1, 0.1*inch))
+                    candidate_elements.append(Paragraph(
+                        "<b>⚠️ Competências Interpessoais em Falta:</b>",
+                        ParagraphStyle(
+                            name='Warning',
+                            parent=self.styles['BodyText'],
+                            textColor=colors.HexColor('#f59e0b'),
+                            spaceAfter=4
+                        )
+                    ))
+                    for skill in missing_soft:
+                        candidate_elements.append(Paragraph(
+                            f"• {skill}",
+                            ParagraphStyle(
+                                name='MissingSkill',
+                                parent=self.styles['BodyText'],
+                                leftIndent=15,
+                                fontSize=10
+                            )
+                        ))
+                
+                candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # Professional Experience Analysis
+            exp_analysis = result.get('professional_experience_analysis', {})
+            if exp_analysis:
+                candidate_elements.append(Paragraph(
+                    "<b>💼 Análise de Experiência Profissional</b>",
+                    self.styles['SubSection']
+                ))
+                
+                if exp_analysis.get('relevance_to_position'):
+                    candidate_elements.append(Paragraph(
+                        "<b>Relevância para a Posição:</b>",
+                        self.styles['BodyText']
+                    ))
+                    candidate_elements.append(Paragraph(
+                        exp_analysis['relevance_to_position'],
+                        self.styles['BodyJustified']
+                    ))
+                    candidate_elements.append(Spacer(1, 0.1*inch))
+                
+                if exp_analysis.get('career_progression'):
+                    candidate_elements.append(Paragraph(
+                        "<b>Progressão de Carreira:</b>",
+                        self.styles['BodyText']
+                    ))
+                    candidate_elements.append(Paragraph(
+                        exp_analysis['career_progression'],
+                        self.styles['BodyJustified']
+                    ))
+                    candidate_elements.append(Spacer(1, 0.1*inch))
+                
+                if exp_analysis.get('professional_stability'):
+                    candidate_elements.append(Paragraph(
+                        "<b>Estabilidade Profissional:</b>",
+                        self.styles['BodyText']
+                    ))
+                    candidate_elements.append(Paragraph(
+                        exp_analysis['professional_stability'],
+                        self.styles['BodyJustified']
+                    ))
+                
+                candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # Education and Certifications
+            education = result.get('education_and_certifications', {})
+            if education:
+                candidate_elements.append(Paragraph(
+                    "<b>🎓 Formação Académica e Certificações</b>",
+                    self.styles['SubSection']
+                ))
+                
+                if education.get('relevance'):
+                    candidate_elements.append(Paragraph(
+                        "<b>Relevância e Adequação:</b>",
+                        self.styles['BodyText']
+                    ))
+                    candidate_elements.append(Paragraph(
+                        education['relevance'],
+                        self.styles['BodyJustified']
+                    ))
+                    candidate_elements.append(Spacer(1, 0.1*inch))
+                
+                if education.get('adequacy'):
+                    candidate_elements.append(Paragraph(
+                        "<b>Avaliação:</b>",
+                        self.styles['BodyText']
+                    ))
+                    candidate_elements.append(Paragraph(
+                        education['adequacy'],
+                        self.styles['BodyJustified']
+                    ))
+                    candidate_elements.append(Spacer(1, 0.1*inch))
+                
+                certs = education.get('certifications', [])
+                if certs:
+                    candidate_elements.append(Paragraph(
+                        "<b>Certificações:</b>",
+                        self.styles['BodyText']
+                    ))
+                    for cert in certs:
+                        candidate_elements.append(Paragraph(
+                            f"• {cert}",
+                            ParagraphStyle(
+                                name='Cert',
+                                parent=self.styles['BodyText'],
+                                leftIndent=15,
+                                fontSize=10
+                            )
+                        ))
+                
+                candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # Notable Achievements
+            achievements = result.get('notable_achievements', [])
+            if achievements:
+                candidate_elements.append(Paragraph(
+                    "<b>🏆 Realizações e Projetos Notáveis</b>",
+                    self.styles['SubSection']
+                ))
+                for achievement in achievements:
+                    candidate_elements.append(Paragraph(
+                        f"<b>{achievement.get('achievement', '')}</b>",
+                        self.styles['BodyText']
+                    ))
+                    candidate_elements.append(Paragraph(
+                        f"<i>Impacto:</i> {achievement.get('impact', '')}",
+                        ParagraphStyle(
+                            name='AchievementImpact',
+                            parent=self.styles['BodyText'],
+                            leftIndent=15,
+                            fontSize=10,
+                            spaceAfter=8
+                        )
+                    ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # Culture Fit Assessment
+            culture_fit = result.get('culture_fit_assessment', {})
+            if culture_fit:
+                candidate_elements.append(Paragraph(
+                    "<b>🌐 Adequação à Cultura Organizacional</b>",
+                    self.styles['SubSection']
+                ))
+                candidate_elements.append(Paragraph(
+                    "Legenda: 1 = Pouco adequado, 2 = Parcialmente adequado, 3 = Adequado, 4 = Bem adequado, 5 = Altamente adequado",
+                    ParagraphStyle(
+                        name='Legend',
+                        parent=self.styles['BodyText'],
+                        fontSize=9,
+                        textColor=colors.HexColor('#6b7280'),
+                        spaceAfter=6
+                    )
+                ))
+                
+                culture_score = culture_fit.get('score', 0)
+                candidate_elements.append(Paragraph(
+                    f"<b>Pontuação:</b> {culture_score}/5",
+                    ParagraphStyle(
+                        name='CultureScore',
+                        parent=self.styles['BodyText'],
+                        fontSize=14,
+                        textColor=colors.HexColor('#0066FF'),
+                        spaceAfter=8
+                    )
+                ))
+                
+                if culture_fit.get('justification'):
+                    candidate_elements.append(Paragraph(
+                        culture_fit['justification'],
+                        self.styles['BodyJustified']
+                    ))
+                
+                candidate_elements.append(Spacer(1, 0.15*inch))
+            
+            # Score Breakdown
+            score_breakdown = result.get('score_breakdown', {})
+            if score_breakdown:
+                candidate_elements.append(Paragraph(
+                    "<b>📊 Decomposição da Pontuação</b>",
+                    self.styles['SubSection']
+                ))
+                
+                global_score = score_breakdown.get('global_score')
+                if global_score is not None:
+                    candidate_elements.append(Paragraph(
+                        f"<b>Pontuação Global: {global_score}/100</b>",
+                        ParagraphStyle(
+                            name='GlobalScore',
+                            parent=self.styles['BodyText'],
+                            fontSize=16,
+                            textColor=colors.HexColor('#0066FF'),
+                            alignment=TA_CENTER,
+                            spaceAfter=12,
+                            backColor=colors.HexColor('#EFF6FF'),
+                            borderPadding=8
+                        )
+                    ))
+                
+                # Score breakdown table
+                breakdown_data = [['Critério', 'Peso (%)', 'Pontuação']]
+                
+                if score_breakdown.get('technical_skills'):
+                    ts = score_breakdown['technical_skills']
+                    breakdown_data.append([
+                        'Competências Técnicas',
+                        f"{ts.get('weight_percent', 0)}%",
+                        f"{ts.get('score', 0)}/100"
+                    ])
+                
+                if score_breakdown.get('soft_skills'):
+                    ss = score_breakdown['soft_skills']
+                    breakdown_data.append([
+                        'Competências Interpessoais',
+                        f"{ss.get('weight_percent', 0)}%",
+                        f"{ss.get('score', 0)}/100"
+                    ])
+                
+                if score_breakdown.get('professional_experience'):
+                    pe = score_breakdown['professional_experience']
+                    breakdown_data.append([
+                        'Experiência Profissional',
+                        f"{pe.get('weight_percent', 0)}%",
+                        f"{pe.get('score', 0)}/100"
+                    ])
+                
+                if score_breakdown.get('education_certifications'):
+                    ec = score_breakdown['education_certifications']
+                    breakdown_data.append([
+                        'Formação e Certificações',
+                        f"{ec.get('weight_percent', 0)}%",
+                        f"{ec.get('score', 0)}/100"
+                    ])
+                
+                if score_breakdown.get('culture_fit'):
+                    cf = score_breakdown['culture_fit']
+                    breakdown_data.append([
+                        'Adequação Cultural',
+                        f"{cf.get('weight_percent', 0)}%",
+                        f"{cf.get('score', 0)}/100"
+                    ])
+                
+                if len(breakdown_data) > 1:  # Has data beyond header
+                    breakdown_table = Table(breakdown_data, colWidths=[2.5*inch, 1*inch, 1*inch])
+                    breakdown_table.setStyle(self.branding.create_branded_table_style(has_header=True))
+                    candidate_elements.append(breakdown_table)
+                
+                # Global score justification
+                if score_breakdown.get('global_score_justification'):
+                    candidate_elements.append(Spacer(1, 0.1*inch))
+                    candidate_elements.append(Paragraph(
+                        "<b>Justificação da Pontuação Global:</b>",
+                        self.styles['BodyText']
+                    ))
+                    candidate_elements.append(Paragraph(
+                        score_breakdown['global_score_justification'],
+                        self.styles['BodyJustified']
+                    ))
+                
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
             # Strengths
             strengths = result.get('strengths', [])
             if strengths:
                 candidate_elements.append(Paragraph(
                     "<b>✓ Strengths:</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 for strength in strengths:
                     candidate_elements.append(Paragraph(
@@ -565,16 +1130,18 @@ class PDFReportGenerator:
                         ParagraphStyle(
                             name='Strength',
                             parent=self.styles['BodyText'],
-                            leftIndent=15
+                            leftIndent=15,
+                            fontSize=10
                         )
                     ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
             # Risks
             risks = result.get('risks', [])
             if risks:
                 candidate_elements.append(Paragraph(
                     "<b>⚠️ Risks & Gaps:</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 for risk in risks:
                     candidate_elements.append(Paragraph(
@@ -583,16 +1150,18 @@ class PDFReportGenerator:
                             name='Risk',
                             parent=self.styles['BodyText'],
                             leftIndent=15,
-                            textColor=colors.HexColor('#d97706')
+                            textColor=colors.HexColor('#d97706'),
+                            fontSize=10
                         )
                     ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
             # Hard blocker violations (if any)
             blocker_flags = result.get('hard_blocker_flags', [])
             if blocker_flags:
                 candidate_elements.append(Paragraph(
                     "<b>🔴 Hard Blocker Violations:</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 for blocker in blocker_flags:
                     candidate_elements.append(Paragraph(
@@ -602,16 +1171,18 @@ class PDFReportGenerator:
                             parent=self.styles['BodyText'],
                             leftIndent=15,
                             textColor=colors.HexColor('#dc2626'),
-                            fontName='Helvetica-Bold'
+                            fontName='Helvetica-Bold',
+                            fontSize=10
                         )
                     ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
-            # Interview questions (ALL questions, not just top 3)
+            # Interview questions (ALL questions)
             questions = result.get('questions', [])
             if questions:
                 candidate_elements.append(Paragraph(
                     f"<b>❓ Suggested Interview Questions ({len(questions)} total):</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 for i, q in enumerate(questions, 1):
                     candidate_elements.append(Paragraph(
@@ -624,14 +1195,14 @@ class PDFReportGenerator:
                             spaceAfter=4
                         )
                     ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
             # Intro Pitch
             intro_pitch = result.get('intro_pitch', '')
             if intro_pitch:
-                candidate_elements.append(Spacer(1, 0.15*inch))
                 candidate_elements.append(Paragraph(
                     "<b>🎤 Intro Pitch:</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 candidate_elements.append(Paragraph(
                     intro_pitch,
@@ -644,14 +1215,14 @@ class PDFReportGenerator:
                         textColor=colors.HexColor('#3b82f6')
                     )
                 ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
             # Gap Strategies
             gap_strategies = self._normalize_list_field(result.get('gap_strategies', []))
             if gap_strategies:
-                candidate_elements.append(Spacer(1, 0.15*inch))
                 candidate_elements.append(Paragraph(
                     "<b>💡 Strategies to Address Gaps & Risks:</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 for strategy in gap_strategies:
                     candidate_elements.append(Paragraph(
@@ -664,14 +1235,14 @@ class PDFReportGenerator:
                             spaceAfter=4
                         )
                     ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
             # Preparation Tips
             preparation_tips = self._normalize_list_field(result.get('preparation_tips', []))
             if preparation_tips:
-                candidate_elements.append(Spacer(1, 0.15*inch))
                 candidate_elements.append(Paragraph(
                     "<b>📚 Study Topics for Interview:</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 for tip in preparation_tips:
                     candidate_elements.append(Paragraph(
@@ -684,14 +1255,14 @@ class PDFReportGenerator:
                             spaceAfter=4
                         )
                     ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
             # AI Recommendation
             recommendation = result.get('recommendation', '')
             if recommendation:
-                candidate_elements.append(Spacer(1, 0.15*inch))
                 candidate_elements.append(Paragraph(
                     "<b>💡 AI Recommendation:</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 candidate_elements.append(Paragraph(
                     recommendation,
@@ -704,14 +1275,14 @@ class PDFReportGenerator:
                         textColor=colors.HexColor('#059669')
                     )
                 ))
+                candidate_elements.append(Spacer(1, 0.15*inch))
             
             # Enrichment Data
             enrichment = result.get('enrichment', {})
             if enrichment and (enrichment.get('company') or enrichment.get('candidate')):
-                candidate_elements.append(Spacer(1, 0.15*inch))
                 candidate_elements.append(Paragraph(
                     "<b>🔍 Enrichment Data (Brave Search):</b>",
-                    self.styles['BodyText']
+                    self.styles['SubSection']
                 ))
                 
                 # Company enrichment
@@ -775,23 +1346,10 @@ class PDFReportGenerator:
                         candidate_elements.append(Paragraph(
                             f"• Portfolio: {cand['portfolio_url']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
-                    ))
+                        ))
             
-            # Wrap in KeepTogether to avoid page breaks in middle of candidate
-            elements.append(KeepTogether(candidate_elements))
-            
-            # Add separator unless last candidate
-            if idx < len(results):
-                elements.append(Spacer(1, 0.3*inch))
-                elements.append(Paragraph(
-                    "─" * 80,
-                    ParagraphStyle(
-                        name='Separator',
-                        parent=self.styles['Normal'],
-                        textColor=colors.HexColor('#e5e7eb')
-                    )
-                ))
-                elements.append(Spacer(1, 0.2*inch))
+            # Add all candidate elements
+            elements.extend(candidate_elements)
         
         return elements
     

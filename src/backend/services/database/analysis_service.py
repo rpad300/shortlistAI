@@ -35,7 +35,8 @@ class AnalysisService:
         questions: Optional[List[str]] = None,
         intro_pitch: Optional[str] = None,
         hard_blocker_flags: Optional[List[str]] = None,
-        report_id: Optional[UUID] = None
+        report_id: Optional[UUID] = None,
+        detailed_analysis: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Create a new analysis record.
@@ -76,7 +77,8 @@ class AnalysisService:
                 "intro_pitch": intro_pitch,
                 "hard_blocker_flags": {"flags": hard_blocker_flags} if hard_blocker_flags else None,
                 "language": language,
-                "report_id": str(report_id) if report_id else None
+                "report_id": str(report_id) if report_id else None,
+                "detailed_analysis": detailed_analysis
             }
             
             result = self.client.table(self.table)\
