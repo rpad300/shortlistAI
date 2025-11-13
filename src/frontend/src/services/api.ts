@@ -84,9 +84,11 @@ export const interviewerAPI = {
       timeout: 30000 // 30s to start upload (actual processing is async)
     });
   },
-  step5Progress: (sessionId: string) => api.get(`/interviewer/step5/progress/${sessionId}`, {
-    timeout: 8000, // Polling endpoint - allow slightly more time for network delays
-  }),
+  step5Progress: (sessionId: string) => {
+    return api.get(`/interviewer/step5/progress/${sessionId}`, {
+      timeout: 8000, // Polling endpoint - allow slightly more time for network delays
+    });
+  },
   step6: (sessionId: string) => api.post(`/interviewer/step6?session_id=${sessionId}`, null, {
     timeout: 30000, // Quick response - analysis runs in background
   }),
