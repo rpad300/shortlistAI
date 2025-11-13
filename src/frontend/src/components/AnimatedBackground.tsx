@@ -116,7 +116,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
     const updateParticles = () => {
       if (!containerRef.current) return;
 
-      particles.forEach((particle, index) => {
+      particles.forEach((particle) => {
         const particleEl = containerRef.current?.querySelector(
           `[data-particle-id="${particle.id}"]`
         ) as HTMLElement;

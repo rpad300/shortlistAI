@@ -122,7 +122,7 @@ const InterviewerStep5: React.FC = () => {
             // Show detailed summary
             const summary = progressData.summary || {};
             const processed = progressData.cv_count || summary.processed || current;
-            const total = summary.total_files || totalFiles || total;
+            const total: number = summary.total_files || totalFiles;
             const failed = summary.failed || (progressData.errors?.length || 0);
             
             if (failed > 0) {
@@ -213,10 +213,8 @@ const InterviewerStep5: React.FC = () => {
         {isProcessing ? (
           <AILoadingOverlay 
             isVisible={isProcessing}
-            message={processingStatus}
-            progress={processingProgress}
-            currentItem={currentFile}
-            totalItems={totalFiles}
+            message={`${processingStatus} (${currentFile}/${totalFiles})`}
+            estimatedSeconds={totalFiles * 15}
           />
         ) : (
           <AILoadingOverlay 
