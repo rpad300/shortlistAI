@@ -32,6 +32,7 @@ export const Pricing: React.FC = () => {
         description="ShortlistAI is completely free forever. No credit card, no signup, no hidden costs. Full access to AI-powered CV analysis, batch upload, PDF reports, and all features."
         keywords="free CV analysis, free recruiting tool, free interview preparation, no cost CV screening, free AI hiring tool"
         canonicalUrl="https://shortlistai.com/pricing"
+        pageType="pricing"
         structuredData={getFAQSchema(faqData)}
       />
       {/* Header */}

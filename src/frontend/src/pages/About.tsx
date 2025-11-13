@@ -21,6 +21,7 @@ export const About: React.FC = () => {
         description="Learn how ShortlistAI uses advanced AI to analyze CVs and help both interviewers and candidates. 100% free, multilingual, GDPR compliant platform powered by Gemini, OpenAI, and Claude."
         keywords="about ShortlistAI, how it works, AI CV analysis, hiring technology, interview preparation platform"
         canonicalUrl="https://shortlistai.com/about"
+        pageType="about"
       />
       {/* Header */}
       <section className="about-header">

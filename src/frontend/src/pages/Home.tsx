@@ -36,8 +36,8 @@ export const Home: React.FC = () => {
         title="ShortlistAI - AI-Powered CV Analysis Platform"
         description="Free AI-powered CV analysis for interviewers and candidates. Compare CVs, prepare for interviews, and build your headhunting database. Multilingual support: EN, PT, FR, ES."
         keywords="CV analysis, AI recruitment, interview preparation, headhunting, candidate screening, CV comparison, job matching, free recruiting tool"
-        ogImage="https://shortlistai.com/assets/social/og-default.png"
         canonicalUrl="https://shortlistai.com/"
+        pageType="home"
         structuredData={structuredData}
       />
         

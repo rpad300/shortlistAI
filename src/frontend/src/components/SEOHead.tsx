@@ -7,28 +7,104 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 
 interface SEOHeadProps {
   title: string;
   description: string;
   keywords?: string;
   ogImage?: string;
+  ogVideo?: {
+    url: string;
+    secureUrl?: string;
+    type?: string;
+    width?: number;
+    height?: number;
+    alt?: string;
+  };
   ogType?: string;
   canonicalUrl?: string;
   structuredData?: object;
   noindex?: boolean;
+  pageType?: 'home' | 'about' | 'pricing' | 'features' | 'default';
+  platformSpecific?: {
+    facebook?: string;
+    linkedin?: string;
+    twitter?: string;
+  };
+}
+
+/**
+ * Get dynamic OG image URL based on page type and language.
+ */
+function getDynamicOGImage(pageType: string | undefined, lang: string): string {
+  const baseUrl = 'https://shortlistai.com/assets/social';
+  const supportedLanguages = ['en', 'pt', 'fr', 'es'];
+  const languageSuffix = supportedLanguages.includes(lang) ? `-${lang}` : '';
+  
+  // Map page types to image names
+  const pageImageMap: Record<string, string> = {
+    'home': 'og',
+    'about': 'og-about',
+    'pricing': 'og-pricing',
+    'features': 'og-features',
+    'default': 'og'
+  };
+  
+  const imageBase = pageImageMap[pageType || 'default'] || 'og';
+  return `${baseUrl}/${imageBase}${languageSuffix}.png`;
+}
+
+/**
+ * Get platform-specific OG image URL.
+ */
+function getPlatformImage(
+  platform: 'facebook' | 'linkedin' | 'twitter' | 'default',
+  baseImage: string,
+  platformSpecific?: { facebook?: string; linkedin?: string; twitter?: string }
+): string {
+  // Use platform-specific image if provided
+  if (platformSpecific) {
+    if (platform === 'facebook' && platformSpecific.facebook) {
+      return platformSpecific.facebook;
+    }
+    if (platform === 'linkedin' && platformSpecific.linkedin) {
+      return platformSpecific.linkedin;
+    }
+    if (platform === 'twitter' && platformSpecific.twitter) {
+      return platformSpecific.twitter;
+    }
+  }
+  
+  // Return base image for all platforms (they can use the same image)
+  return baseImage;
 }
 
 export const SEOHead: React.FC<SEOHeadProps> = ({
   title,
   description,
   keywords,
-  ogImage = 'https://shortlistai.com/assets/social/og-default.png',
+  ogImage,
+  ogVideo,
   ogType = 'website',
   canonicalUrl,
   structuredData,
-  noindex = false
+  noindex = false,
+  pageType = 'default',
+  platformSpecific
 }) => {
+  // Get current language from i18n
+  const { i18n } = useTranslation();
+  const currentLang = i18n.language.split('-')[0] || 'en'; // Extract base language (en-US -> en)
+  
+  // Get OG image: use provided ogImage, or dynamic page-based image, or language-based image
+  const ogImageUrl = ogImage || getDynamicOGImage(pageType, currentLang);
+  
+  // Get platform-specific images
+  const facebookImage = getPlatformImage('facebook', ogImageUrl, platformSpecific);
+  const linkedinImage = getPlatformImage('linkedin', ogImageUrl, platformSpecific);
+  const twitterImage = getPlatformImage('twitter', ogImageUrl, platformSpecific);
+  
   const fullTitle = title.includes('ShortlistAI') ? title : `${title} | ShortlistAI`;
   const currentUrl = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : 'https://shortlistai.com');
 
@@ -69,37 +145,94 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
       <link rel="alternate" hrefLang="es" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=es`} />
       <link rel="alternate" hrefLang="x-default" href={currentUrl} />
 
-      {/* Open Graph / Facebook */}
+      {/* Open Graph / Facebook / LinkedIn / WhatsApp / Telegram */}
       <meta property="og:type" content={ogType} />
       <meta property="og:url" content={currentUrl} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={ogImage} />
-      <meta property="og:image:secure_url" content={ogImage} />
+      
+      {/* OG Image - Facebook optimized (1200x630) */}
+      <meta property="og:image" content={facebookImage} />
+      <meta property="og:image:secure_url" content={facebookImage} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:image:alt" content={fullTitle} />
       <meta property="og:image:type" content="image/png" />
+      
+      {/* OG Video - TikTok/Instagram support */}
+      {ogVideo && (
+        <>
+          <meta property="og:video" content={ogVideo.url} />
+          <meta property="og:video:secure_url" content={ogVideo.secureUrl || ogVideo.url} />
+          <meta property="og:video:type" content={ogVideo.type || 'video/mp4'} />
+          {ogVideo.width && <meta property="og:video:width" content={ogVideo.width.toString()} />}
+          {ogVideo.height && <meta property="og:video:height" content={ogVideo.height.toString()} />}
+          {ogVideo.alt && <meta property="og:video:alt" content={ogVideo.alt} />}
+        </>
+      )}
+      
       <meta property="og:site_name" content="ShortlistAI" />
-      <meta property="og:locale" content="en_US" />
+      <meta property="og:locale" content={currentLang === 'en' ? 'en_US' : currentLang === 'pt' ? 'pt_PT' : currentLang === 'fr' ? 'fr_FR' : currentLang === 'es' ? 'es_ES' : 'en_US'} />
+      <meta property="og:locale:alternate" content="en_US" />
       <meta property="og:locale:alternate" content="pt_PT" />
       <meta property="og:locale:alternate" content="fr_FR" />
       <meta property="og:locale:alternate" content="es_ES" />
       <meta property="og:updated_time" content={new Date().toISOString()} />
+      
+      {/* Platform-specific images */}
+      {linkedinImage !== facebookImage && (
+        <>
+          {/* LinkedIn optimized (1200x627) - uses same image but could be different */}
+          <meta property="og:image:linkedin" content={linkedinImage} />
+        </>
+      )}
 
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" />
+      {/* Twitter / X - optimized (1200x600) */}
+      <meta name="twitter:card" content={ogVideo ? "player" : "summary_large_image"} />
       <meta name="twitter:url" content={currentUrl} />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image" content={twitterImage} />
       <meta name="twitter:image:alt" content={fullTitle} />
       <meta name="twitter:site" content="@ShortlistAI" />
       <meta name="twitter:creator" content="@ShortlistAI" />
+      {ogVideo && (
+        <>
+          <meta name="twitter:player" content={ogVideo.url} />
+          {ogVideo.width && <meta name="twitter:player:width" content={ogVideo.width.toString()} />}
+          {ogVideo.height && <meta name="twitter:player:height" content={ogVideo.height.toString()} />}
+        </>
+      )}
       <meta name="twitter:label1" content="Price" />
       <meta name="twitter:data1" content="Free Forever" />
       <meta name="twitter:label2" content="Languages" />
       <meta name="twitter:data2" content="EN, PT, FR, ES" />
+
+      {/* WhatsApp / Telegram / TikTok - Use OG tags with absolute URL */}
+      <meta property="og:image:url" content={ogImageUrl} />
+      
+      {/* TikTok specific - uses OG video if available */}
+      {ogVideo && (
+        <meta name="tiktok:video" content={ogVideo.url} />
+      )}
+      
+      {/* Instagram specific - uses OG video and image */}
+      {ogVideo && (
+        <>
+          <meta property="og:video:instagram" content={ogVideo.url} />
+        </>
+      )}
+
+      {/* Additional social platforms */}
+      <meta name="description" content={description} />
+      
+      {/* Article-specific (if applicable) */}
+      {ogType === 'article' && (
+        <>
+          <meta property="article:author" content="ShortlistAI" />
+          <meta property="article:publisher" content="https://shortlistai.com" />
+        </>
+      )}
 
       {/* Structured Data (JSON-LD) */}
       {structuredData && (

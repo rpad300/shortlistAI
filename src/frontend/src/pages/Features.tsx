@@ -22,6 +22,7 @@ export const Features: React.FC = () => {
         description="Discover powerful features: batch CV upload, AI-powered ranking, custom interview questions, PDF reports, multilingual support. Free for interviewers and candidates."
         keywords="CV screening features, AI recruitment tools, interview questions generator, candidate ranking, batch CV upload"
         canonicalUrl="https://shortlistai.com/features"
+        pageType="features"
       />
       {/* Page Header */}
       <section className="page-header">
