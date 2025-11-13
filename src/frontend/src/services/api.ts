@@ -58,6 +58,9 @@ export const interviewerAPI = {
   step2: (data: FormData) => api.post('/interviewer/step2', data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  step3Suggestions: (sessionId: string) => api.get(`/interviewer/step3/suggestions/${sessionId}`, {
+    timeout: 60000,
+  }),
   step3: (data: any) => api.post('/interviewer/step3', data),
   step4Suggestions: (sessionId: string) => api.get(`/interviewer/step4/suggestions/${sessionId}`, {
     timeout: 60000,

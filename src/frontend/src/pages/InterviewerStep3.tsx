@@ -33,8 +33,8 @@ const InterviewerStep3: React.FC = () => {
       }
       
       try {
-        const response = await fetch(`http://localhost:8000/api/interviewer/step3/suggestions/${sessionId}`);
-        const data = await response.json();
+        const response = await interviewerAPI.step3Suggestions(sessionId);
+        const data = response.data;
         
         if (data.has_suggestions && data.suggested_key_points) {
           setKeyPoints(data.suggested_key_points);
