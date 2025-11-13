@@ -144,7 +144,8 @@ const AdminPrompts: React.FC = () => {
         normalizedVariables = prompt.variables ? JSON.parse(prompt.variables) : [];
       } catch (e) {
         // If parsing fails, treat as comma-separated string
-        normalizedVariables = prompt.variables.split(',').map(v => v.trim()).filter(v => v);
+        const varsString = prompt.variables as string;
+        normalizedVariables = varsString.split(',').map((v: string) => v.trim()).filter((v: string) => v.length > 0);
       }
     }
     
@@ -273,7 +274,7 @@ const AdminPrompts: React.FC = () => {
 
   const handleVariablesChange = (value: string) => {
     // Split by comma and trim
-    const vars = value.split(',').map(v => v.trim()).filter(v => v);
+    const vars = value.split(',').map((v: string) => v.trim()).filter((v: string) => v.length > 0);
     setFormData({ ...formData, variables: vars });
   };
 
