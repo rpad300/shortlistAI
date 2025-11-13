@@ -81,7 +81,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       
       // Get user info
-      const userResponse = await api.get('/api/admin/me');
+      const userResponse = await api.get('/admin/me');
       setUser(userResponse.data);
       
       return true;

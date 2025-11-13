@@ -192,7 +192,7 @@ const AdminPrompts: React.FC = () => {
       fetchStats();
       
       // Refresh the selected prompt
-      const response = await api.get(`/api/admin/prompts/${selectedPrompt.id}`);
+      const response = await api.get(`/admin/prompts/${selectedPrompt.id}`);
       handleSelectPrompt(response.data);
     } catch (err: any) {
       console.error('Error updating prompt:', err);
