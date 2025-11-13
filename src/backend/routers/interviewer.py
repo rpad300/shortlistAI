@@ -1276,7 +1276,36 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
 
                 if not cv_markdown or not job_posting_markdown:
                     logger.error(f"Missing CV or job posting text for analysis. CV ID: {cv_id}")
-                    errors.append(f"CV {idx}: Missing text content")
+                    error_msg = f"CV {idx}: Missing text content"
+                    errors.append(error_msg)
+                    # Still add to results so it appears in step7
+                    summary = candidate_info.get("summary") or {}
+                    candidate_label = (
+                        summary.get("full_name")
+                        or summary.get("current_role")
+                        or candidate_info.get("filename")
+                        or f"Candidate {idx}"
+                    )
+                    session_results.append({
+                        "analysis_id": None,
+                        "candidate_id": str(cv.get("candidate_id")) if cv and cv.get("candidate_id") else str(cv_id),
+                        "candidate_label": candidate_label,
+                        "file_name": candidate_info.get("filename"),
+                        "summary": summary,
+                        "global_score": 0,
+                        "categories": {},
+                        "strengths": [],
+                        "risks": [error_msg],
+                        "questions": [],
+                        "hard_blocker_flags": [],
+                        "recommendation": "Missing CV or job posting text",
+                        "intro_pitch": "",
+                        "gap_strategies": [],
+                        "preparation_tips": [],
+                        "provider": None,
+                        "enrichment": None,
+                        "error": error_msg
+                    })
                     continue
 
                 # Run AI analysis
@@ -1297,7 +1326,36 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 )
 
                 if not ai_result or not ai_result.get("data"):
-                    errors.append(f"CV {idx}: AI failed to analyze")
+                    error_msg = f"CV {idx}: AI failed to analyze"
+                    errors.append(error_msg)
+                    # Still add to results so it appears in step7
+                    summary = candidate_info.get("summary") or {}
+                    candidate_label = (
+                        summary.get("full_name")
+                        or summary.get("current_role")
+                        or candidate_info.get("filename")
+                        or f"Candidate {idx}"
+                    )
+                    session_results.append({
+                        "analysis_id": None,
+                        "candidate_id": str(cv.get("candidate_id")) if cv and cv.get("candidate_id") else str(cv_id),
+                        "candidate_label": candidate_label,
+                        "file_name": candidate_info.get("filename"),
+                        "summary": summary,
+                        "global_score": 0,
+                        "categories": {},
+                        "strengths": [],
+                        "risks": [error_msg],
+                        "questions": [],
+                        "hard_blocker_flags": [],
+                        "recommendation": "AI analysis failed",
+                        "intro_pitch": "",
+                        "gap_strategies": [],
+                        "preparation_tips": [],
+                        "provider": None,
+                        "enrichment": None,
+                        "error": error_msg
+                    })
                     continue
 
                 data = ai_result.get("data", {})
