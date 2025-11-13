@@ -63,11 +63,11 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
       <link rel="canonical" href={currentUrl} />
       
       {/* Alternate Language Links */}
-      <link rel="alternate" hreflang="en" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=en`} />
-      <link rel="alternate" hreflang="pt" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=pt`} />
-      <link rel="alternate" hreflang="fr" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=fr`} />
-      <link rel="alternate" hreflang="es" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=es`} />
-      <link rel="alternate" hreflang="x-default" href={currentUrl} />
+      <link rel="alternate" hrefLang="en" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=en`} />
+      <link rel="alternate" hrefLang="pt" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=pt`} />
+      <link rel="alternate" hrefLang="fr" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=fr`} />
+      <link rel="alternate" hrefLang="es" href={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}lang=es`} />
+      <link rel="alternate" hrefLang="x-default" href={currentUrl} />
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={ogType} />

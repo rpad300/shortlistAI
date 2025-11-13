@@ -23,7 +23,6 @@ const InterviewerStep5: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
-  const [processingProgress, setProcessingProgress] = useState(0);
   const [currentFile, setCurrentFile] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   
@@ -71,7 +70,6 @@ const InterviewerStep5: React.FC = () => {
     setIsProcessing(true);
     setUploadProgress(`Starting upload of ${files.length} CV(s)...`);
     setProcessingStatus('Starting upload...');
-    setProcessingProgress(0);
     setTotalFiles(files.length);
     
     try {
@@ -109,15 +107,9 @@ const InterviewerStep5: React.FC = () => {
           setTotalFiles(total);
           setProcessingStatus(currentFilename ? `${statusText}` : statusText);
           
-          // Calculate progress percentage
-          const progressPercent = total > 0 ? Math.min(95, (current / total) * 100) : 20;
-          setProcessingProgress(progressPercent);
-          
           // Check if complete
           if (progressData.complete) {
             clearInterval(pollInterval);
-            
-            setProcessingProgress(100);
             
             // Show detailed summary
             const summary = progressData.summary || {};
@@ -147,7 +139,6 @@ const InterviewerStep5: React.FC = () => {
             clearInterval(pollInterval);
             
             setProcessingStatus(`❌ Upload failed: ${progressInfo.status || 'Unknown error'}`);
-            setProcessingProgress(0);
             setError(progressData.errors?.join(', ') || 'Upload failed');
             setIsProcessing(false);
             setLoading(false);

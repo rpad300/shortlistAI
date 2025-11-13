@@ -152,18 +152,35 @@
       "note": "No credit card required · No signup needed · Start in 2 minutes"
     },
     "valueProp": {
-      "title": "Transform Your Hiring Process",
-      "subtitle": "ShortlistAI uses advanced AI to analyze CVs against job postings, providing instant insights, rankings, and interview questions.",
-      "stat1": "10x Faster CV Screening",
-      "stat2": "100% Free Forever",
-      "stat3": "4 Languages Supported",
-      "stat4": "5 AI Providers"
+      "title": "Transform Your Hiring Journey",
+      "subtitle": "Two perspectives, one powerful platform. Whether you're hiring or seeking, ShortlistAI has the tools you need.",
+      "interviewer": {
+        "title": "For Hiring Teams",
+        "subtitle": "Streamline your recruitment process with AI-powered CV analysis",
+        "description": "Compare and rank multiple candidates in minutes. Get instant insights, custom interview questions, and comprehensive reports.",
+        "stat1": { "value": "10x", "label": "Faster Screening" },
+        "stat2": { "value": "100+", "label": "CVs at Once" },
+        "stat3": { "value": "Instant", "label": "Rankings" },
+        "stat4": { "value": "Custom", "label": "Questions" }
+      },
+      "candidate": {
+        "title": "For Job Seekers",
+        "subtitle": "Prepare for interviews with AI-powered insights and personalized guidance",
+        "description": "Analyze your fit, predict interview questions, perfect your pitch, and boost your confidence.",
+        "stat1": { "value": "Instant", "label": "Fit Score" },
+        "stat2": { "value": "100%", "label": "Free Forever" },
+        "stat3": { "value": "Predict", "label": "Questions" },
+        "stat4": { "value": "Perfect", "label": "Your Pitch" }
+      }
     },
     "features": {
-      "title": "Two Powerful Modes",
+      "title": "Two Powerful Modes for Every Hiring Need",
+      "subtitle": "Whether you're hiring or being hired, we've got the perfect solution for you.",
       "interviewer": {
         "title": "Interviewer Mode",
+        "badge": "For Hiring Teams",
         "description": "Compare and rank multiple candidates against your job posting. Upload 10, 50, or 100+ CVs and get instant AI analysis with scores, strengths, risks, and custom interview questions.",
+        "highlight": "Analyze 100 CVs in Minutes",
         "features": [
           "Batch upload (10, 50, 100+ CVs)",
           "Automatic ranking by fit score",
@@ -176,7 +193,9 @@
       },
       "candidate": {
         "title": "Candidate Mode",
+        "badge": "For Job Seekers",
         "description": "Prepare for your next interview with AI-powered insights. Upload the job posting and your CV to receive personalized preparation tips, likely questions, and your perfect intro pitch.",
+        "highlight": "Prepare Like a Pro",
         "features": [
           "Instant fit score analysis",
           "Identify your strengths and gaps",
@@ -189,28 +208,62 @@
       }
     },
     "howItWorks": {
-      "title": "How It Works",
-      "subtitle": "Simple, fast, and powered by advanced AI",
-      "step1": { "title": "Upload", "description": "Upload your job posting and CV(s). Support for PDF, DOCX, and text formats." },
-      "step2": { "title": "Analyze", "description": "Our AI analyzes content, extracts key information, and matches candidates to requirements." },
-      "step3": { "title": "Review", "description": "Get detailed scores, rankings, strengths, risks, and custom interview questions." },
-      "step4": { "title": "Export", "description": "Download PDF reports or receive email summaries with all analysis details." }
+      "title": "Get Started in 4 Simple Steps",
+      "subtitle": "From upload to insights in minutes. Our AI does the heavy lifting, you make the decisions.",
+      "step1": { 
+        "title": "Upload Your Documents", 
+        "description": "Upload your job posting and CV(s) - or just your CV if you're preparing. We support PDF, DOCX, and text formats. No account needed.",
+        "time": "30 seconds"
+      },
+      "step2": { 
+        "title": "AI Analysis Begins", 
+        "description": "Our advanced AI extracts key information, analyzes skills, experience, and matches candidates to job requirements using 5 different AI models.",
+        "time": "2-5 minutes"
+      },
+      "step3": { 
+        "title": "Review Your Results", 
+        "description": "Get detailed fit scores, rankings, strengths, risks, and personalized interview questions tailored to each candidate or position.",
+        "time": "Instant"
+      },
+      "step4": { 
+        "title": "Export & Share", 
+        "description": "Download comprehensive PDF reports or send email summaries to your team. All insights, ready to use.",
+        "time": "1 minute"
+      }
     },
     "benefits": {
       "title": "Why Choose ShortlistAI?",
-      "free": { "title": "100% Free", "description": "No hidden costs, no credit card required. Full access to all features, forever." },
-      "fast": { "title": "Lightning Fast", "description": "Analyze 100 CVs in minutes. Get instant results with advanced AI processing." },
-      "multilingual": { "title": "Multilingual", "description": "Full support for English, Portuguese, French, and Spanish interfaces." },
-      "ai": { "title": "5 AI Models", "description": "Powered by Gemini, OpenAI, Claude, Kimi, and Minimax for maximum accuracy." },
-      "secure": { "title": "Private & Secure", "description": "Your data is protected. GDPR compliant with enterprise-grade security." },
-      "everywhere": { "title": "Works Everywhere", "description": "PWA-ready. Install on mobile, tablet, desktop, or use in your browser." }
+      "subtitle": "Built for modern hiring. Free, fast, and powered by the best AI technology available.",
+      "free": { "title": "100% Free Forever", "description": "No hidden costs, no credit card required, no limits. Full access to all features, forever. No catch, no tricks." },
+      "fast": { "title": "Lightning Fast Analysis", "description": "Analyze 100 CVs in under 5 minutes. Get instant rankings, scores, and insights. No waiting, no delays." },
+      "multilingual": { "title": "True Multilingual Support", "description": "Full support for English, Portuguese, French, and Spanish. Interface and AI analysis in all 4 languages." },
+      "ai": { "title": "5 Premium AI Models", "description": "Powered by Gemini 2.5 Pro, OpenAI GPT-4, Claude 3.5, Kimi, and Minimax. Best accuracy in the industry." },
+      "secure": { "title": "Enterprise-Grade Security", "description": "Your data is protected with GDPR compliance, encryption at rest, and enterprise-grade security practices." },
+      "everywhere": { "title": "Works on Any Device", "description": "PWA-ready. Install on mobile, tablet, desktop, or use in your browser. Works offline, syncs everywhere." }
     },
     "useCases": {
-      "title": "Perfect For",
-      "recruiters": { "title": "👔 Recruiters & HR Teams", "description": "Screen hundreds of candidates quickly. Focus on the best matches. Save hours of manual CV review." },
-      "managers": { "title": "💼 Hiring Managers", "description": "Make data-driven hiring decisions. Compare candidates objectively. Get custom interview questions." },
-      "seekers": { "title": "🎯 Job Seekers", "description": "Prepare thoroughly for interviews. Understand your strengths and gaps. Perfect your pitch." },
-      "startups": { "title": "🏢 Startups & SMBs", "description": "Professional hiring tools without the enterprise price tag. Free, powerful, and easy to use." }
+      "title": "Perfect For Every Hiring Need",
+      "subtitle": "Whether you're a recruiter, hiring manager, job seeker, or growing startup, ShortlistAI has the tools you need.",
+      "recruiters": { 
+        "title": "Recruiters & HR Teams", 
+        "description": "Screen hundreds of candidates in minutes, not hours. Automate CV filtering, get instant rankings, and focus on what matters - finding the perfect match.",
+        "benefit": "Save 10+ hours per week"
+      },
+      "managers": { 
+        "title": "Hiring Managers", 
+        "description": "Make data-driven hiring decisions with confidence. Compare candidates objectively using AI-powered fit scores and get personalized interview questions.",
+        "benefit": "Hire faster, hire better"
+      },
+      "seekers": { 
+        "title": "Job Seekers", 
+        "description": "Prepare thoroughly for every interview. Analyze your fit score, predict likely questions, perfect your pitch, and increase your chances of landing the job.",
+        "benefit": "Increase interview success rate"
+      },
+      "startups": { 
+        "title": "Startups & SMBs", 
+        "description": "Get enterprise-grade hiring tools without the enterprise price tag. Free forever, powerful, and easy to use. Perfect for teams with limited budgets.",
+        "benefit": "Enterprise tools, zero cost"
+      }
     },
     "cta": {
       "title": "Ready to Transform Your Hiring?",

@@ -152,49 +152,118 @@
       "note": "Sin tarjeta de crédito · Sin registro · Comienza en 2 minutos"
     },
     "valueProp": {
-      "title": "Transforme Su Proceso de Contratación",
-      "subtitle": "ShortlistAI usa IA avanzada para analizar CVs contra ofertas de trabajo, proporcionando insights instantáneos, clasificaciones y preguntas de entrevista.",
-      "stat1": "10x Más Rápido",
-      "stat2": "100% Gratis Para Siempre",
-      "stat3": "4 Idiomas Soportados",
-      "stat4": "5 Proveedores de IA"
+      "title": "Transforma Tu Jornada de Contratación",
+      "subtitle": "Dos perspectivas, una plataforma poderosa. Ya sea que estés contratando o siendo contratado, ShortlistAI tiene las herramientas que necesitas.",
+      "interviewer": {
+        "title": "Para Equipos de RH",
+        "subtitle": "Simplifica tu proceso de contratación con análisis de CVs por IA",
+        "description": "Compara y clasifica múltiples candidatos en minutos. Obtén insights instantáneos, preguntas personalizadas e informes completos.",
+        "stat1": { "value": "10x", "label": "Más Rápido" },
+        "stat2": { "value": "100+", "label": "CVs de Una Vez" },
+        "stat3": { "value": "Instantáneo", "label": "Clasificaciones" },
+        "stat4": { "value": "Personalizado", "label": "Preguntas" }
+      },
+      "candidate": {
+        "title": "Para Candidatos",
+        "subtitle": "Prepárate para entrevistas con insights por IA y orientación personalizada",
+        "description": "Analiza tu compatibilidad, predice preguntas, perfecciona tu pitch y aumenta tu confianza.",
+        "stat1": { "value": "Instantáneo", "label": "Puntuación Fit" },
+        "stat2": { "value": "100%", "label": "Gratis Para Siempre" },
+        "stat3": { "value": "Predice", "label": "Preguntas" },
+        "stat4": { "value": "Perfecciona", "label": "Tu Pitch" }
+      }
     },
     "features": {
-      "title": "Dos Modos Potentes",
+      "title": "Dos Modos Potentes para Cada Necesidad de Contratación",
+      "subtitle": "Ya sea que estés contratando o siendo contratado, tenemos la solución perfecta para ti.",
       "interviewer": {
         "title": "Modo Entrevistador",
+        "badge": "Para Equipos de RH",
         "description": "Compare y clasifique múltiples candidatos contra su oferta de trabajo. Cargue 10, 50 o 100+ CVs y obtenga análisis instantáneo de IA con puntuaciones, fortalezas, riesgos y preguntas personalizadas.",
+        "highlight": "Analiza 100 CVs en Minutos",
+        "features": [
+          "Carga por lotes (10, 50, 100+ CVs)",
+          "Clasificación automática por puntuación de compatibilidad",
+          "Peso personalizado y bloqueadores",
+          "Preguntas por candidato",
+          "Descargar informes PDF completos",
+          "Enviar resumen por email a tu equipo"
+        ],
         "cta": "Comenzar a Analizar CVs →"
       },
       "candidate": {
         "title": "Modo Candidato",
+        "badge": "Para Candidatos",
         "description": "Prepárese para su próxima entrevista con insights de IA. Cargue la oferta de trabajo y su CV para recibir consejos personalizados, preguntas probables y su pitch perfecto.",
+        "highlight": "Prepárate Como un Profesional",
+        "features": [
+          "Análisis instantáneo de compatibilidad",
+          "Identifica tus fortalezas y brechas",
+          "Predice preguntas probables de la entrevista",
+          "Obtén respuestas sugeridas y consejos",
+          "Perfecciona tu pitch de introducción",
+          "Recibe guía de preparación por email"
+        ],
         "cta": "Preparar para Entrevista →"
       }
     },
     "howItWorks": {
-      "title": "Cómo Funciona",
-      "subtitle": "Simple, rápido e impulsado por IA avanzada",
-      "step1": { "title": "Cargar", "description": "Cargue su oferta de trabajo y CV(s). Soporte para PDF, DOCX y texto." },
-      "step2": { "title": "Analizar", "description": "Nuestra IA analiza el contenido, extrae información clave y empareja candidatos con requisitos." },
-      "step3": { "title": "Revisar", "description": "Obtenga puntuaciones detalladas, clasificaciones, fortalezas, riesgos y preguntas de entrevista personalizadas." },
-      "step4": { "title": "Exportar", "description": "Descargue informes PDF o reciba resúmenes por email con todos los detalles del análisis." }
+      "title": "Comienza en 4 Pasos Simples",
+      "subtitle": "De la carga a los insights en minutos. Nuestra IA hace el trabajo pesado, tú tomas las decisiones.",
+      "step1": { 
+        "title": "Sube Tus Documentos", 
+        "description": "Sube tu oferta de trabajo y CV(s) - o solo tu CV si te estás preparando. Soportamos PDF, DOCX y texto. Sin necesidad de cuenta.",
+        "time": "30 segundos"
+      },
+      "step2": { 
+        "title": "Comienza el Análisis IA", 
+        "description": "Nuestra IA avanzada extrae información clave, analiza habilidades, experiencia y empareja candidatos con requisitos usando 5 modelos de IA diferentes.",
+        "time": "2-5 minutos"
+      },
+      "step3": { 
+        "title": "Revisa Tus Resultados", 
+        "description": "Obtén puntuaciones de compatibilidad detalladas, clasificaciones, fortalezas, riesgos y preguntas de entrevista personalizadas para cada candidato o posición.",
+        "time": "Instantáneo"
+      },
+      "step4": { 
+        "title": "Exporta y Comparte", 
+        "description": "Descarga informes PDF completos o envía resúmenes por email a tu equipo. Todos los insights, listos para usar.",
+        "time": "1 minuto"
+      }
     },
     "benefits": {
       "title": "¿Por Qué Elegir ShortlistAI?",
-      "free": { "title": "100% Gratis", "description": "Sin costos ocultos, sin tarjeta de crédito. Acceso completo a todas las funciones, para siempre." },
-      "fast": { "title": "Ultra Rápido", "description": "Analice 100 CVs en minutos. Obtenga resultados instantáneos con procesamiento de IA avanzado." },
-      "multilingual": { "title": "Multilingüe", "description": "Soporte completo para interfaces en inglés, portugués, francés y español." },
-      "ai": { "title": "5 Modelos de IA", "description": "Impulsado por Gemini, OpenAI, Claude, Kimi y Minimax para máxima precisión." },
-      "secure": { "title": "Privado y Seguro", "description": "Sus datos están protegidos. Cumplimiento GDPR con seguridad empresarial." },
-      "everywhere": { "title": "Funciona En Todas Partes", "description": "PWA listo. Instale en móvil, tableta, escritorio o use en su navegador." }
+      "subtitle": "Construido para contratación moderna. Gratis, rápido e impulsado por la mejor tecnología IA disponible.",
+      "free": { "title": "100% Gratis Para Siempre", "description": "Sin costos ocultos, sin tarjeta de crédito, sin límites. Acceso completo a todas las funciones, para siempre. Sin trucos, sin trampas." },
+      "fast": { "title": "Análisis Ultra Rápido", "description": "Analiza 100 CVs en menos de 5 minutos. Obtén clasificaciones instantáneas, puntuaciones e insights. Sin esperas, sin demoras." },
+      "multilingual": { "title": "Soporte Multilingüe Real", "description": "Soporte completo para Inglés, Portugués, Francés y Español. Interfaz y análisis IA en los 4 idiomas." },
+      "ai": { "title": "5 Modelos Premium de IA", "description": "Impulsado por Gemini 2.5 Pro, OpenAI GPT-4, Claude 3.5, Kimi y Minimax. Mejor precisión de la industria." },
+      "secure": { "title": "Seguridad de Nivel Empresarial", "description": "Tus datos están protegidos con cumplimiento GDPR, cifrado en reposo y prácticas de seguridad de nivel empresarial." },
+      "everywhere": { "title": "Funciona en Cualquier Dispositivo", "description": "PWA listo. Instala en móvil, tableta, escritorio o usa en tu navegador. Funciona sin conexión, se sincroniza en todas partes." }
     },
     "useCases": {
-      "title": "Perfecto Para",
-      "recruiters": { "title": "👔 Reclutadores y Equipos de RR.HH.", "description": "Examine cientos de candidatos rápidamente. Enfóquese en los mejores. Ahorre horas de revisión manual." },
-      "managers": { "title": "💼 Gerentes de Contratación", "description": "Tome decisiones basadas en datos. Compare candidatos objetivamente. Obtenga preguntas personalizadas." },
-      "seekers": { "title": "🎯 Buscadores de Empleo", "description": "Prepárese completamente para entrevistas. Comprenda sus fortalezas y brechas. Perfeccione su pitch." },
-      "startups": { "title": "🏢 Startups y PYMEs", "description": "Herramientas de contratación profesionales sin el precio empresarial. Gratis, potente y fácil de usar." }
+      "title": "Perfecto Para Cada Necesidad de Contratación",
+      "subtitle": "Ya sea que seas reclutador, gerente de RH, buscador de empleo o startup en crecimiento, ShortlistAI tiene las herramientas que necesitas.",
+      "recruiters": { 
+        "title": "Reclutadores y Equipos de RR.HH.", 
+        "description": "Examine cientos de candidatos en minutos, no horas. Automatice el filtrado de CVs, obtenga clasificaciones instantáneas y enfóquese en lo que importa - encontrar el match perfecto.",
+        "benefit": "Ahorre 10+ horas por semana"
+      },
+      "managers": { 
+        "title": "Gerentes de Contratación", 
+        "description": "Tome decisiones de contratación basadas en datos con confianza. Compare candidatos objetivamente usando puntuaciones de compatibilidad por IA y obtenga preguntas de entrevista personalizadas.",
+        "benefit": "Contrate más rápido, contrate mejor"
+      },
+      "seekers": { 
+        "title": "Buscadores de Empleo", 
+        "description": "Prepárese completamente para cada entrevista. Analice su puntuación de compatibilidad, prediga preguntas probables, perfeccione su pitch y aumente sus posibilidades de conseguir el trabajo.",
+        "benefit": "Aumente su tasa de éxito"
+      },
+      "startups": { 
+        "title": "Startups y PYMEs", 
+        "description": "Obtenga herramientas de contratación de nivel empresarial sin el precio empresarial. Gratis para siempre, potente y fácil de usar. Perfecto para equipos con presupuestos limitados.",
+        "benefit": "Herramientas empresariales, costo cero"
+      }
     },
     "cta": {
       "title": "¿Listo Para Transformar Su Contratación?",
