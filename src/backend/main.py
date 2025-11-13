@@ -50,17 +50,17 @@ from middleware.rate_limit import get_rate_limiter
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     """Apply rate limiting to requests."""
-            # Exclude endpoints that need frequent requests or large uploads from rate limiting
-            excluded_paths = [
-                "/api/interviewer/step5/progress/",  # Polling endpoint (called every 3 seconds)
-                "/api/interviewer/step6/progress/",  # Polling endpoint (called every 3 seconds)
-                "/api/interviewer/step5",  # File upload endpoint
-                "/api/candidate/step3",  # File upload endpoint
-                "/api/interviewer/step2",  # Job posting upload
-                "/api/candidate/step2",  # Job posting upload
-                "/api/interviewer/step8/report/",  # PDF download
-                "/api/candidate/step6/download/",  # PDF download
-            ]
+    # Exclude endpoints that need frequent requests or large uploads from rate limiting
+    excluded_paths = [
+        "/api/interviewer/step5/progress/",  # Polling endpoint (called every 3 seconds)
+        "/api/interviewer/step6/progress/",  # Polling endpoint (called every 3 seconds)
+        "/api/interviewer/step5",  # File upload endpoint
+        "/api/candidate/step3",  # File upload endpoint
+        "/api/interviewer/step2",  # Job posting upload
+        "/api/candidate/step2",  # Job posting upload
+        "/api/interviewer/step8/report/",  # PDF download
+        "/api/candidate/step6/download/",  # PDF download
+    ]
     
     # Check if this path should be excluded
     should_exclude = any(request.url.path.startswith(path) for path in excluded_paths)
