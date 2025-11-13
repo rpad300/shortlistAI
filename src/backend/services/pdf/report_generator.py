@@ -29,10 +29,15 @@ class PDFReportGenerator:
     """Generate PDF reports for interviewer analysis results with ShortlistAI branding."""
     
     def __init__(self):
-        self.styles = getSampleStyleSheet()
-        self.branding = get_branding()
-        self.branding.ensure_fonts_registered()
-        self._setup_custom_styles()
+        try:
+            self.styles = getSampleStyleSheet()
+            self.branding = get_branding()
+            self.branding.ensure_fonts_registered()
+            self._setup_custom_styles()
+            logger.info("PDFReportGenerator initialized successfully")
+        except Exception as e:
+            logger.error(f"Error initializing PDFReportGenerator: {e}", exc_info=True)
+            raise
     
     def _get_style(self, preferred_name: str, fallback_name: str):
         """Get style with fallback."""
@@ -770,7 +775,7 @@ class PDFReportGenerator:
                         candidate_elements.append(Paragraph(
                             f"• Portfolio: {cand['portfolio_url']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
-                        ))
+                    ))
             
             # Wrap in KeepTogether to avoid page breaks in middle of candidate
             elements.append(KeepTogether(candidate_elements))
