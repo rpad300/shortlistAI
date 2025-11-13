@@ -129,9 +129,27 @@
   },
   
   "home": {
-    "hero": {
-      "title": "Analyse de CV par IA",
-      "subtitle": "Comparez des candidats ou préparez-vous aux entretiens avec une technologie IA avancée. Gratuit, rapide et multilingue."
+    "heroDual": {
+      "badge": "100% Gratuit Pour Toujours",
+      "title": "Choisissez Votre Chemin",
+      "subtitle": "Deux modes puissants pour transformer votre processus de recrutement. Que vous recrutiez ou soyez recruté, nous sommes là.",
+      "interviewer": {
+        "title": "Je Recrute",
+        "description": "Comparez et classez plusieurs candidats par rapport à votre offre d'emploi. Téléchargez 10, 50 ou 100+ CVs et obtenez une analyse IA instantanée.",
+        "feature1": "Téléchargement par lot (10, 50, 100+ CVs)",
+        "feature2": "Classement automatique par score de compatibilité",
+        "feature3": "Questions d'entretien personnalisées par candidat",
+        "cta": "Commencer l'Analyse de CVs"
+      },
+      "candidate": {
+        "title": "Je Cherche un Emploi",
+        "description": "Préparez-vous pour votre prochain entretien avec des insights par IA. Téléchargez l'offre d'emploi et votre CV pour recevoir une préparation personnalisée.",
+        "feature1": "Analyse instantanée de compatibilité",
+        "feature2": "Prédisez les questions probables de l'entretien",
+        "feature3": "Perfectionnez votre pitch d'introduction",
+        "cta": "Préparer l'Entretien"
+      },
+      "note": "Sans carte bancaire · Sans inscription · Commencez en 2 minutes"
     },
     "valueProp": {
       "title": "Transformez Votre Processus de Recrutement",

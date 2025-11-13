@@ -1,0 +1,604 @@
+/**
+ * Hero Dual Mode Component Styles
+ * 
+ * Two prominent cards for Interviewer and Candidate modes.
+ * Fully responsive with glassmorphism effects.
+ */
+
+.hero-dual-section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem 4rem;
+  overflow: visible;
+  margin: 0;
+  background: transparent;
+}
+
+.hero-dual-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  max-width: 900px;
+  animation: headerFadeIn 0.8s ease-out;
+}
+
+.hero-dual-badge {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  animation: badgeFadeIn 0.6s ease-out 0.2s both;
+}
+
+.hero-dual-badge-text {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+  border: 1px solid rgba(0, 102, 255, 0.3);
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ai-blue, #0066FF);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-badge-text {
+    background: linear-gradient(135deg, rgba(51, 136, 255, 0.2) 0%, rgba(159, 122, 234, 0.2) 100%);
+    border-color: rgba(51, 136, 255, 0.4);
+    color: var(--color-ai-blue-dark, #3388FF);
+    box-shadow: 0 4px 12px rgba(51, 136, 255, 0.3);
+  }
+}
+
+[data-theme="dark"] .hero-dual-badge-text {
+  background: linear-gradient(135deg, rgba(51, 136, 255, 0.2) 0%, rgba(159, 122, 234, 0.2) 100%);
+  border-color: rgba(51, 136, 255, 0.4);
+  color: var(--color-ai-blue-dark, #3388FF);
+  box-shadow: 0 4px 12px rgba(51, 136, 255, 0.3);
+}
+
+.hero-dual-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin: 0 0 1rem 0;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #0052CC 0%, #6D28D9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: var(--color-ai-blue, #0066FF);
+  animation: titleFadeIn 0.8s ease-out 0.3s both;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-title {
+    color: var(--text-primary-dark, #F9FAFB);
+    -webkit-text-fill-color: var(--text-primary-dark, #F9FAFB);
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+  }
+}
+
+[data-theme="dark"] .hero-dual-title {
+  color: var(--text-primary-dark, #F9FAFB);
+  -webkit-text-fill-color: var(--text-primary-dark, #F9FAFB);
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+
+.hero-dual-subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  margin: 0;
+  color: var(--text-secondary-light, #6B7280);
+  line-height: 1.6;
+  animation: subtitleFadeIn 0.8s ease-out 0.5s both;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-subtitle {
+    color: var(--text-secondary-dark, #9CA3AF);
+  }
+}
+
+[data-theme="dark"] .hero-dual-subtitle {
+  color: var(--text-secondary-dark, #9CA3AF);
+}
+
+/* Dual Cards Container */
+.hero-dual-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin-bottom: 2rem;
+  animation: cardsFadeIn 0.8s ease-out 0.7s both;
+}
+
+/* Individual Card */
+.hero-dual-card {
+  position: relative;
+  min-height: 500px;
+  border-radius: 32px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 20px 60px rgba(0, 102, 255, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-dual-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 
+    0 30px 80px rgba(0, 102, 255, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-card {
+    background: rgba(10, 10, 11, 0.85);
+    border-color: rgba(51, 136, 255, 0.3);
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(51, 136, 255, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .hero-dual-card:hover {
+    border-color: rgba(51, 136, 255, 0.5);
+    box-shadow: 
+      0 30px 80px rgba(0, 0, 0, 0.8),
+      0 0 0 1px rgba(51, 136, 255, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+}
+
+[data-theme="dark"] .hero-dual-card {
+  background: rgba(10, 10, 11, 0.85);
+  border-color: rgba(51, 136, 255, 0.3);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(51, 136, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .hero-dual-card:hover {
+  border-color: rgba(51, 136, 255, 0.5);
+  box-shadow: 
+    0 30px 80px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(51, 136, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Card Background Gradient */
+.hero-dual-card-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-dual-card-gradient {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  opacity: 0.3;
+  filter: blur(60px);
+  transition: transform 0.5s ease;
+}
+
+.hero-dual-card-gradient-interviewer {
+  background: radial-gradient(circle, #0066FF 0%, transparent 70%);
+  top: -50%;
+  left: -50%;
+}
+
+.hero-dual-card:hover .hero-dual-card-gradient-interviewer {
+  transform: scale(1.1);
+}
+
+.hero-dual-card-gradient-candidate {
+  background: radial-gradient(circle, #7C3AED 0%, transparent 70%);
+  top: -50%;
+  right: -50%;
+}
+
+.hero-dual-card:hover .hero-dual-card-gradient-candidate {
+  transform: scale(1.1);
+}
+
+/* Card Content */
+.hero-dual-card-content {
+  position: relative;
+  z-index: 1;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
+}
+
+.hero-dual-card-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+  border: 1px solid rgba(0, 102, 255, 0.2);
+  color: var(--color-ai-blue, #0066FF);
+}
+
+.hero-dual-card-candidate .hero-dual-card-icon {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
+  border-color: rgba(124, 58, 237, 0.2);
+  color: #7C3AED;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-card-icon {
+    background: linear-gradient(135deg, rgba(51, 136, 255, 0.2) 0%, rgba(159, 122, 234, 0.2) 100%);
+    border-color: rgba(51, 136, 255, 0.3);
+    color: var(--color-ai-blue-dark, #3388FF);
+  }
+
+  .hero-dual-card-candidate .hero-dual-card-icon {
+    background: linear-gradient(135deg, rgba(159, 122, 234, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
+    border-color: rgba(159, 122, 234, 0.3);
+    color: #9F7AEA;
+  }
+}
+
+.hero-dual-card-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: var(--text-primary-light, #111827);
+  line-height: 1.2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-card-title {
+    color: var(--text-primary-dark, #F9FAFB);
+  }
+}
+
+[data-theme="dark"] .hero-dual-card-title {
+  color: var(--text-primary-dark, #F9FAFB);
+}
+
+.hero-dual-card-description {
+  font-size: 1.125rem;
+  font-weight: 400;
+  margin: 0 0 2rem 0;
+  color: var(--text-secondary-light, #6B7280);
+  line-height: 1.6;
+  flex: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-card-description {
+    color: var(--text-secondary-dark, #9CA3AF);
+  }
+}
+
+[data-theme="dark"] .hero-dual-card-description {
+  color: var(--text-secondary-dark, #9CA3AF);
+}
+
+/* Card Features */
+.hero-dual-card-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.hero-dual-card-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--text-secondary-light, #6B7280);
+  font-weight: 500;
+}
+
+.hero-dual-card-feature svg {
+  flex-shrink: 0;
+  color: var(--color-ai-blue, #0066FF);
+}
+
+.hero-dual-card-candidate .hero-dual-card-feature svg {
+  color: #7C3AED;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-card-feature {
+    color: var(--text-secondary-dark, #9CA3AF);
+  }
+
+  .hero-dual-card-feature svg {
+    color: var(--color-ai-blue-dark, #3388FF);
+  }
+
+  .hero-dual-card-candidate .hero-dual-card-feature svg {
+    color: #9F7AEA;
+  }
+}
+
+/* Card CTA */
+.hero-dual-card-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin-top: auto;
+}
+
+.hero-dual-card-cta-primary {
+  background: linear-gradient(135deg, #0066FF 0%, #7C3AED 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(0, 102, 255, 0.3);
+}
+
+.hero-dual-card-cta-primary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.hero-dual-card-cta-primary:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.hero-dual-card-cta-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 102, 255, 0.4);
+}
+
+.hero-dual-card-cta-secondary {
+  background: transparent;
+  border: 2px solid #7C3AED;
+  color: #7C3AED;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.2);
+}
+
+.hero-dual-card-cta-secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.hero-dual-card-cta-secondary:hover::before {
+  left: 0;
+}
+
+.hero-dual-card-cta-secondary:hover {
+  border-color: #6D28D9;
+  background: rgba(124, 58, 237, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-card-cta-secondary {
+    border-color: #9F7AEA;
+    color: #9F7AEA;
+  }
+
+  .hero-dual-card-cta-secondary:hover {
+    border-color: #A78BFA;
+    background: rgba(159, 122, 234, 0.1);
+  }
+}
+
+[data-theme="dark"] .hero-dual-card-cta-secondary {
+  border-color: #9F7AEA;
+  color: #9F7AEA;
+}
+
+[data-theme="dark"] .hero-dual-card-cta-secondary:hover {
+  border-color: #A78BFA;
+  background: rgba(159, 122, 234, 0.1);
+}
+
+.hero-dual-card-cta svg {
+  flex-shrink: 0;
+}
+
+.hero-dual-note {
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary-light, #6B7280);
+  font-weight: 500;
+  animation: noteFadeIn 0.8s ease-out 1s both;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-dual-note {
+    color: var(--text-secondary-dark, #9CA3AF);
+  }
+}
+
+[data-theme="dark"] .hero-dual-note {
+  color: var(--text-secondary-dark, #9CA3AF);
+}
+
+/* Animations */
+@keyframes headerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes badgeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes titleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subtitleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes noteFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero-dual-cards {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .hero-dual-card {
+    min-height: 450px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-dual-section {
+    padding: 2rem 1rem 3rem;
+    min-height: auto;
+  }
+
+  .hero-dual-header {
+    margin-bottom: 2rem;
+  }
+
+  .hero-dual-title {
+    font-size: 2rem;
+  }
+
+  .hero-dual-subtitle {
+    font-size: 1.125rem;
+  }
+
+  .hero-dual-card {
+    min-height: 400px;
+  }
+
+  .hero-dual-card-content {
+    padding: 2rem 1.5rem;
+  }
+
+  .hero-dual-card-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .hero-dual-card-title {
+    font-size: 1.5rem;
+  }
+
+  .hero-dual-card-description {
+    font-size: 1rem;
+  }
+
+  .hero-dual-card-cta {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-dual-header,
+  .hero-dual-badge,
+  .hero-dual-title,
+  .hero-dual-subtitle,
+  .hero-dual-cards,
+  .hero-dual-note {
+    animation: none;
+  }
+}
+

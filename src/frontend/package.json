@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
-    "test:contrast": "node scripts/validate-contrast.js"
+    "test:contrast": "node scripts/validate-contrast.js",
+    "seo:validate": "python ../../scripts/validate_seo.py",
+    "seo:update-sitemap": "python ../../scripts/update_sitemap_dates.py",
+    "seo:update-sitemap:date": "python ../../scripts/update_sitemap_dates.py --date"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",

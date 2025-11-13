@@ -8,7 +8,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Hero } from '../components/Hero';
+import { HeroDualMode } from '../components/HeroDualMode';
 import { SEOHead, getOrganizationSchema, getWebsiteSchema, getSoftwareApplicationSchema } from '../components/SEOHead';
 import Layout from '../components/Layout';
 import './Home.css';
@@ -41,25 +41,8 @@ export const Home: React.FC = () => {
         structuredData={structuredData}
       />
         
-        {/* Hero Section with AI-generated background */}
-        <section className="hero-section">
-        <Hero 
-          title={t('home.hero.title')}
-          subtitle={t('home.hero.subtitle')}
-          showImage={false}
-        />
-        
-        <div className="hero-cta">
-          <Link to="/interviewer/step1" className="btn btn-primary btn-large">
-            <img src="/assets/icons/feature-analytics.svg" alt="" width="20" height="20" />
-            {t('nav.analyzeCV')}
-          </Link>
-          <Link to="/candidate/step1" className="btn btn-secondary btn-large">
-            <img src="/assets/icons/feature-document.svg" alt="" width="20" height="20" />
-            {t('nav.prepareInterview')}
-          </Link>
-        </div>
-      </section>
+        {/* Hero Section - Dual Mode */}
+        <HeroDualMode />
 
       {/* Value Proposition */}
       <section className="value-prop-section">

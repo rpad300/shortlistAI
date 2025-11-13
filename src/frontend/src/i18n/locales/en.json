@@ -129,9 +129,27 @@
   },
   
   "home": {
-    "hero": {
-      "title": "AI-Powered CV Analysis",
-      "subtitle": "Compare candidates or prepare for interviews with advanced AI technology. Free, fast, and multilingual."
+    "heroDual": {
+      "badge": "100% Free Forever",
+      "title": "Choose Your Path",
+      "subtitle": "Two powerful modes to transform your hiring process. Whether you're hiring or being hired, we've got you covered.",
+      "interviewer": {
+        "title": "I'm Hiring",
+        "description": "Compare and rank multiple candidates against your job posting. Upload 10, 50, or 100+ CVs and get instant AI analysis.",
+        "feature1": "Batch upload (10, 50, 100+ CVs)",
+        "feature2": "Automatic ranking by fit score",
+        "feature3": "Custom interview questions per candidate",
+        "cta": "Start Analyzing CVs"
+      },
+      "candidate": {
+        "title": "I'm Job Seeking",
+        "description": "Prepare for your next interview with AI-powered insights. Upload the job posting and your CV to receive personalized preparation.",
+        "feature1": "Instant fit score analysis",
+        "feature2": "Predict likely interview questions",
+        "feature3": "Perfect your intro pitch",
+        "cta": "Prepare for Interview"
+      },
+      "note": "No credit card required · No signup needed · Start in 2 minutes"
     },
     "valueProp": {
       "title": "Transform Your Hiring Process",

@@ -1,6 +1,8 @@
 # Robots.txt for ShortlistAI
-# Updated: 2025-11-10
+# Updated: 2025-01-10
+# This file defines crawling rules for search engines and AI bots
 
+# Standard search engine bots (Google, Bing, etc.)
 User-agent: *
 Allow: /
 Allow: /features
@@ -12,6 +14,152 @@ Allow: /candidate/step1
 Allow: /legal/
 
 # Disallow internal/admin routes
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+# AI Search Engine Bots (Perplexity, ChatGPT, etc.)
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+User-agent: CCBot
+Allow: /
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+# Google-specific bots
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /interviewer/step2
+Disallow: /interviewer/step3
+Disallow: /interviewer/step4
+Disallow: /interviewer/step5
+Disallow: /interviewer/step6
+Disallow: /interviewer/step7
+Disallow: /interviewer/step8
+Disallow: /candidate/step2
+Disallow: /candidate/step3
+Disallow: /candidate/step4
+Disallow: /candidate/step5
+Disallow: /candidate/step6
+
+User-agent: Google-Extended
+Allow: /
 Disallow: /admin/
 Disallow: /interviewer/step2
 Disallow: /interviewer/step3

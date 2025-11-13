@@ -1,8 +1,8 @@
 /**
  * Hero Component with Light/Dark Mode Support
  * 
+ * Enhanced hero with badges, stats, and improved visual impact.
  * Displays hero images that adapt to the user's color scheme preference.
- * Uses the generated brand images from Gemini Nano Banana.
  */
 
 import React from 'react';
@@ -11,6 +11,8 @@ import './Hero.css';
 interface HeroProps {
   title?: string;
   subtitle?: string;
+  badge?: string;
+  stats?: Array<{label: string; value: string}>;
   showImage?: boolean;
   className?: string;
 }
@@ -18,6 +20,8 @@ interface HeroProps {
 export const Hero: React.FC<HeroProps> = ({
   title = 'ShortlistAI',
   subtitle = 'AI-Powered CV Analysis Platform',
+  badge,
+  stats,
   showImage = true,
   className = ''
 }) => {
@@ -54,8 +58,36 @@ export const Hero: React.FC<HeroProps> = ({
       )}
       
       <div className="hero-content">
-        {title && <h1 className="hero-title">{title}</h1>}
+        {badge && (
+          <div className="hero-badge">
+            <span className="hero-badge-text">{badge}</span>
+          </div>
+        )}
+        
+        {title && (
+          <h1 className="hero-title">
+            {title.split('.').map((part, index, array) => (
+              <React.Fragment key={index}>
+                <span className="hero-title-line">{part.trim()}</span>
+                {index < array.length - 1 && '.'}
+                {index < array.length - 1 && <br />}
+              </React.Fragment>
+            ))}
+          </h1>
+        )}
+        
         {subtitle && <p className="hero-subtitle">{subtitle}</p>}
+        
+        {stats && stats.length > 0 && (
+          <div className="hero-stats">
+            {stats.map((stat, index) => (
+              <div key={index} className="hero-stat">
+                <div className="hero-stat-value">{stat.value}</div>
+                <div className="hero-stat-label">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

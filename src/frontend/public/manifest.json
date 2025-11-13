@@ -1,13 +1,15 @@
 {
-  "name": "ShortlistAI - AI-Powered CV Analysis",
+  "name": "ShortlistAI - AI-Powered CV Analysis Platform",
   "short_name": "ShortlistAI",
-  "description": "AI-powered CV analysis for interviewers and candidates. Multi-language support: EN, PT, FR, ES.",
+  "description": "Free AI-powered CV analysis for interviewers and candidates. Compare CVs, prepare for interviews, and build your headhunting database. Multi-language support: EN, PT, FR, ES. Powered by Gemini, OpenAI, Claude, Kimi, Minimax.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#0066FF",
   "orientation": "portrait-primary",
+  "dir": "ltr",
+  "lang": "en",
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -75,8 +77,6 @@
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
-  "lang": "en",
-  "dir": "ltr",
   "prefer_related_applications": false
 }
 

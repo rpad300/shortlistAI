@@ -1,0 +1,27 @@
+{
+  "name": "shortlistai",
+  "version": "1.0.0",
+  "description": "AI-Powered CV Analysis Platform",
+  "private": true,
+  "scripts": {
+    "seo:validate": "python scripts/validate_seo.py",
+    "seo:update-sitemap": "python scripts/update_sitemap_dates.py",
+    "seo:update-sitemap:date": "python scripts/update_sitemap_dates.py --date",
+    "backend:start": "cd src/backend && python main.py",
+    "frontend:start": "cd src/frontend && npm run dev",
+    "frontend:build": "cd src/frontend && npm run build"
+  },
+  "keywords": [
+    "cv-analysis",
+    "ai-recruitment",
+    "interview-preparation",
+    "recruitment-software"
+  ],
+  "author": "ShortlistAI",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.7.0"
+  }
+}
+

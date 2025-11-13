@@ -129,9 +129,27 @@
   },
   
   "home": {
-    "hero": {
-      "title": "Análisis de CVs con IA",
-      "subtitle": "Compare candidatos o prepárese para entrevistas con tecnología de IA avanzada. Gratis, rápido y multilingüe."
+    "heroDual": {
+      "badge": "100% Gratis Para Siempre",
+      "title": "Elige Tu Camino",
+      "subtitle": "Dos modos poderosos para transformar tu proceso de contratación. Ya sea que estés contratando o siendo contratado, te tenemos cubierto.",
+      "interviewer": {
+        "title": "Estoy Contratando",
+        "description": "Compara y clasifica múltiples candidatos contra tu oferta de trabajo. Sube 10, 50 o 100+ CVs y obtén análisis instantáneo por IA.",
+        "feature1": "Carga por lotes (10, 50, 100+ CVs)",
+        "feature2": "Clasificación automática por puntuación de compatibilidad",
+        "feature3": "Preguntas personalizadas por candidato",
+        "cta": "Comenzar Análisis de CVs"
+      },
+      "candidate": {
+        "title": "Estoy Buscando Trabajo",
+        "description": "Prepárate para tu próxima entrevista con insights por IA. Sube la oferta de trabajo y tu CV para recibir preparación personalizada.",
+        "feature1": "Análisis instantáneo de compatibilidad",
+        "feature2": "Predice preguntas probables de la entrevista",
+        "feature3": "Perfecciona tu pitch de introducción",
+        "cta": "Preparar Entrevista"
+      },
+      "note": "Sin tarjeta de crédito · Sin registro · Comienza en 2 minutos"
     },
     "valueProp": {
       "title": "Transforme Su Proceso de Contratación",
