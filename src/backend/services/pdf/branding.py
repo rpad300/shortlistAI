@@ -74,8 +74,27 @@ class ShortlistAIBranding:
     def get_logo_path(cls) -> Optional[Path]:
         """Get path to ShortlistAI logo PNG."""
         if cls._LOGO_PATH is None:
-            # Try multiple possible locations for the logo
-            project_root = Path(__file__).resolve().parents[4]
+            # Find project root - works in both dev and Docker
+            current_file = Path(__file__).resolve()
+            project_root = None
+            
+            # Try different parent levels
+            for level in range(1, 6):
+                try:
+                    candidate = current_file.parents[level]
+                    # Check if this looks like project root (has src/ or public/ directory)
+                    if (candidate / "src").exists() or (candidate / "public").exists():
+                        project_root = candidate
+                        break
+                except IndexError:
+                    continue
+            
+            if not project_root:
+                # Fallback: use /app in Docker, or current file's parent in dev
+                try:
+                    project_root = current_file.parents[2]  # /app in Docker
+                except IndexError:
+                    project_root = current_file.parents[3]  # Fallback
 
             logo_paths = [
                 # Preferred: branded app icon inside frontend public assets
@@ -119,7 +138,30 @@ class ShortlistAIBranding:
         if cls._FONTS_REGISTERED:
             return
 
-        project_root = Path(__file__).resolve().parents[4]
+        # Find project root - works in both dev and Docker
+        # In Docker: /app/services/pdf/branding.py -> /app
+        # In Dev: src/backend/services/pdf/branding.py -> ShortlistAI/
+        current_file = Path(__file__).resolve()
+        project_root = None
+        
+        # Try different parent levels
+        for level in range(1, 6):
+            try:
+                candidate = current_file.parents[level]
+                # Check if this looks like project root (has src/ or public/ directory)
+                if (candidate / "src").exists() or (candidate / "public").exists():
+                    project_root = candidate
+                    break
+            except IndexError:
+                continue
+        
+        if not project_root:
+            # Fallback: use /app in Docker, or current file's parent in dev
+            try:
+                project_root = current_file.parents[2]  # /app in Docker
+            except IndexError:
+                project_root = current_file.parents[3]  # Fallback
+        
         font_dir: Optional[Path] = None
 
         for relative_parts in cls._FONT_DIRECTORIES:
