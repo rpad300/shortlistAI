@@ -1625,9 +1625,12 @@ async def step7_results(
                 "source": "report"
             })
         
+        # Safely access session data
+        session_data = session.get("data", {})
+        
         # Check if analysis is complete
-        analysis_complete = session["data"].get("analysis_complete", False)
-        report_code_in_session = session["data"].get("report_code")
+        analysis_complete = session_data.get("analysis_complete", False)
+        report_code_in_session = session_data.get("report_code")
         
         # If analysis not complete but we have a report_code, try to load from report
         if not analysis_complete and report_code_in_session:
@@ -1882,7 +1885,7 @@ async def step7_results(
                 "total_candidates": len(sorted_results),
                 "results": sorted_results,
                 "executive_recommendation": executive_recommendation,
-                "hard_blockers": session["data"].get("hard_blockers", []),
+                "hard_blockers": session_data.get("hard_blockers", []),
                 "report_code": report_code_in_session,
                 "source": "session"
             })
