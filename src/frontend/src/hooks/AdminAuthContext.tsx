@@ -57,10 +57,17 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       // Verify token with backend
       const response = await api.get('/admin/me');
       setUser(response.data);
-    } catch (error) {
-      // Token is invalid, remove it
-      localStorage.removeItem('admin_token');
-      delete api.defaults.headers.common['Authorization'];
+    } catch (error: any) {
+      // Token is invalid or expired, remove it silently
+      // Don't log 401 errors as they're expected when token expires
+      if (error.response?.status === 401) {
+        localStorage.removeItem('admin_token');
+        delete api.defaults.headers.common['Authorization'];
+        setUser(null);
+      } else {
+        // Log other errors
+        console.error('Error checking admin auth status:', error);
+      }
     } finally {
       setLoading(false);
     }

@@ -1624,13 +1624,111 @@ async def step7_results(
             })
         
         # Check if analysis is complete
-        if not session["data"].get("analysis_complete"):
+        analysis_complete = session["data"].get("analysis_complete", False)
+        report_code_in_session = session["data"].get("report_code")
+        
+        # If analysis not complete but we have a report_code, try to load from report
+        if not analysis_complete and report_code_in_session:
+            logger.info(f"Analysis not complete in session, but report_code exists. Attempting to load from report: {report_code_in_session}")
+            try:
+                report_service = get_report_service()
+                report = await report_service.get_by_code(report_code_in_session)
+                
+                if report:
+                    analyses = await report_service.get_analyses_for_report(UUID(report["id"]))
+                    
+                    if analyses and len(analyses) > 0:
+                        # We have results in the report, use them
+                        logger.info(f"Found {len(analyses)} analyses in report {report_code_in_session}, using them")
+                        # Update session to mark as complete
+                        session_service.update_session(
+                            session_id,
+                            {
+                                "analysis_complete": True,
+                                "analysis_status": "completed"
+                            },
+                            step=7
+                        )
+                        # Reload session
+                        session = session_service.get_session(session_id)
+                        analysis_complete = True
+                        # Use report data
+                        executive_recommendation = report.get("executive_recommendation")
+                        # Build results from analyses (same as fallback above)
+                        candidate_service = get_candidate_service()
+                        
+                        def _ensure_list(value: Any) -> List[Any]:
+                            if isinstance(value, list):
+                                return value
+                            if isinstance(value, dict):
+                                items = value.get("items")
+                                if isinstance(items, list):
+                                    return items
+                                flags = value.get("flags")
+                                if isinstance(flags, list):
+                                    return flags
+                                values = value.get("value") or value.get("values")
+                                if isinstance(values, list):
+                                    return values
+                            if value is None:
+                                return []
+                            return [value]
+                        
+                        report_results: List[Dict[str, Any]] = []
+                        for idx, analysis in enumerate(analyses, start=1):
+                            candidate_label = None
+                            try:
+                                candidate = await candidate_service.get_by_id(UUID(analysis["candidate_id"]))
+                                if candidate and candidate.get("name"):
+                                    candidate_label = candidate["name"]
+                            except Exception as candidate_err:
+                                logger.warning(f"Failed to load candidate {analysis.get('candidate_id')}: {candidate_err}")
+                            
+                            detailed_analysis = analysis.get("detailed_analysis") or {}
+                            report_results.append({
+                                "analysis_id": analysis["id"],
+                                "candidate_id": analysis["candidate_id"],
+                                "candidate_label": candidate_label or f"Candidate {idx}",
+                                "global_score": analysis.get("global_score", 0),
+                                "categories": analysis.get("categories") or {},
+                                "strengths": _ensure_list(analysis.get("strengths")),
+                                "risks": _ensure_list(analysis.get("risks")),
+                                "questions": _ensure_list(analysis.get("questions")),
+                                "hard_blocker_flags": _ensure_list(analysis.get("hard_blocker_flags")),
+                                "provider": analysis.get("provider"),
+                                "profile_summary": detailed_analysis.get("profile_summary"),
+                                "swot_analysis": detailed_analysis.get("swot_analysis", {}),
+                                "technical_skills_detailed": detailed_analysis.get("technical_skills_detailed", []),
+                                "soft_skills_detailed": detailed_analysis.get("soft_skills_detailed", []),
+                                "missing_critical_technical_skills": detailed_analysis.get("missing_critical_technical_skills", []),
+                                "missing_important_soft_skills": detailed_analysis.get("missing_important_soft_skills", []),
+                                "professional_experience_analysis": detailed_analysis.get("professional_experience_analysis", {}),
+                                "education_and_certifications": detailed_analysis.get("education_and_certifications", {}),
+                                "notable_achievements": detailed_analysis.get("notable_achievements", []),
+                                "culture_fit_assessment": detailed_analysis.get("culture_fit_assessment", {}),
+                                "score_breakdown": detailed_analysis.get("score_breakdown", {})
+                            })
+                        
+                        # Update session with results
+                        session_service.update_session(
+                            session_id,
+                            {
+                                "analysis_results": report_results
+                            },
+                            step=7
+                        )
+                        # Reload session again
+                        session = session_service.get_session(session_id)
+                        results = report_results
+            except Exception as report_err:
+                logger.warning(f"Failed to load from report_code fallback: {report_err}")
+        
+        if not analysis_complete:
             raise HTTPException(
                 status_code=400,
                 detail="Analysis not complete. Run step 6 first."
             )
         
-        report_code_in_session = session["data"].get("report_code")
         results = session["data"].get("analysis_results")
         executive_recommendation = session["data"].get("executive_recommendation")
         
@@ -1796,406 +1894,6 @@ async def step7_results(
         raise
     except Exception as e:
         logger.error(f"Error retrieving results: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error retrieving results"
-        )
-
-
-@router.get("/step7/{session_id}")
-async def step7_results(
-    session_id: UUID,
-    report_code: Optional[str] = Query(
-        default=None,
-        max_length=50,
-        description="Optional report code to recover results if session expired"
-    )
-):
-    """
-    Step 7: Display results.
-    
-    Returns ranked list of candidates with scores and details.
-    """
-    from services.database import (
-        get_session_service,
-        get_analysis_service,
-        get_report_service,
-        get_candidate_service
-    )
-    
-    try:
-        session_service = get_session_service()
-        analysis_service = get_analysis_service()
-        
-        # Validate session
-        session = session_service.get_session(session_id)
-        if not session:
-            if not report_code:
-                raise HTTPException(status_code=404, detail="Session not found or expired")
-            
-            # Fallback: load results directly from persistent report
-            report_service = get_report_service()
-            report = await report_service.get_by_code(report_code)
-            
-            if not report:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Session expired and report code not found. Please restart the analysis."
-                )
-            
-            analyses = await report_service.get_analyses_for_report(UUID(report["id"]))
-            
-            if not analyses:
-                raise HTTPException(
-                    status_code=404,
-                    detail="No analysis results found for this report yet."
-                )
-            
-            candidate_service = get_candidate_service()
-            
-            def _ensure_list(value: Any) -> List[Any]:
-                if isinstance(value, list):
-                    return value
-                if isinstance(value, dict):
-                    items = value.get("items")
-                    if isinstance(items, list):
-                        return items
-                    flags = value.get("flags")
-                    if isinstance(flags, list):
-                        return flags
-                    values = value.get("value") or value.get("values")
-                    if isinstance(values, list):
-                        return values
-                if value is None:
-                    return []
-                return [value]
-            
-            fallback_results: List[Dict[str, Any]] = []
-            for idx, analysis in enumerate(analyses, start=1):
-                candidate_label = None
-                try:
-                    candidate = await candidate_service.get_by_id(UUID(analysis["candidate_id"]))
-                    if candidate and candidate.get("name"):
-                        candidate_label = candidate["name"]
-                except Exception as candidate_err:  # pragma: no cover - logging only
-                    logger.warning(
-                        "Failed to load candidate %s for report fallback: %s",
-                        analysis.get("candidate_id"),
-                        candidate_err
-                    )
-                
-                detailed_analysis = analysis.get("detailed_analysis") or {}
-                fallback_results.append({
-                    "analysis_id": analysis["id"],
-                    "candidate_id": analysis["candidate_id"],
-                    "candidate_label": candidate_label or f"Candidate {idx}",
-                    "global_score": analysis.get("global_score", 0),
-                    "categories": analysis.get("categories") or {},
-                    "strengths": _ensure_list(analysis.get("strengths")),
-                    "risks": _ensure_list(analysis.get("risks")),
-                    "questions": _ensure_list(analysis.get("questions")),
-                    "hard_blocker_flags": _ensure_list(analysis.get("hard_blocker_flags")),
-                    "provider": analysis.get("provider"),
-                    # Include detailed analysis fields if available
-                    "profile_summary": detailed_analysis.get("profile_summary"),
-                    "swot_analysis": detailed_analysis.get("swot_analysis", {}),
-                    "technical_skills_detailed": detailed_analysis.get("technical_skills_detailed", []),
-                    "soft_skills_detailed": detailed_analysis.get("soft_skills_detailed", []),
-                    "missing_critical_technical_skills": detailed_analysis.get("missing_critical_technical_skills", []),
-                    "missing_important_soft_skills": detailed_analysis.get("missing_important_soft_skills", []),
-                    "professional_experience_analysis": detailed_analysis.get("professional_experience_analysis", {}),
-                    "education_and_certifications": detailed_analysis.get("education_and_certifications", {}),
-                    "notable_achievements": detailed_analysis.get("notable_achievements", []),
-                    "culture_fit_assessment": detailed_analysis.get("culture_fit_assessment", {}),
-                    "score_breakdown": detailed_analysis.get("score_breakdown", {})
-                })
-            
-            logger.info(
-                "Loaded %d results from persistent report %s for session %s",
-                len(fallback_results),
-                report_code,
-                session_id
-            )
-            
-            return JSONResponse({
-                "status": "success",
-                "total_candidates": len(fallback_results),
-                "results": fallback_results,
-                "executive_recommendation": report.get("executive_recommendation"),
-                "hard_blockers": report.get("hard_blockers", []),  # Include hard blockers from report
-                "message": f"Recovered {len(fallback_results)} candidates from report {report_code}.",
-                "report_id": report.get("id"),
-                "report_code": report.get("report_code"),
-                "source": "report"
-            })
-        
-        # Check if analysis is complete
-        if not session["data"].get("analysis_complete"):
-            raise HTTPException(
-                status_code=400,
-                detail="Analysis not complete. Run step 6 first."
-            )
-        
-        report_code_in_session = session["data"].get("report_code")
-        results = session["data"].get("analysis_results")
-        executive_recommendation = session["data"].get("executive_recommendation")
-        
-        # Extract company name from structured job posting
-        company_name = None
-        structured_job_posting = session["data"].get("structured_job_posting")
-        if structured_job_posting and isinstance(structured_job_posting, dict):
-            company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
-        
-        if results:
-            # SORT by global_score DESCENDING (best candidates first)
-            sorted_results = sorted(
-                results,
-                key=lambda x: x.get('global_score', 0),
-                reverse=True
-            )
-            
-            # Fetch enrichment data for all candidates and ensure all required fields
-            from services.database.enrichment_service import (
-                CompanyEnrichmentService,
-                CandidateEnrichmentService
-            )
-            company_enrichment_service = CompanyEnrichmentService()
-            candidate_enrichment_service = CandidateEnrichmentService()
-            
-            # Get company enrichment once (same for all candidates)
-            company_enrichment_data = None
-            if company_name:
-                company_enrichment = await company_enrichment_service.get_latest(company_name, max_age_days=30)
-                if company_enrichment:
-                    company_enrichment_data = {
-                        "name": company_enrichment.get("company_name"),
-                        "website": company_enrichment.get("website"),
-                        "description": company_enrichment.get("description"),
-                        "industry": company_enrichment.get("industry"),
-                        "size": company_enrichment.get("company_size"),
-                        "location": company_enrichment.get("location"),
-                        "social_media": company_enrichment.get("social_media", {}),
-                        "recent_news": company_enrichment.get("recent_news", []),
-                        "ai_summary": company_enrichment.get("ai_summary")
-                    }
-            
-            # Ensure all required fields are present for each result
-            for result in sorted_results:
-                # Ensure summary is a dict (not None)
-                if not result.get("summary") or not isinstance(result.get("summary"), dict):
-                    result["summary"] = {}
-                # Ensure candidate_label exists
-                if not result.get("candidate_label"):
-                    summary = result.get("summary", {})
-                    result["candidate_label"] = (
-                        summary.get("full_name") 
-                        or summary.get("current_role")
-                        or result.get("file_name")
-                        or "Candidate"
-                    )
-                # Ensure all list fields are arrays
-                if not isinstance(result.get("strengths"), list):
-                    result["strengths"] = []
-                if not isinstance(result.get("risks"), list):
-                    result["risks"] = []
-                if not isinstance(result.get("questions"), list):
-                    result["questions"] = []
-                if not isinstance(result.get("hard_blocker_flags"), list):
-                    result["hard_blocker_flags"] = []
-                # Ensure categories is a dict
-                if not isinstance(result.get("categories"), dict):
-                    result["categories"] = {}
-                # Ensure global_score is a number
-                if result.get("global_score") is None:
-                    result["global_score"] = 0
-                # Ensure recommendation exists (can be empty string)
-                if "recommendation" not in result:
-                    result["recommendation"] = ""
-                # Ensure intro_pitch exists (can be empty string)
-                if "intro_pitch" not in result:
-                    result["intro_pitch"] = ""
-                # Ensure gap_strategies is a list
-                if not isinstance(result.get("gap_strategies"), list):
-                    result["gap_strategies"] = []
-                # Ensure preparation_tips is a list
-                if not isinstance(result.get("preparation_tips"), list):
-                    result["preparation_tips"] = []
-                # Ensure detailed analysis fields exist (can be empty/None)
-                if "profile_summary" not in result:
-                    result["profile_summary"] = ""
-                if "swot_analysis" not in result or not isinstance(result.get("swot_analysis"), dict):
-                    result["swot_analysis"] = {}
-                if not isinstance(result.get("technical_skills_detailed"), list):
-                    result["technical_skills_detailed"] = []
-                if not isinstance(result.get("soft_skills_detailed"), list):
-                    result["soft_skills_detailed"] = []
-                if not isinstance(result.get("missing_critical_technical_skills"), list):
-                    result["missing_critical_technical_skills"] = []
-                if not isinstance(result.get("missing_important_soft_skills"), list):
-                    result["missing_important_soft_skills"] = []
-                if "professional_experience_analysis" not in result or not isinstance(result.get("professional_experience_analysis"), dict):
-                    result["professional_experience_analysis"] = {}
-                if "education_and_certifications" not in result or not isinstance(result.get("education_and_certifications"), dict):
-                    result["education_and_certifications"] = {}
-                if not isinstance(result.get("notable_achievements"), list):
-                    result["notable_achievements"] = []
-                if "culture_fit_assessment" not in result or not isinstance(result.get("culture_fit_assessment"), dict):
-                    result["culture_fit_assessment"] = {}
-                if "score_breakdown" not in result or not isinstance(result.get("score_breakdown"), dict):
-                    result["score_breakdown"] = {}
-                
-                # Fetch or update enrichment data for this candidate
-                enrichment_data = {}
-                
-                # Check if already has enrichment from step6
-                if result.get("enrichment") and isinstance(result.get("enrichment"), dict):
-                    enrichment_data = result.get("enrichment")
-                    logger.info(f"Candidate {result.get('candidate_id')}: Using enrichment from step6")
-                else:
-                    logger.info(f"Candidate {result.get('candidate_id')}: Fetching enrichment from database")
-                
-                # Fetch candidate enrichment if not already present
-                if "candidate" not in enrichment_data:
-                    try:
-                        candidate_id = result.get("candidate_id")
-                        if candidate_id:
-                            candidate_enrichment = await candidate_enrichment_service.get_latest(UUID(candidate_id))
-                            if candidate_enrichment:
-                                logger.info(f"Found candidate enrichment in database for {candidate_id}")
-                                enrichment_data["candidate"] = {
-                                    "name": candidate_enrichment.get("candidate_name") or candidate_enrichment.get("name"),
-                                    "professional_summary": candidate_enrichment.get("professional_summary"),
-                                    "linkedin_profile": candidate_enrichment.get("linkedin_profile"),
-                                    "github_profile": candidate_enrichment.get("github_profile"),
-                                    "portfolio_url": candidate_enrichment.get("portfolio_url"),
-                                    "publications": candidate_enrichment.get("publications", []),
-                                    "awards": candidate_enrichment.get("awards", []),
-                                    "ai_summary": candidate_enrichment.get("ai_summary"),
-                                    "result_count": candidate_enrichment.get("result_count", 0)
-                                }
-                            else:
-                                logger.warning(f"No candidate enrichment found in database for {candidate_id}")
-                    except Exception as enrichment_err:
-                        logger.warning(f"Failed to fetch candidate enrichment for step7: {enrichment_err}")
-                
-                # Add company enrichment if available
-                if company_enrichment_data and "company" not in enrichment_data:
-                    enrichment_data["company"] = company_enrichment_data
-                    logger.info(f"Added company enrichment for {company_name}")
-                
-                # Always set enrichment (set to None only if truly empty, otherwise keep dict)
-                if enrichment_data and (enrichment_data.get("company") or enrichment_data.get("candidate")):
-                    result["enrichment"] = enrichment_data
-                    logger.info(f"Candidate {result.get('candidate_id')}: enrichment has_company={bool(enrichment_data.get('company'))}, has_candidate={bool(enrichment_data.get('candidate'))}")
-                else:
-                    result["enrichment"] = None
-                    logger.info(f"Candidate {result.get('candidate_id')}: No enrichment data available")
-            
-            logger.info("Returning %d analysis results from session cache for %s", len(sorted_results), session_id)
-            if sorted_results:
-                first_result = sorted_results[0]
-                logger.info("Step7 first result fields: analysis_id=%s, candidate_id=%s, candidate_label=%s, global_score=%s, strengths_count=%d, risks_count=%d, questions_count=%d, has_enrichment=%s",
-                    first_result.get("analysis_id"),
-                    first_result.get("candidate_id"),
-                    first_result.get("candidate_label"),
-                    first_result.get("global_score"),
-                    len(first_result.get("strengths", [])),
-                    len(first_result.get("risks", [])),
-                    len(first_result.get("questions", [])),
-                    "yes" if first_result.get("enrichment") else "no"
-                )
-            
-            # Get hard blockers from session
-            hard_blockers = session["data"].get("hard_blockers", [])
-            
-            return JSONResponse({
-                "status": "success",
-                "total_candidates": len(sorted_results),
-                "results": sorted_results,
-                "executive_recommendation": executive_recommendation,
-                "hard_blockers": hard_blockers,  # Include hard blockers (must-have requirements) in response
-                "message": f"Analysis complete for {len(sorted_results)} candidates.",
-                "report_code": report_code_in_session,
-                "source": "session"
-            })
-        
-        # Fallback: query database (legacy)
-        job_posting_id = session["data"].get("job_posting_id")
-        analyses = await analysis_service.get_by_job_posting(UUID(job_posting_id))
-        
-        # Format results
-        results = []
-        def _ensure_list(value: Any) -> List[Any]:
-            if isinstance(value, list):
-                return value
-            if isinstance(value, dict):
-                items = value.get("items")
-                if isinstance(items, list):
-                    return items
-                flags = value.get("flags")
-                if isinstance(flags, list):
-                    return flags
-                values = value.get("value") or value.get("values")
-                if isinstance(values, list):
-                    return values
-            if value is None:
-                return []
-            return [value]
-
-        for analysis in analyses:
-            detailed_analysis = analysis.get("detailed_analysis") or {}
-            result = {
-                "analysis_id": analysis["id"],
-                "candidate_id": analysis["candidate_id"],
-                "global_score": analysis["global_score"],
-                "categories": analysis["categories"],
-                "strengths": _ensure_list(analysis.get("strengths")),
-                "risks": _ensure_list(analysis.get("risks")),
-                "questions": _ensure_list(analysis.get("questions")),
-                "hard_blocker_flags": _ensure_list(analysis.get("hard_blocker_flags")),
-                "provider": analysis.get("provider"),
-                # Include detailed analysis fields if available
-                "profile_summary": detailed_analysis.get("profile_summary"),
-                "swot_analysis": detailed_analysis.get("swot_analysis", {}),
-                "technical_skills_detailed": detailed_analysis.get("technical_skills_detailed", []),
-                "soft_skills_detailed": detailed_analysis.get("soft_skills_detailed", []),
-                "missing_critical_technical_skills": detailed_analysis.get("missing_critical_technical_skills", []),
-                "missing_important_soft_skills": detailed_analysis.get("missing_important_soft_skills", []),
-                "professional_experience_analysis": detailed_analysis.get("professional_experience_analysis", {}),
-                "education_and_certifications": detailed_analysis.get("education_and_certifications", {}),
-                "notable_achievements": detailed_analysis.get("notable_achievements", []),
-                "culture_fit_assessment": detailed_analysis.get("culture_fit_assessment", {}),
-                "score_breakdown": detailed_analysis.get("score_breakdown", {})
-            }
-            results.append(result)
-        
-        # SORT by global_score DESCENDING (best candidates first)
-        sorted_results = sorted(
-            results,
-            key=lambda x: x.get('global_score', 0),
-            reverse=True
-        )
-        
-        logger.info(f"Results retrieved: {len(sorted_results)} candidates for session: {session_id}")
-        
-        # Get executive recommendation from session (if available)
-        executive_recommendation = session["data"].get("executive_recommendation")
-        
-        return JSONResponse({
-            "status": "success",
-            "total_candidates": len(sorted_results),
-            "results": sorted_results,
-            "executive_recommendation": executive_recommendation,
-            "hard_blockers": hard_blockers,  # Include hard blockers (must-have requirements) in response
-            "message": f"Analysis complete for {len(sorted_results)} candidates.",
-            "report_code": report_code_in_session,
-            "source": "session-db"
-        })
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in step7_results: {e}")
         raise HTTPException(
             status_code=500,
             detail="Internal server error retrieving results"
