@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import api from '@services/api';
 
 interface AdminUser {
@@ -40,6 +40,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
   // Check if user is authenticated on mount
   useEffect(() => {
     checkAuthStatus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuthStatus = async () => {
@@ -97,15 +98,19 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
     setUser(null);
   };
 
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders
+  // Note: login and logout are stable functions, so they don't need to be in deps
+  const value: AdminAuthContextType = useMemo(() => ({
     user,
     loading,
     login,
     logout,
     isAuthenticated: !!user,
     isSuperAdmin: user?.role === 'super_admin'
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [user, loading]);
 
+  // Always provide a valid context value, even during loading
   return (
     <AdminAuthContext.Provider value={value}>
       {children}
