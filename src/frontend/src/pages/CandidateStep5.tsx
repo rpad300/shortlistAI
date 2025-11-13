@@ -264,10 +264,19 @@ const CandidateStep5: React.FC = () => {
         <div className="form-actions">
           <Button
             variant="outline"
-            onClick={() => {
+            onClick={async () => {
               const sessionId = sessionStorage.getItem('candidate_session_id');
               if (sessionId) {
-                window.open(`http://localhost:8000/api/candidate/step6/report/${sessionId}`, '_blank');
+                try {
+                  const response = await candidateAPI.downloadReport(sessionId);
+                  const blob = new Blob([response.data], { type: 'application/pdf' });
+                  const url = window.URL.createObjectURL(blob);
+                  window.open(url, '_blank');
+                  // Clean up the URL after a delay
+                  setTimeout(() => window.URL.revokeObjectURL(url), 100);
+                } catch (error) {
+                  console.error('Error downloading report:', error);
+                }
               }
             }}
           >

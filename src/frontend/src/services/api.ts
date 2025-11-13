@@ -100,6 +100,8 @@ export const candidateAPI = {
   step5: (sessionId: string) => api.get(`/candidate/step5/${sessionId}`),
   sendEmail: (sessionId: string, email: string) => 
     api.post('/candidate/step6/email', { session_id: sessionId, recipient_email: email }),
-  downloadReport: (sessionId: string) => api.get(`/candidate/step6/report/${sessionId}`),
+  downloadReport: (sessionId: string) => api.get(`/candidate/step6/report/${sessionId}`, {
+    responseType: 'blob'
+  }),
 };
 
