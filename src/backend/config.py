@@ -32,7 +32,9 @@ else:
             print(f"[Config] Loaded .env from: {env_path}")
             break
     else:
-        print("[Config] No .env file found, using environment variables from docker-compose")
+        # In Docker, env_file in docker-compose.yml injects variables directly
+        # No physical .env file needed - this is normal and expected
+        print("[Config] No .env file found, using environment variables (normal in Docker)")
 
 
 class Settings(BaseSettings):
