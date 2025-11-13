@@ -1201,6 +1201,8 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
         )
         
         for idx, cv_id in enumerate(cv_ids, 1):
+            cv = None
+            candidate_info = candidate_lookup.get(cv_id, {})
             try:
                 # Update progress
                 session_service.update_session(
@@ -1219,8 +1221,6 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 if not cv:
                     logger.warning(f"CV {cv_id} not found, skipping")
                     continue
-
-                candidate_info = candidate_lookup.get(cv_id, {})
                 extracted_text = cv.get("extracted_text") or ""
                 candidate_uuid: Optional[UUID] = None
                 candidate_name: Optional[str] = None
@@ -1436,7 +1436,6 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 logger.error(f"AI analysis timed out for CV {cv_id}")
                 errors.append(error_msg)
                 # Still add to results with error info so it appears in step7
-                candidate_info = candidate_lookup.get(cv_id, {})
                 summary = candidate_info.get("summary") or {}
                 candidate_label = (
                     summary.get("full_name")
@@ -1444,9 +1443,10 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     or candidate_info.get("filename")
                     or f"Candidate {idx}"
                 )
+                candidate_id_str = str(cv.get("candidate_id")) if cv and cv.get("candidate_id") else str(cv_id)
                 session_results.append({
                     "analysis_id": None,
-                    "candidate_id": str(cv.get("candidate_id")) if cv else str(cv_id),
+                    "candidate_id": candidate_id_str,
                     "candidate_label": candidate_label,
                     "file_name": candidate_info.get("filename"),
                     "summary": summary,
@@ -1469,7 +1469,6 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 logger.error(f"Error analyzing CV {cv_id}: {cv_err}", exc_info=True)
                 errors.append(error_msg)
                 # Still add to results with error info so it appears in step7
-                candidate_info = candidate_lookup.get(cv_id, {})
                 summary = candidate_info.get("summary") or {}
                 candidate_label = (
                     summary.get("full_name")
@@ -1477,9 +1476,10 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     or candidate_info.get("filename")
                     or f"Candidate {idx}"
                 )
+                candidate_id_str = str(cv.get("candidate_id")) if cv and cv.get("candidate_id") else str(cv_id)
                 session_results.append({
                     "analysis_id": None,
-                    "candidate_id": str(cv.get("candidate_id")) if cv else str(cv_id),
+                    "candidate_id": candidate_id_str,
                     "candidate_label": candidate_label,
                     "file_name": candidate_info.get("filename"),
                     "summary": summary,
