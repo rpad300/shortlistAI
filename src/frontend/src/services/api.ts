@@ -77,17 +77,16 @@ export const interviewerAPI = {
   }),
   step4: (data: any) => api.post('/interviewer/step4', data),
   step5: (data: FormData) => {
-    // Calculate timeout based on number of files (estimate 25 seconds per CV + 60s base)
-    // Get file count from FormData - count all entries with key 'files'
-    const fileCount = Array.from(data.entries()).filter(([key]) => key === 'files').length;
-    // Minimum 120s (2 minutes), +25s per file for upload + extraction + AI summary
-    const timeout = Math.max(120000, (fileCount * 25000) + 60000);
-    console.log(`[API] step5 timeout calculated: ${timeout}ms for ${fileCount} file(s)`);
+    // Upload starts immediately, processing happens in background
+    // Use shorter timeout since we just need to start the upload
     return api.post('/interviewer/step5', data, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: timeout
+      timeout: 30000 // 30s to start upload (actual processing is async)
     });
   },
+  step5Progress: (sessionId: string) => api.get(`/interviewer/step5/progress/${sessionId}`, {
+    timeout: 8000, // Polling endpoint - allow slightly more time for network delays
+  }),
   step6: (sessionId: string) => api.post(`/interviewer/step6?session_id=${sessionId}`, null, {
     timeout: 30000, // Quick response - analysis runs in background
   }),

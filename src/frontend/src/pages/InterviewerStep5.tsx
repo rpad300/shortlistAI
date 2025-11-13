@@ -2,7 +2,7 @@
  * Interviewer Flow - Step 5: Upload CVs (Batch)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import StepLayout from '@components/StepLayout';
@@ -21,6 +21,21 @@ const InterviewerStep5: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [uploadProgress, setUploadProgress] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState('');
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [currentFile, setCurrentFile] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
+  
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if ((window as any).__step5PollInterval) {
+        clearInterval((window as any).__step5PollInterval);
+        delete (window as any).__step5PollInterval;
+      }
+    };
+  }, []);
   
   // Handler to ADD files (not replace)
   const handleAddFiles = (newFiles: File[]) => {
@@ -53,7 +68,11 @@ const InterviewerStep5: React.FC = () => {
     
     setLoading(true);
     setError('');
-    setUploadProgress(`Uploading ${files.length} CV(s)... This may take ${Math.ceil(files.length * 15 / 60)} minute(s)`);
+    setIsProcessing(true);
+    setUploadProgress(`Starting upload of ${files.length} CV(s)...`);
+    setProcessingStatus('Starting upload...');
+    setProcessingProgress(0);
+    setTotalFiles(files.length);
     
     try {
       const formData = new FormData();
@@ -62,32 +81,90 @@ const InterviewerStep5: React.FC = () => {
         formData.append('files', file);
       });
       
-      // Calculate estimated time: ~25 seconds per CV (upload + extraction + AI summary)
-      const estimatedSeconds = files.length * 25;
-      const estimatedMinutes = Math.ceil(estimatedSeconds / 60);
+      console.log(`[Step5] Starting upload of ${files.length} CV(s)`);
       
-      // Update progress message during upload
-      setUploadProgress(`Processing ${files.length} CV(s)... Estimated time: ${estimatedMinutes} minute(s). Please wait...`);
-      
-      console.log(`[Step5] Starting upload of ${files.length} CV(s), estimated ${estimatedSeconds}s`);
-      
+      // Start upload (returns immediately, processing happens in background)
       const response = await interviewerAPI.step5(formData);
       
-      const { files_processed, files_failed } = response.data;
-      
-      if (files_failed > 0) {
-        setUploadProgress(`✅ Processed ${files_processed} CVs. ${files_failed} failed.`);
-        // Still allow to proceed
-        setTimeout(() => navigate('/interviewer/step6'), 2000);
+      if (response.data.status === 'already_running') {
+        setProcessingStatus('Upload already in progress...');
       } else {
-        navigate('/interviewer/step6');
+        setProcessingStatus('Upload started! Processing CVs...');
+        setTotalFiles(response.data.total_files || files.length);
       }
+      
+      // Start polling for progress
+      const pollInterval = setInterval(async () => {
+        try {
+          const progressResponse = await interviewerAPI.step5Progress(sessionId);
+          const progressData = progressResponse.data;
+          
+          const progressInfo = progressData.progress || {};
+          const current = progressInfo.current || 0;
+          const total = progressInfo.total || totalFiles || 1;
+          const statusText = progressInfo.status || 'Processing...';
+          const currentFilename = progressInfo.current_filename || '';
+          
+          setCurrentFile(current);
+          setTotalFiles(total);
+          setProcessingStatus(currentFilename ? `${statusText}` : statusText);
+          
+          // Calculate progress percentage
+          const progressPercent = total > 0 ? Math.min(95, (current / total) * 100) : 20;
+          setProcessingProgress(progressPercent);
+          
+          // Check if complete
+          if (progressData.complete) {
+            clearInterval(pollInterval);
+            
+            setProcessingProgress(100);
+            setProcessingStatus(`✅ Completed: ${progressData.cv_count || current} CV(s) processed`);
+            
+            // Show errors if any
+            if (progressData.errors && progressData.errors.length > 0) {
+              setError(`Some CVs failed: ${progressData.errors.join(', ')}`);
+            }
+            
+            // Navigate to step 6 after short delay
+            setTimeout(() => {
+              navigate('/interviewer/step6');
+            }, 2000);
+          } else if (progressData.status === 'failed') {
+            clearInterval(pollInterval);
+            
+            setProcessingStatus(`❌ Upload failed: ${progressInfo.status || 'Unknown error'}`);
+            setProcessingProgress(0);
+            setError(progressData.errors?.join(', ') || 'Upload failed');
+            setIsProcessing(false);
+            setLoading(false);
+          }
+        } catch (pollError: any) {
+          // Don't log timeout errors as they're expected during long operations
+          const isTimeout = pollError.code === 'ECONNABORTED' || pollError.message?.includes('timeout');
+          if (!isTimeout) {
+            console.error('Error polling upload progress:', pollError);
+          }
+          
+          // Continue polling unless it's a 404 (session expired)
+          if (pollError.response?.status === 404) {
+            clearInterval(pollInterval);
+            
+            sessionStorage.removeItem('interviewer_session_id');
+            setError('Session expired. Please restart from step 1.');
+            setIsProcessing(false);
+            setLoading(false);
+          }
+        }
+      }, 3000); // Poll every 3 seconds
+      
+      // Store interval ID for cleanup on unmount
+      (window as any).__step5PollInterval = pollInterval;
       
     } catch (error: any) {
       console.error('Error in step 5:', error);
-      setError(error.response?.data?.detail || 'An error occurred uploading CVs.');
+      setError(error.response?.data?.detail || 'An error occurred starting CV upload.');
       setUploadProgress('');
-    } finally {
+      setIsProcessing(false);
       setLoading(false);
     }
   };
@@ -119,11 +196,21 @@ const InterviewerStep5: React.FC = () => {
           }
         />
         
-        <AILoadingOverlay 
-          isVisible={loading}
-          message={`Uploading and processing ${files.length} CV(s)`}
-          estimatedSeconds={files.length * 15}
-        />
+        {isProcessing ? (
+          <AILoadingOverlay 
+            isVisible={isProcessing}
+            message={processingStatus}
+            progress={processingProgress}
+            currentItem={currentFile}
+            totalItems={totalFiles}
+          />
+        ) : (
+          <AILoadingOverlay 
+            isVisible={loading}
+            message={uploadProgress || `Preparing to upload ${files.length} CV(s)...`}
+            estimatedSeconds={files.length * 15}
+          />
+        )}
         
         <form onSubmit={handleSubmit} className="step-form">
           <div className="form-section">

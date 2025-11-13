@@ -806,15 +806,221 @@ async def step4_weighting(data: WeightingInput):
         )
 
 
+async def _run_cv_upload_background(session_id: UUID, files_data: List[Dict[str, Any]], 
+                                    session_service, cv_service, candidate_service,
+                                    storage_service, ai_service):
+    """
+    Background task to process CV uploads sequentially.
+    Updates progress in session as it goes.
+    """
+    from utils import FileProcessor
+    from uuid import UUID
+    
+    try:
+        # Get session data
+        session = session_service.get_session(session_id)
+        if not session:
+            logger.error(f"Session {session_id} not found in background task")
+            return
+        
+        session_data = session.get("data", {})
+        language = session_data.get("language", "en")
+        total_files = len(files_data)
+        
+        processed_cvs = []
+        errors = []
+        
+        # Initialize progress
+        session_service.update_session(
+            session_id,
+            {
+                "upload_status": "running",
+                "upload_progress": {
+                    "current": 0,
+                    "total": total_files,
+                    "status": "Starting upload...",
+                    "current_filename": None
+                }
+            }
+        )
+        
+        # Process each CV file SEQUENTIALLY
+        for idx, file_data in enumerate(files_data, 1):
+            filename = file_data["filename"]
+            file_content = file_data["content"]
+            
+            try:
+                # Update progress
+                session_service.update_session(
+                    session_id,
+                    {
+                        "upload_progress": {
+                            "current": idx,
+                            "total": total_files,
+                            "status": f"Processing CV {idx} of {total_files}: {filename}",
+                            "current_filename": filename
+                        }
+                    }
+                )
+                
+                logger.info(f"Processing CV {idx}/{total_files}: {filename}")
+                
+                # Validate file
+                is_valid, error = FileProcessor.validate_file_type(filename)
+                if not is_valid:
+                    errors.append(f"{filename}: {error}")
+                    continue
+                
+                # Validate size
+                is_valid, error = FileProcessor.validate_file_size(len(file_content))
+                if not is_valid:
+                    errors.append(f"{filename}: {error}")
+                    continue
+                
+                # Extract text
+                success, extracted_text, error = FileProcessor.extract_text(
+                    file_content,
+                    filename
+                )
+                
+                if not success or not extracted_text:
+                    extracted_text = ""
+                    logger.warning(f"No text extracted from {filename}")
+                
+                # Generate unique email to avoid duplicates during batch upload
+                generated_email = f"interviewer_session_{session_id}_{idx}@shortlistai.test"
+                candidate = await candidate_service.create(
+                    email=generated_email,
+                    name=f"Candidate {idx}",
+                    consent_given=False  # Consent from interviewer, not candidate
+                )
+                
+                if not candidate:
+                    errors.append(f"{filename}: Failed to create candidate")
+                    continue
+                
+                # Upload CV file FIRST (before AI processing to avoid memory issues)
+                success, file_url, error = await storage_service.upload_cv(
+                    file_content,
+                    filename,
+                    candidate["id"]
+                )
+                
+                if not success:
+                    errors.append(f"{filename}: {error}")
+                    continue
+                
+                # Create CV record
+                cv = await cv_service.create(
+                    candidate_id=UUID(candidate["id"]),
+                    file_url=file_url,
+                    uploaded_by_flow="interviewer",
+                    extracted_text=extracted_text
+                )
+                
+                if not cv:
+                    errors.append(f"{filename}: Failed to create CV record")
+                    continue
+                
+                # Summarize CV with AI AFTER upload (if we have extracted text)
+                summary = None
+                if extracted_text:
+                    try:
+                        # Limit text length for summary to avoid token issues
+                        summary_text = extracted_text[:5000] if len(extracted_text) > 5000 else extracted_text
+                        summary = await ai_service.summarize_cv(
+                            summary_text,
+                            filename,
+                            language
+                        )
+                        logger.info(f"Summary generated for {filename}")
+                    except Exception as summary_error:
+                        logger.warning(f"Failed to generate summary for {filename}: {summary_error}")
+                        summary = None
+                else:
+                    logger.warning(f"No extracted text available for {filename}, skipping AI summary")
+                
+                processed_cvs.append({
+                    "cv_id": cv["id"],
+                    "candidate_id": candidate["id"],
+                    "filename": filename,
+                    "summary": summary
+                })
+                logger.info(f"✅ CV {idx}/{total_files} processed: {filename} -> {cv['id']}")
+                
+                # Clear file_content from memory after processing
+                del file_content
+                
+            except Exception as e:
+                errors.append(f"{filename}: {str(e)}")
+                logger.error(f"Error processing CV {filename}: {e}", exc_info=True)
+        
+        # Update session with results
+        if len(processed_cvs) > 0:
+            session_service.update_session(
+                session_id,
+                {
+                    "cv_ids": [cv["cv_id"] for cv in processed_cvs],
+                    "cv_count": len(processed_cvs),
+                    "candidates_info": processed_cvs,
+                    "analysis_complete": False,
+                    "analysis_results": [],
+                    "upload_status": "complete",
+                    "upload_progress": {
+                        "current": total_files,
+                        "total": total_files,
+                        "status": f"Completed: {len(processed_cvs)} CV(s) processed",
+                        "current_filename": None
+                    },
+                    "upload_errors": errors if errors else []
+                },
+                step=5
+            )
+            logger.info(f"✅ Upload completed: {len(processed_cvs)} CVs processed for session: {session_id}")
+        else:
+            # All failed
+            session_service.update_session(
+                session_id,
+                {
+                    "upload_status": "failed",
+                    "upload_progress": {
+                        "current": 0,
+                        "total": total_files,
+                        "status": "Upload failed: No CVs could be processed",
+                        "current_filename": None
+                    },
+                    "upload_errors": errors
+                }
+            )
+            logger.error(f"❌ Upload failed: No CVs processed for session: {session_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in _run_cv_upload_background for session {session_id}: {e}", exc_info=True)
+        try:
+            session_service.update_session(
+                session_id,
+                {
+                    "upload_status": "failed",
+                    "upload_progress": {
+                        "status": f"Error: {str(e)}",
+                        "current_filename": None
+                    }
+                }
+            )
+        except:
+            pass
+
+
 @router.post("/step5")
 async def step5_upload_cvs(
     session_id: str = Form(...),
     files: List[UploadFile] = File(...)
 ):
     """
-    Step 5: CV upload (batch).
+    Step 5: CV upload (batch) - async processing.
     
-    Accepts multiple CV files for analysis.
+    Accepts multiple CV files and processes them in the background.
+    Returns immediately. Use GET /step5/progress/{session_id} to check progress.
     """
     from services.database import (
         get_session_service,
@@ -834,170 +1040,69 @@ async def step5_upload_cvs(
     
     try:
         session_service = get_session_service()
-        cv_service = get_cv_service()
-        candidate_service = get_candidate_service()
-        storage_service = get_storage_service()
-        ai_service = get_ai_analysis_service()
         
         # Validate session
         session = session_service.get_session(UUID(session_id))
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
         
-        processed_cvs = []
-        errors = []
-        session_data = session.get("data", {})
-        language = session_data.get("language", "en")
+        # Check if upload is already running
+        if session["data"].get("upload_status") == "running":
+            return JSONResponse({
+                "status": "already_running",
+                "message": "CV upload is already in progress",
+                "total_files": len(files)
+            })
         
-        # Process each CV file SEQUENTIALLY (one at a time to avoid memory/token issues)
-        for idx, file in enumerate(files):
+        # Read all files into memory (we need to pass them to background task)
+        # This is acceptable since we're processing sequentially in background
+        files_data = []
+        for file in files:
             try:
-                logger.info(f"Processing CV {idx+1}/{len(files)}: {file.filename}")
-                
-                # Validate file
-                is_valid, error = FileProcessor.validate_file_type(file.filename)
-                if not is_valid:
-                    errors.append(f"{file.filename}: {error}")
-                    continue
-                
-                # Read file
                 file_content = await file.read()
-                
-                # Validate size
-                is_valid, error = FileProcessor.validate_file_size(len(file_content))
-                if not is_valid:
-                    errors.append(f"{file.filename}: {error}")
-                    continue
-                
-                # Extract text to try to find email for deduplication
-                # Process ONE file at a time to avoid memory issues
-                success, extracted_text, error = FileProcessor.extract_text(
-                    file_content,
-                    file.filename
-                )
-                
-                if not success or not extracted_text:
-                    extracted_text = ""
-                    logger.warning(f"No text extracted from {file.filename}")
-                
-                # Generate unique email to avoid duplicates during batch upload
-                generated_email = f"interviewer_session_{session_id}_{idx+1}@shortlistai.test"
-                candidate = await candidate_service.create(
-                    email=generated_email,
-                    name=f"Candidate {idx+1}",
-                    consent_given=False  # Consent from interviewer, not candidate
-                )
-                
-                if not candidate:
-                    errors.append(f"{file.filename}: Failed to create candidate")
-                    continue
-                
-                # Upload CV file FIRST (before AI processing to avoid memory issues)
-                success, file_url, error = await storage_service.upload_cv(
-                    file_content,
-                    file.filename,
-                    candidate["id"]
-                )
-                
-                if not success:
-                    errors.append(f"{file.filename}: {error}")
-                    continue
-                
-                # Create CV record
-                cv = await cv_service.create(
-                    candidate_id=UUID(candidate["id"]),
-                    file_url=file_url,
-                    uploaded_by_flow="interviewer",
-                    extracted_text=extracted_text
-                )
-                
-                if not cv:
-                    errors.append(f"{file.filename}: Failed to create CV record")
-                    continue
-                
-                # Summarize CV with AI AFTER upload (if we have extracted text)
-                # Process ONE summary at a time to avoid token/memory limits
-                summary = None
-                if extracted_text:
-                    try:
-                        # Limit text length for summary to avoid token issues
-                        # Use first 5000 chars for summary (full text saved in CV record)
-                        summary_text = extracted_text[:5000] if len(extracted_text) > 5000 else extracted_text
-                        summary = await ai_service.summarize_cv(
-                            summary_text,
-                            file.filename,
-                            language
-                        )
-                        logger.info(f"Summary generated for {file.filename}")
-                    except Exception as summary_error:
-                        logger.warning(f"Failed to generate summary for {file.filename}: {summary_error}")
-                        # Continue without summary - not critical for upload
-                        summary = None
-                else:
-                    logger.warning(f"No extracted text available for {file.filename}, skipping AI summary")
-                
-                processed_cvs.append({
-                    "cv_id": cv["id"],
-                    "candidate_id": candidate["id"],
+                files_data.append({
                     "filename": file.filename,
-                    "summary": summary
+                    "content": file_content
                 })
-                logger.info(f"✅ CV {idx+1}/{len(files)} processed: {file.filename} -> {cv['id']}")
-                
-                # Clear file_content from memory after processing
-                del file_content
-                
             except Exception as e:
-                errors.append(f"{file.filename}: {str(e)}")
-                logger.error(f"Error processing CV {file.filename}: {e}", exc_info=True)
+                logger.error(f"Error reading file {file.filename}: {e}")
         
-        if len(processed_cvs) == 0:
+        if len(files_data) == 0:
             raise HTTPException(
                 status_code=400,
-                detail=f"No CVs could be processed. Errors: {errors}"
+                detail="No files could be read"
             )
         
-        # Update session with CV IDs
-        session_service.update_session(
-            UUID(session_id),
-            {
-                "cv_ids": [cv["cv_id"] for cv in processed_cvs],
-                "cv_count": len(processed_cvs),
-                "candidates_info": processed_cvs,
-                "analysis_complete": False,
-                "analysis_results": []
-            },
-            step=5
-        )
+        # Get services for background task
+        cv_service = get_cv_service()
+        candidate_service = get_candidate_service()
+        storage_service = get_storage_service()
+        ai_service = get_ai_analysis_service()
         
-        logger.info(f"Uploaded {len(processed_cvs)} CVs for session: {session_id}")
-
-        response_cvs = [
-            {
-                "cv_id": info["cv_id"],
-                "candidate_id": info["candidate_id"],
-                "filename": info["filename"],
-                "summary": info.get("summary")
-            }
-            for info in processed_cvs
-        ]
+        # Start background task
+        asyncio.create_task(_run_cv_upload_background(
+            UUID(session_id),
+            files_data,
+            session_service,
+            cv_service,
+            candidate_service,
+            storage_service,
+            ai_service
+        ))
         
         return JSONResponse({
-            "status": "success",
-            "files_processed": len(processed_cvs),
-            "files_failed": len(errors),
-            "cvs": response_cvs,
-            "errors": errors if errors else None,
-            "message": f"Uploaded {len(processed_cvs)} CVs. Proceed to step 6 for AI analysis."
+            "status": "started",
+            "message": f"Upload started for {len(files_data)} CV(s). Processing in background...",
+            "total_files": len(files_data)
         })
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in step5_upload_cvs: {e}")
+        logger.error(f"Error in step5_upload_cvs: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Internal server error uploading CVs"
+            detail="Internal server error starting CV upload"
         )
 
 
@@ -1478,6 +1583,48 @@ async def step6_analysis(session_id: str):
         raise HTTPException(
             status_code=500,
             detail="Internal server error starting analysis"
+        )
+
+
+@router.get("/step5/progress/{session_id}")
+async def step5_progress(session_id: UUID):
+    """
+    Get CV upload progress for a session.
+    
+    Returns current progress, status, and completion state.
+    """
+    from services.database import get_session_service
+    
+    try:
+        session_service = get_session_service()
+        session = session_service.get_session(session_id)
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Safely access session data with defaults
+        session_data = session.get("data", {})
+        progress = session_data.get("upload_progress", {})
+        status = session_data.get("upload_status", "not_started")
+        is_complete = status == "complete"
+        errors = session_data.get("upload_errors", [])
+        cv_count = session_data.get("cv_count", 0)
+        
+        return JSONResponse({
+            "status": status,
+            "complete": is_complete,
+            "progress": progress,
+            "cv_count": cv_count,
+            "errors": errors if errors else None
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting upload progress for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error getting upload progress"
         )
 
 
