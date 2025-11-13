@@ -50,8 +50,22 @@ from middleware.rate_limit import get_rate_limiter
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     """Apply rate limiting to requests."""
-    # Apply rate limiting only to public endpoints
-    if request.url.path.startswith("/api/interviewer") or request.url.path.startswith("/api/candidate"):
+    # Exclude endpoints that need frequent requests or large uploads from rate limiting
+    excluded_paths = [
+        "/api/interviewer/step6/progress/",  # Polling endpoint (called every 3 seconds)
+        "/api/interviewer/step5",  # File upload endpoint
+        "/api/candidate/step3",  # File upload endpoint
+        "/api/interviewer/step2",  # Job posting upload
+        "/api/candidate/step2",  # Job posting upload
+        "/api/interviewer/step8/report/",  # PDF download
+        "/api/candidate/step6/download/",  # PDF download
+    ]
+    
+    # Check if this path should be excluded
+    should_exclude = any(request.url.path.startswith(path) for path in excluded_paths)
+    
+    # Apply rate limiting only to public endpoints that are not excluded
+    if (request.url.path.startswith("/api/interviewer") or request.url.path.startswith("/api/candidate")) and not should_exclude:
         rate_limiter = get_rate_limiter()
         await rate_limiter.check_rate_limit(request)
     
