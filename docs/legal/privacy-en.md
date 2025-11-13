@@ -162,6 +162,8 @@ We will respond within 30 days of receiving your request.
 
 You can control cookies through your browser settings. Note that disabling cookies may affect Platform functionality.
 
+For detailed information about cookies, see our [Cookie Policy](cookie-policy-en.md).
+
 ## 9. Data Sharing
 
 ### 9.1 Who We Share With
@@ -199,7 +201,28 @@ We may update this Privacy Policy from time to time. Changes will be posted on t
 
 Continued use of the Platform after changes constitutes acceptance of the updated Policy.
 
-## 13. Contact Us
+## 13. Data Breach Notification
+
+### 13.1 Our Commitment
+
+In the event of a data breach that poses a risk to your rights and freedoms, we will:
+- Notify affected users without undue delay
+- Notify relevant supervisory authorities as required by law
+- Provide clear information about the nature of the breach
+- Explain measures taken to address the breach
+
+### 13.2 Notification Process
+
+Notifications will be sent via email to the address associated with your account. If email is not available, we will use alternative communication methods.
+
+## 14. Data Protection Officer
+
+For data protection inquiries, contact:
+
+**Email**: privacy@shortlistai.com  
+**Subject**: Data Protection Inquiry
+
+## 15. Contact Us
 
 For privacy-related questions or concerns:
 
@@ -210,6 +233,10 @@ For data rights requests:
 
 **Email**: privacy@shortlistai.com  
 **Subject**: Data Rights Request
+
+For general legal questions:
+
+**Email**: legal@shortlistai.com
 
 ---
 

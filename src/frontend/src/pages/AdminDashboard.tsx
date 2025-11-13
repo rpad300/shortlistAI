@@ -167,6 +167,10 @@ const AdminDashboard: React.FC = () => {
                   <h3>🤖 AI Prompts</h3>
                   <p>Manage and edit AI prompt templates</p>
                 </Link>
+                <Link to="/admin/ai-settings" className="management-card">
+                  <h3>⚙️ AI Provider Settings</h3>
+                  <p>Configure default AI provider</p>
+                </Link>
                 <Link to="/admin/ai-usage" className="management-card">
                   <h3>AI Usage Logs</h3>
                   <p>Track AI provider usage and costs</p>

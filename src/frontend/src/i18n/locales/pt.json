@@ -34,7 +34,50 @@
     "step6_title": "Análise IA",
     "step6_subtitle": "Nossa IA está analisando todos os candidatos",
     "step7_title": "Resultados e Rankings",
-    "step7_subtitle": "Revise a análise e classificação dos candidatos"
+    "step7_subtitle": "Revise a análise e classificação dos candidatos",
+    "step7": {
+      "detailed_analysis": "Análise Detalhada",
+      "profile_summary": "Resumo do Perfil",
+      "swot_analysis": "Análise SWOT",
+      "strengths": "Pontos Fortes",
+      "weaknesses": "Pontos Fracos",
+      "opportunities": "Oportunidades",
+      "threats": "Ameaças",
+      "technical_skills": "Avaliação de Competências Técnicas (Hard Skills)",
+      "technical_skills_legend": "Legenda: 1 = Básico, 2 = Intermediário, 3 = Avançado, 4 = Proficiente, 5 = Especialista",
+      "skill": "Competência",
+      "score": "Pontuação",
+      "justification": "Justificação",
+      "missing_technical_skills": "Competências Técnicas em Falta",
+      "soft_skills": "Avaliação de Competências Interpessoais (Soft Skills)",
+      "soft_skills_legend": "Legenda: 1 = Pouco evidente, 2 = Parcialmente demonstrada, 3 = Adequadamente demonstrada, 4 = Bem demonstrada, 5 = Fortemente demonstrada",
+      "missing_soft_skills": "Competências Interpessoais em Falta",
+      "professional_experience": "Análise de Experiência Profissional",
+      "relevance_to_position": "Relevância para a Posição",
+      "career_progression": "Progressão de Carreira",
+      "professional_stability": "Estabilidade Profissional",
+      "education_certifications": "Formação Académica e Certificações",
+      "relevance_adequacy": "Relevância e Adequação",
+      "evaluation": "Avaliação",
+      "certifications": "Certificações",
+      "notable_achievements": "Realizações e Projetos Notáveis",
+      "impact": "Impacto",
+      "culture_fit": "Adequação à Cultura Organizacional",
+      "culture_fit_legend": "Legenda: 1 = Pouco adequado, 2 = Parcialmente adequado, 3 = Adequado, 4 = Bem adequado, 5 = Altamente adequado",
+      "culture_fit_score": "Pontuação",
+      "score_breakdown": "Decomposição da Pontuação",
+      "global_score": "Pontuação Global",
+      "criterion": "Critério",
+      "weight_percent": "Peso (%)",
+      "technical_skills_label": "Competências Técnicas",
+      "soft_skills_label": "Competências Interpessoais",
+      "professional_experience_label": "Experiência Profissional",
+      "education_certifications_label": "Formação e Certificações",
+      "culture_fit_label": "Adequação Cultural",
+      "global_score_justification": "Justificação da Pontuação Global",
+      "view_details": "Ver Detalhes",
+      "hide_details": "Ocultar Detalhes"
+    }
   },
   
   "candidate": {
@@ -179,7 +222,15 @@
   "legal": {
     "terms": "Termos e Condições",
     "privacy": "Política de Privacidade",
-    "cookies": "Política de Cookies"
+    "cookies": "Política de Cookies",
+    "base_language_notice": "Esta é a versão oficial em inglês. Traduções para outros idiomas são fornecidas apenas para conveniência. Em caso de conflito, a versão em inglês prevalece.",
+    "last_updated": "Última Atualização",
+    "version": "Versão",
+    "back_to_home": "← Voltar ao Início",
+    "contact": {
+      "legal": "legal@shortlistai.com",
+      "privacy": "privacy@shortlistai.com"
+    }
   },
   
   "features": {

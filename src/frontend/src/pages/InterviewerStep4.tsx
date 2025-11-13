@@ -55,6 +55,15 @@ const InterviewerStep4: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   
+  // Check if session exists on mount
+  useEffect(() => {
+    const sessionId = sessionStorage.getItem('interviewer_session_id');
+    if (!sessionId) {
+      console.warn('No session found. Redirecting to step 1.');
+      navigate('/interviewer/step1');
+    }
+  }, [navigate]);
+  
   const [weights, setWeights] = useState<Weights>({
     technical_skills: 40,
     experience: 25,
@@ -118,7 +127,9 @@ const InterviewerStep4: React.FC = () => {
     const fetchSuggestions = async () => {
       const sessionId = sessionStorage.getItem('interviewer_session_id');
       if (!sessionId) {
+        console.warn('No session ID found. User may need to restart from step 1.');
         setLoadingSuggestions(false);
+        setHasSuggestions(false);
         return;
       }
 
@@ -141,8 +152,17 @@ const InterviewerStep4: React.FC = () => {
           setHasSuggestions(false);
           setSummary('');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Could not load AI weighting suggestions', err);
+        // If session not found (404), redirect to step 1
+        if (err.response?.status === 404 && err.response?.data?.detail === 'Session not found') {
+          console.warn('Session expired or not found. Redirecting to step 1.');
+          sessionStorage.removeItem('interviewer_session_id');
+          sessionStorage.removeItem('interviewer_id');
+          sessionStorage.removeItem('interviewer_report_code');
+          // Don't redirect automatically - let user continue manually
+          // navigate('/interviewer/step1');
+        }
         setHasSuggestions(false);
         setSummary('');
       } finally {

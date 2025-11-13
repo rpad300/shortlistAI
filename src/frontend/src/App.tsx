@@ -33,8 +33,10 @@ import AdminInterviewers from '@pages/AdminInterviewers';
 import AdminJobPostings from '@pages/AdminJobPostings';
 import AdminUsers from '@pages/AdminUsers';
 import AdminPrompts from '@pages/AdminPrompts';
+import AdminAISettings from '@pages/AdminAISettings';
 import LegalTerms from '@pages/LegalTerms';
 import LegalPrivacy from '@pages/LegalPrivacy';
+import LegalCookies from '@pages/LegalCookies';
 import './App.css';
 
 function App() {
@@ -63,6 +65,7 @@ function App() {
           <Route path="/candidate/step6" element={<PlaceholderPage step="6 - Email Sent!" flow="candidate" />} />
           <Route path="/legal/terms" element={<LegalTerms />} />
           <Route path="/legal/privacy" element={<LegalPrivacy />} />
+          <Route path="/legal/cookies" element={<LegalCookies />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/candidates" element={<AdminCandidates />} />
@@ -72,6 +75,7 @@ function App() {
           <Route path="/admin/interviewers" element={<AdminInterviewers />} />
           <Route path="/admin/job-postings" element={<AdminJobPostings />} />
           <Route path="/admin/prompts" element={<AdminPrompts />} />
+          <Route path="/admin/ai-settings" element={<AdminAISettings />} />
           <Route path="/admin/ai-usage" element={<PlaceholderPage step="AI Usage Logs" flow="admin" />} />
           <Route path="/admin/users" element={<AdminUsers />} />
         </Routes>

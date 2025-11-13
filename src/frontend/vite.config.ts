@@ -76,6 +76,12 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    hmr: {
+      // Reduce WebSocket connection issues
+      clientPort: 3000,
+      protocol: 'ws',
+      host: 'localhost'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

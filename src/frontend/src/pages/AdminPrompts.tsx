@@ -87,7 +87,25 @@ const AdminPrompts: React.FC = () => {
       if (languageFilter) params.append('language', languageFilter);
       
       const response = await api.get(`/admin/prompts?${params.toString()}`);
-      setPrompts(response.data.prompts || []);
+      const prompts = (response.data.prompts || []).map((prompt: any) => {
+        // Normalize variables to always be an array
+        let normalizedVariables: string[] = [];
+        if (Array.isArray(prompt.variables)) {
+          normalizedVariables = prompt.variables;
+        } else if (typeof prompt.variables === 'string') {
+          try {
+            normalizedVariables = prompt.variables ? JSON.parse(prompt.variables) : [];
+          } catch (e) {
+            // If parsing fails, treat as comma-separated string
+            normalizedVariables = prompt.variables.split(',').map((v: string) => v.trim()).filter((v: string) => v);
+          }
+        }
+        return {
+          ...prompt,
+          variables: normalizedVariables
+        };
+      });
+      setPrompts(prompts);
     } catch (err: any) {
       console.error('Error fetching prompts:', err);
       setError(err.response?.data?.detail || 'Failed to load prompts');
@@ -117,14 +135,32 @@ const AdminPrompts: React.FC = () => {
   };
 
   const handleSelectPrompt = (prompt: Prompt) => {
-    setSelectedPrompt(prompt);
+    // Normalize variables to always be an array
+    let normalizedVariables: string[] = [];
+    if (Array.isArray(prompt.variables)) {
+      normalizedVariables = prompt.variables;
+    } else if (typeof prompt.variables === 'string') {
+      try {
+        normalizedVariables = prompt.variables ? JSON.parse(prompt.variables) : [];
+      } catch (e) {
+        // If parsing fails, treat as comma-separated string
+        normalizedVariables = prompt.variables.split(',').map(v => v.trim()).filter(v => v);
+      }
+    }
+    
+    const normalizedPrompt = {
+      ...prompt,
+      variables: normalizedVariables
+    };
+    
+    setSelectedPrompt(normalizedPrompt);
     setFormData({
       prompt_key: prompt.prompt_key,
       name: prompt.name,
       content: prompt.content,
       category: prompt.category,
       description: prompt.description || '',
-      variables: prompt.variables,
+      variables: normalizedVariables,
       language: prompt.language,
       model_preferences: prompt.model_preferences,
       is_active: prompt.is_active,
@@ -191,7 +227,7 @@ const AdminPrompts: React.FC = () => {
       fetchPrompts();
       fetchStats();
       
-      // Refresh the selected prompt
+      // Refresh the selected prompt (normalization happens in handleSelectPrompt)
       const response = await api.get(`/admin/prompts/${selectedPrompt.id}`);
       handleSelectPrompt(response.data);
     } catch (err: any) {
@@ -690,18 +726,27 @@ const AdminPrompts: React.FC = () => {
                     <pre className="prompt-content">{selectedPrompt.content}</pre>
                   </div>
 
-                  {selectedPrompt.variables && selectedPrompt.variables.length > 0 && (
-                    <div className="detail-section">
-                      <h3>Variables</h3>
-                      <div className="variables-list">
-                        {selectedPrompt.variables.map((variable: string) => (
-                          <code key={variable} className="variable-badge">
-                            {'{' + variable + '}'}
-                          </code>
-                        ))}
+                  {(() => {
+                    // Ensure variables is always an array
+                    const variables = Array.isArray(selectedPrompt.variables) 
+                      ? selectedPrompt.variables 
+                      : (typeof selectedPrompt.variables === 'string' 
+                          ? (selectedPrompt.variables ? JSON.parse(selectedPrompt.variables) : [])
+                          : []);
+                    
+                    return variables && variables.length > 0 && (
+                      <div className="detail-section">
+                        <h3>Variables</h3>
+                        <div className="variables-list">
+                          {variables.map((variable: string) => (
+                            <code key={variable} className="variable-badge">
+                              {'{' + variable + '}'}
+                            </code>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {selectedPrompt.admin_notes && (
                     <div className="detail-section">

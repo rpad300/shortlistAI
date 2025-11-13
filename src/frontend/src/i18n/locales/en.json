@@ -34,7 +34,50 @@
     "step6_title": "AI Analysis",
     "step6_subtitle": "Our AI is analyzing all candidates",
     "step7_title": "Results & Rankings",
-    "step7_subtitle": "Review candidate analysis and rankings"
+    "step7_subtitle": "Review candidate analysis and rankings",
+    "step7": {
+      "detailed_analysis": "Detailed Analysis",
+      "profile_summary": "Profile Summary",
+      "swot_analysis": "SWOT Analysis",
+      "strengths": "Strengths",
+      "weaknesses": "Weaknesses",
+      "opportunities": "Opportunities",
+      "threats": "Threats",
+      "technical_skills": "Technical Skills Evaluation (Hard Skills)",
+      "technical_skills_legend": "Legend: 1 = Basic, 2 = Intermediate, 3 = Advanced, 4 = Proficient, 5 = Expert",
+      "skill": "Skill",
+      "score": "Score",
+      "justification": "Justification",
+      "missing_technical_skills": "Missing Critical Technical Skills",
+      "soft_skills": "Interpersonal Skills Evaluation (Soft Skills)",
+      "soft_skills_legend": "Legend: 1 = Not evident, 2 = Partially demonstrated, 3 = Adequately demonstrated, 4 = Well demonstrated, 5 = Strongly demonstrated",
+      "missing_soft_skills": "Missing Important Soft Skills",
+      "professional_experience": "Professional Experience Analysis",
+      "relevance_to_position": "Relevance to Position",
+      "career_progression": "Career Progression",
+      "professional_stability": "Professional Stability",
+      "education_certifications": "Academic Background and Certifications",
+      "relevance_adequacy": "Relevance and Adequacy",
+      "evaluation": "Evaluation",
+      "certifications": "Certifications",
+      "notable_achievements": "Notable Achievements and Projects",
+      "impact": "Impact",
+      "culture_fit": "Organizational Culture Fit Assessment",
+      "culture_fit_legend": "Legend: 1 = Not suitable, 2 = Partially suitable, 3 = Suitable, 4 = Well suited, 5 = Highly suitable",
+      "culture_fit_score": "Score",
+      "score_breakdown": "Score Breakdown",
+      "global_score": "Global Score",
+      "criterion": "Criterion",
+      "weight_percent": "Weight (%)",
+      "technical_skills_label": "Technical Skills",
+      "soft_skills_label": "Interpersonal Skills",
+      "professional_experience_label": "Professional Experience",
+      "education_certifications_label": "Education & Certifications",
+      "culture_fit_label": "Culture Fit",
+      "global_score_justification": "Global Score Justification",
+      "view_details": "View Details",
+      "hide_details": "Hide Details"
+    }
   },
   
   "candidate": {
@@ -300,7 +343,15 @@
   "legal": {
     "terms": "Terms and Conditions",
     "privacy": "Privacy Policy",
-    "cookies": "Cookie Policy"
+    "cookies": "Cookie Policy",
+    "base_language_notice": "This is the official English version. Translations to other languages are provided for convenience only. In case of conflict, the English version prevails.",
+    "last_updated": "Last Updated",
+    "version": "Version",
+    "back_to_home": "← Back to Home",
+    "contact": {
+      "legal": "legal@shortlistai.com",
+      "privacy": "privacy@shortlistai.com"
+    }
   },
   
   "common": {

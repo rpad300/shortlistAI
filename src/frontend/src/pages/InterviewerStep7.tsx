@@ -12,6 +12,53 @@ import Button from '@components/Button';
 import { interviewerAPI } from '@services/api';
 import './InterviewerStep1.css';
 
+interface TechnicalSkill {
+  skill: string;
+  score: number;
+  justification: string;
+}
+
+interface SoftSkill {
+  skill: string;
+  score: number;
+  justification: string;
+}
+
+interface NotableAchievement {
+  achievement: string;
+  impact: string;
+}
+
+interface ScoreBreakdown {
+  technical_skills?: {
+    weight_percent: number;
+    score: number;
+    justification: string;
+  };
+  soft_skills?: {
+    weight_percent: number;
+    score: number;
+    justification: string;
+  };
+  professional_experience?: {
+    weight_percent: number;
+    score: number;
+    justification: string;
+  };
+  education_certifications?: {
+    weight_percent: number;
+    score: number;
+    justification: string;
+  };
+  culture_fit?: {
+    weight_percent: number;
+    score: number;
+    justification: string;
+  };
+  global_score?: number;
+  global_score_justification?: string;
+}
+
 interface CandidateResult {
   analysis_id: string;
   candidate_id: string;
@@ -35,6 +82,34 @@ interface CandidateResult {
   intro_pitch?: string;  // Candidate intro pitch
   gap_strategies?: string[];  // Strategies to address gaps/risks
   preparation_tips?: string[];  // Study topics for interview
+  // Detailed analysis fields
+  profile_summary?: string;
+  swot_analysis?: {
+    strengths?: string[];
+    weaknesses?: string[];
+    opportunities?: string[];
+    threats?: string[];
+  };
+  technical_skills_detailed?: TechnicalSkill[];
+  soft_skills_detailed?: SoftSkill[];
+  missing_critical_technical_skills?: string[];
+  missing_important_soft_skills?: string[];
+  professional_experience_analysis?: {
+    relevance_to_position?: string;
+    career_progression?: string;
+    professional_stability?: string;
+  };
+  education_and_certifications?: {
+    relevance?: string;
+    adequacy?: string;
+    certifications?: string[];
+  };
+  notable_achievements?: NotableAchievement[];
+  culture_fit_assessment?: {
+    score: number;
+    justification: string;
+  };
+  score_breakdown?: ScoreBreakdown;
   enrichment?: {
     company?: {
       name?: string;
@@ -341,7 +416,7 @@ const InterviewerStep7: React.FC = () => {
                         variant="outline"
                         onClick={() => setSelectedCandidate(selectedCandidate === idx ? null : idx)}
                       >
-                        {selectedCandidate === idx ? 'Hide' : 'View'} Details
+                        {selectedCandidate === idx ? t('interviewer.step7.hide_details') : t('interviewer.step7.view_details')}
                       </Button>
                     </td>
                   </tr>
@@ -364,8 +439,26 @@ const InterviewerStep7: React.FC = () => {
             <h2 style={{ fontSize: '1.75rem' }}>
               {results[selectedCandidate].summary?.full_name || 
                results[selectedCandidate].candidate_label || 
-               `Candidate ${selectedCandidate + 1}`} - Detailed Analysis
+               `${t('interviewer.step7.candidate', { defaultValue: 'Candidate' })} ${selectedCandidate + 1}`} - {t('interviewer.step7.detailed_analysis')}
             </h2>
+            {/* Profile Summary */}
+            {results[selectedCandidate].profile_summary && (
+              <div style={{ 
+                padding: 'var(--spacing-md)', 
+                backgroundColor: 'var(--color-bg-primary)', 
+                borderRadius: 'var(--radius-md)',
+                marginBottom: 'var(--spacing-lg)',
+                fontSize: '1rem',
+                lineHeight: '1.6',
+                whiteSpace: 'pre-wrap',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
+              }}>
+                <h3 style={{ fontSize: '1.25rem', marginTop: 0, marginBottom: 'var(--spacing-sm)' }}>📋 {t('interviewer.step7.profile_summary')}</h3>
+                <p style={{ margin: 0 }}>{results[selectedCandidate].profile_summary}</p>
+              </div>
+            )}
+
             {results[selectedCandidate].summary && (
               <div style={{ 
                 padding: 'var(--spacing-md)', 
@@ -393,6 +486,54 @@ const InterviewerStep7: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* SWOT Analysis */}
+            {results[selectedCandidate].swot_analysis && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--spacing-md)' }}>📊 {t('interviewer.step7.swot_analysis')}</h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                  gap: 'var(--spacing-md)',
+                  overflow: 'visible',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
+                }}>
+                  <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-success)', color: 'white', borderRadius: 'var(--radius-md)' }}>
+                    <h4 style={{ marginTop: 0, fontSize: '1.125rem' }}>{t('interviewer.step7.strengths')}</h4>
+                    <ul style={{ paddingLeft: 'var(--spacing-lg)', lineHeight: '1.8', fontSize: '0.95rem' }}>
+                      {(results[selectedCandidate].swot_analysis.strengths || []).map((s, i) => (
+                        <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-error)', color: 'white', borderRadius: 'var(--radius-md)' }}>
+                    <h4 style={{ marginTop: 0, fontSize: '1.125rem' }}>{t('interviewer.step7.weaknesses')}</h4>
+                    <ul style={{ paddingLeft: 'var(--spacing-lg)', lineHeight: '1.8', fontSize: '0.95rem' }}>
+                      {(results[selectedCandidate].swot_analysis.weaknesses || []).map((w, i) => (
+                        <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-accent-primary)', color: 'white', borderRadius: 'var(--radius-md)' }}>
+                    <h4 style={{ marginTop: 0, fontSize: '1.125rem' }}>{t('interviewer.step7.opportunities')}</h4>
+                    <ul style={{ paddingLeft: 'var(--spacing-lg)', lineHeight: '1.8', fontSize: '0.95rem' }}>
+                      {(results[selectedCandidate].swot_analysis.opportunities || []).map((o, i) => (
+                        <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{o}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-warning)', color: 'white', borderRadius: 'var(--radius-md)' }}>
+                    <h4 style={{ marginTop: 0, fontSize: '1.125rem' }}>{t('interviewer.step7.threats')}</h4>
+                    <ul style={{ paddingLeft: 'var(--spacing-lg)', lineHeight: '1.8', fontSize: '0.95rem' }}>
+                      {(results[selectedCandidate].swot_analysis.threats || []).map((t, i) => (
+                        <li key={i} style={{ marginBottom: 'var(--spacing-xs)' }}>{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
               {Object.entries(results[selectedCandidate].categories).map(([category, score]) => (
@@ -407,6 +548,266 @@ const InterviewerStep7: React.FC = () => {
               ))}
             </div>
             
+            {/* Technical Skills Detailed */}
+            {results[selectedCandidate].technical_skills_detailed && results[selectedCandidate].technical_skills_detailed.length > 0 && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--spacing-md)' }}>🔧 {t('interviewer.step7.technical_skills')}</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-sm)' }}>
+                  {t('interviewer.step7.technical_skills_legend')}
+                </p>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: 'var(--color-bg-secondary)', textAlign: 'left' }}>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.skill')}</th>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.score')}</th>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.justification')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results[selectedCandidate].technical_skills_detailed.map((skill, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: 'var(--spacing-sm)', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{skill.skill}</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center', fontWeight: 'bold' }}>{skill.score}/5</td>
+                          <td style={{ padding: 'var(--spacing-sm)', wordWrap: 'break-word', overflowWrap: 'break-word', fontSize: '0.9rem' }}>{skill.justification}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {results[selectedCandidate].missing_critical_technical_skills && results[selectedCandidate].missing_critical_technical_skills.length > 0 && (
+                  <div style={{ marginTop: 'var(--spacing-md)', padding: 'var(--spacing-md)', backgroundColor: 'var(--color-warning)', borderRadius: 'var(--radius-md)' }}>
+                    <strong>⚠️ {t('interviewer.step7.missing_technical_skills')}:</strong>
+                    <ul style={{ marginTop: 'var(--spacing-xs)', paddingLeft: 'var(--spacing-lg)' }}>
+                      {results[selectedCandidate].missing_critical_technical_skills.map((skill, i) => (
+                        <li key={i}>{skill}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Soft Skills Detailed */}
+            {results[selectedCandidate].soft_skills_detailed && results[selectedCandidate].soft_skills_detailed.length > 0 && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--spacing-md)' }}>🤝 {t('interviewer.step7.soft_skills')}</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-sm)' }}>
+                  {t('interviewer.step7.soft_skills_legend')}
+                </p>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: 'var(--color-bg-secondary)', textAlign: 'left' }}>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.skill')}</th>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.score')}</th>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.justification')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results[selectedCandidate].soft_skills_detailed.map((skill, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: 'var(--spacing-sm)', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{skill.skill}</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center', fontWeight: 'bold' }}>{skill.score}/5</td>
+                          <td style={{ padding: 'var(--spacing-sm)', wordWrap: 'break-word', overflowWrap: 'break-word', fontSize: '0.9rem' }}>{skill.justification}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {results[selectedCandidate].missing_important_soft_skills && results[selectedCandidate].missing_important_soft_skills.length > 0 && (
+                  <div style={{ marginTop: 'var(--spacing-md)', padding: 'var(--spacing-md)', backgroundColor: 'var(--color-warning)', borderRadius: 'var(--radius-md)' }}>
+                    <strong>⚠️ {t('interviewer.step7.missing_soft_skills')}:</strong>
+                    <ul style={{ marginTop: 'var(--spacing-xs)', paddingLeft: 'var(--spacing-lg)' }}>
+                      {results[selectedCandidate].missing_important_soft_skills.map((skill, i) => (
+                        <li key={i}>{skill}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Professional Experience Analysis */}
+            {results[selectedCandidate].professional_experience_analysis && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--spacing-md)' }}>💼 {t('interviewer.step7.professional_experience')}</h3>
+                <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-md)' }}>
+                  {results[selectedCandidate].professional_experience_analysis.relevance_to_position && (
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <strong>{t('interviewer.step7.relevance_to_position')}:</strong>
+                      <p style={{ marginTop: 'var(--spacing-xs)', whiteSpace: 'pre-wrap', wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.6' }}>
+                        {results[selectedCandidate].professional_experience_analysis.relevance_to_position}
+                      </p>
+                    </div>
+                  )}
+                  {results[selectedCandidate].professional_experience_analysis.career_progression && (
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <strong>{t('interviewer.step7.career_progression')}:</strong>
+                      <p style={{ marginTop: 'var(--spacing-xs)', whiteSpace: 'pre-wrap', wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.6' }}>
+                        {results[selectedCandidate].professional_experience_analysis.career_progression}
+                      </p>
+                    </div>
+                  )}
+                  {results[selectedCandidate].professional_experience_analysis.professional_stability && (
+                    <div>
+                      <strong>{t('interviewer.step7.professional_stability')}:</strong>
+                      <p style={{ marginTop: 'var(--spacing-xs)', whiteSpace: 'pre-wrap', wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.6' }}>
+                        {results[selectedCandidate].professional_experience_analysis.professional_stability}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Education and Certifications */}
+            {results[selectedCandidate].education_and_certifications && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--spacing-md)' }}>🎓 {t('interviewer.step7.education_certifications')}</h3>
+                <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-md)' }}>
+                  {results[selectedCandidate].education_and_certifications.relevance && (
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <strong>{t('interviewer.step7.relevance_adequacy')}:</strong>
+                      <p style={{ marginTop: 'var(--spacing-xs)', whiteSpace: 'pre-wrap', wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.6' }}>
+                        {results[selectedCandidate].education_and_certifications.relevance}
+                      </p>
+                    </div>
+                  )}
+                  {results[selectedCandidate].education_and_certifications.adequacy && (
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <strong>{t('interviewer.step7.evaluation')}:</strong>
+                      <p style={{ marginTop: 'var(--spacing-xs)', whiteSpace: 'pre-wrap', wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.6' }}>
+                        {results[selectedCandidate].education_and_certifications.adequacy}
+                      </p>
+                    </div>
+                  )}
+                  {results[selectedCandidate].education_and_certifications.certifications && results[selectedCandidate].education_and_certifications.certifications.length > 0 && (
+                    <div>
+                      <strong>{t('interviewer.step7.certifications')}:</strong>
+                      <ul style={{ marginTop: 'var(--spacing-xs)', paddingLeft: 'var(--spacing-lg)' }}>
+                        {results[selectedCandidate].education_and_certifications.certifications.map((cert, i) => (
+                          <li key={i}>{cert}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Notable Achievements */}
+            {results[selectedCandidate].notable_achievements && results[selectedCandidate].notable_achievements.length > 0 && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--spacing-md)' }}>🏆 {t('interviewer.step7.notable_achievements')}</h3>
+                <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-md)' }}>
+                  {results[selectedCandidate].notable_achievements.map((achievement, i) => (
+                    <div key={i} style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <strong>{achievement.achievement}</strong>
+                      <p style={{ marginTop: 'var(--spacing-xs)', whiteSpace: 'pre-wrap', wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.6' }}>
+                        <em>{t('interviewer.step7.impact')}:</em> {achievement.impact}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Culture Fit Assessment */}
+            {results[selectedCandidate].culture_fit_assessment && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--spacing-md)' }}>🌐 {t('interviewer.step7.culture_fit')}</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-sm)' }}>
+                  {t('interviewer.step7.culture_fit_legend')}
+                </p>
+                <div style={{ padding: 'var(--spacing-md)', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'bold', color: 'var(--color-accent-primary)', marginBottom: 'var(--spacing-sm)' }}>
+                    {t('interviewer.step7.culture_fit_score')}: {results[selectedCandidate].culture_fit_assessment.score}/5
+                  </div>
+                  <p style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.6' }}>
+                    {results[selectedCandidate].culture_fit_assessment.justification}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Score Breakdown */}
+            {results[selectedCandidate].score_breakdown && (
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: 'var(--spacing-md)' }}>📊 {t('interviewer.step7.score_breakdown')}</h3>
+                {results[selectedCandidate].score_breakdown.global_score !== undefined && (
+                  <div style={{ 
+                    padding: 'var(--spacing-md)', 
+                    backgroundColor: 'var(--color-accent-primary)', 
+                    color: 'white',
+                    borderRadius: 'var(--radius-md)',
+                    marginBottom: 'var(--spacing-md)',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'bold' }}>
+                      {t('interviewer.step7.global_score')}: {results[selectedCandidate].score_breakdown.global_score}/100
+                    </div>
+                  </div>
+                )}
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: 'var(--color-bg-secondary)', textAlign: 'left' }}>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.criterion')}</th>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.weight_percent')}</th>
+                        <th style={{ padding: 'var(--spacing-sm)', borderBottom: '2px solid var(--color-border)' }}>{t('interviewer.step7.score')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results[selectedCandidate].score_breakdown.technical_skills && (
+                        <tr>
+                          <td style={{ padding: 'var(--spacing-sm)' }}>{t('interviewer.step7.technical_skills_label')}</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center' }}>{results[selectedCandidate].score_breakdown.technical_skills.weight_percent}%</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center', fontWeight: 'bold' }}>{results[selectedCandidate].score_breakdown.technical_skills.score}/100</td>
+                        </tr>
+                      )}
+                      {results[selectedCandidate].score_breakdown.soft_skills && (
+                        <tr>
+                          <td style={{ padding: 'var(--spacing-sm)' }}>{t('interviewer.step7.soft_skills_label')}</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center' }}>{results[selectedCandidate].score_breakdown.soft_skills.weight_percent}%</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center', fontWeight: 'bold' }}>{results[selectedCandidate].score_breakdown.soft_skills.score}/100</td>
+                        </tr>
+                      )}
+                      {results[selectedCandidate].score_breakdown.professional_experience && (
+                        <tr>
+                          <td style={{ padding: 'var(--spacing-sm)' }}>{t('interviewer.step7.professional_experience_label')}</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center' }}>{results[selectedCandidate].score_breakdown.professional_experience.weight_percent}%</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center', fontWeight: 'bold' }}>{results[selectedCandidate].score_breakdown.professional_experience.score}/100</td>
+                        </tr>
+                      )}
+                      {results[selectedCandidate].score_breakdown.education_certifications && (
+                        <tr>
+                          <td style={{ padding: 'var(--spacing-sm)' }}>{t('interviewer.step7.education_certifications_label')}</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center' }}>{results[selectedCandidate].score_breakdown.education_certifications.weight_percent}%</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center', fontWeight: 'bold' }}>{results[selectedCandidate].score_breakdown.education_certifications.score}/100</td>
+                        </tr>
+                      )}
+                      {results[selectedCandidate].score_breakdown.culture_fit && (
+                        <tr>
+                          <td style={{ padding: 'var(--spacing-sm)' }}>{t('interviewer.step7.culture_fit_label')}</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center' }}>{results[selectedCandidate].score_breakdown.culture_fit.weight_percent}%</td>
+                          <td style={{ padding: 'var(--spacing-sm)', textAlign: 'center', fontWeight: 'bold' }}>{results[selectedCandidate].score_breakdown.culture_fit.score}/100</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {results[selectedCandidate].score_breakdown.global_score_justification && (
+                  <div style={{ marginTop: 'var(--spacing-md)', padding: 'var(--spacing-md)', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-md)' }}>
+                    <strong>{t('interviewer.step7.global_score_justification')}:</strong>
+                    <p style={{ marginTop: 'var(--spacing-xs)', whiteSpace: 'pre-wrap', wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.6' }}>
+                      {results[selectedCandidate].score_breakdown.global_score_justification}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
               <h3 style={{ color: 'var(--color-success)', fontSize: '1.25rem' }}>✓ Strengths</h3>
               <ul style={{ 

@@ -16,43 +16,142 @@ const InterviewerStep6: React.FC = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState('Preparing analysis...');
   const [progress, setProgress] = useState(0);
+  const [currentCv, setCurrentCv] = useState(0);
+  const [totalCvs, setTotalCvs] = useState(0);
   
   useEffect(() => {
-    const runAnalysis = async () => {
-      const sessionId = sessionStorage.getItem('interviewer_session_id');
-      if (!sessionId) {
-        setStatus('Error: Session not found');
-        return;
-      }
-      
+    const sessionId = sessionStorage.getItem('interviewer_session_id');
+    if (!sessionId) {
+      setStatus('Error: Session not found. Please restart from step 1.');
+      setProgress(0);
+      setTimeout(() => {
+        navigate('/interviewer/step1');
+      }, 3000);
+      return;
+    }
+    
+    let pollInterval: NodeJS.Timeout | null = null;
+    let isMounted = true;
+    
+    const startAnalysis = async () => {
       try {
-        setStatus('Analyzing CVs with AI...');
-        setProgress(20);
+        setStatus('Starting analysis...');
+        setProgress(5);
         
+        // Start analysis (returns immediately)
         const response = await interviewerAPI.step6(sessionId);
         
-        setProgress(80);
-        setStatus('Analysis complete! Preparing results...');
+        if (response.data.status === 'already_running') {
+          // Analysis already running, just poll
+          setStatus('Analysis already in progress...');
+        } else {
+          setStatus('Analysis started! Processing CVs...');
+          setTotalCvs(response.data.total_cvs || 0);
+        }
         
-        const { analyses_created } = response.data;
-        
-        setProgress(100);
-        setStatus(`Successfully analyzed ${analyses_created} candidates!`);
-        
-        // Navigate to results after short delay
-        setTimeout(() => {
-          navigate('/interviewer/step7');
-        }, 1500);
+        // Start polling for progress
+        pollInterval = setInterval(async () => {
+          try {
+            const progressResponse = await interviewerAPI.step6Progress(sessionId);
+            const progressData = progressResponse.data;
+            
+            if (!isMounted) return;
+            
+            const progressInfo = progressData.progress || {};
+            const current = progressInfo.current || 0;
+            const total = progressInfo.total || totalCvs || 1;
+            const statusText = progressInfo.status || 'Processing...';
+            
+            setCurrentCv(current);
+            setTotalCvs(total);
+            setStatus(statusText);
+            
+            // Calculate progress percentage
+            const progressPercent = total > 0 ? Math.min(95, (current / total) * 100) : 20;
+            setProgress(progressPercent);
+            
+            // Check if complete
+            if (progressData.complete) {
+              if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+              }
+              
+              setProgress(100);
+              setStatus('Analysis complete! Preparing results...');
+              
+              // Navigate to results after short delay
+              setTimeout(() => {
+                if (isMounted) {
+                  navigate('/interviewer/step7');
+                }
+              }, 1500);
+            } else if (progressData.status === 'error') {
+              if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+              }
+              
+              setStatus(`Error: ${progressInfo.status || 'Analysis failed'}`);
+              setProgress(0);
+            }
+          } catch (pollError: any) {
+            // Don't log timeout errors as they're expected during long operations
+            const isTimeout = pollError.code === 'ECONNABORTED' || pollError.message?.includes('timeout');
+            if (!isTimeout) {
+              console.error('Error polling progress:', pollError);
+            }
+            
+            // Continue polling unless it's a 404 (session expired)
+            // Timeouts are OK - we'll retry on next poll
+            if (pollError.response?.status === 404) {
+              if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+              }
+              
+              sessionStorage.removeItem('interviewer_session_id');
+              sessionStorage.removeItem('interviewer_id');
+              sessionStorage.removeItem('interviewer_report_code');
+              setStatus('Session expired. Redirecting...');
+              setTimeout(() => {
+                if (isMounted) {
+                  navigate('/interviewer/step1');
+                }
+              }, 3000);
+            }
+            // For timeouts, just continue polling - don't break the loop
+          }
+        }, 3000); // Poll every 3 seconds (reduces server load)
         
       } catch (error: any) {
-        console.error('Error in analysis:', error);
-        setStatus('Error: ' + (error.response?.data?.detail || 'Analysis failed'));
+        console.error('Error starting analysis:', error);
+        const errorDetail = error.response?.data?.detail || 'Failed to start analysis';
+        setStatus(`Error: ${errorDetail}`);
         setProgress(0);
+        
+        // If session expired, redirect to step 1
+        if (error.response?.status === 404 && errorDetail.includes('Session')) {
+          sessionStorage.removeItem('interviewer_session_id');
+          sessionStorage.removeItem('interviewer_id');
+          sessionStorage.removeItem('interviewer_report_code');
+          setTimeout(() => {
+            navigate('/interviewer/step1');
+          }, 3000);
+        }
       }
     };
     
-    runAnalysis();
-  }, [navigate]);
+    startAnalysis();
+    
+    // Cleanup on unmount
+    return () => {
+      isMounted = false;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [navigate, totalCvs]);
   
   return (
     <StepLayout>
@@ -94,8 +193,15 @@ const InterviewerStep6: React.FC = () => {
             }}></div>
           </div>
           
-          <p style={{ marginTop: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)' }}>
-            This may take 20-30 seconds for multiple CVs...
+          {totalCvs > 0 && (
+            <p style={{ marginTop: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+              Processing CV {currentCv} of {totalCvs}...
+            </p>
+          )}
+          <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-tertiary)' }}>
+            {totalCvs > 0 
+              ? `This may take ${Math.ceil(totalCvs * 2)}-${Math.ceil(totalCvs * 5)} minutes for ${totalCvs} CV${totalCvs > 1 ? 's' : ''}...`
+              : 'This may take a few minutes for multiple CVs...'}
           </p>
         </div>
       </div>

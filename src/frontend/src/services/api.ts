@@ -37,11 +37,21 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Don't log timeout errors for polling endpoints (they're expected)
+    const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
+    const isPollingEndpoint = error.config?.url?.includes('/step6/progress/');
+    
+    if (isTimeout && isPollingEndpoint) {
+      // Silently handle timeout for polling - it's expected and will retry
+      return Promise.reject(error);
+    }
+    
     if (error.response) {
       console.error('[API] Response error:', error.response.status, error.response.data);
-    } else if (error.request) {
+    } else if (error.request && !isTimeout) {
+      // Only log "No response received" if it's not a timeout
       console.error('[API] No response received:', error.request);
-    } else {
+    } else if (!isTimeout) {
       console.error('[API] Error:', error.message);
     }
     return Promise.reject(error);
@@ -70,7 +80,10 @@ export const interviewerAPI = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   step6: (sessionId: string) => api.post(`/interviewer/step6?session_id=${sessionId}`, null, {
-    timeout: 90000,
+    timeout: 30000, // Quick response - analysis runs in background
+  }),
+  step6Progress: (sessionId: string) => api.get(`/interviewer/step6/progress/${sessionId}`, {
+    timeout: 8000, // Polling endpoint - allow slightly more time for network delays
   }),
   step7: (sessionId: string, reportCode?: string) => {
     const url = reportCode 
