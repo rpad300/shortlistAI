@@ -68,16 +68,37 @@
   margin: 0 0 1rem 0;
   line-height: 1.1;
   letter-spacing: -0.03em;
+  /* LIGHT MODE: Use darker gradient for better contrast */
   background: linear-gradient(135deg, #0052CC 0%, #6D28D9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: var(--color-ai-blue, #0066FF);
+  /* Fallback: solid dark color if gradient doesn't work */
+  color: #111827;
   animation: titleFadeIn 0.8s ease-out 0.3s both;
 }
 
-@media (prefers-color-scheme: dark) {
+/* LIGHT MODE - explicit: Ensure dark color */
+[data-theme="light"] .hero-dual-title {
+  color: #111827;
+  background: linear-gradient(135deg, #0052CC 0%, #6D28D9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@media (prefers-color-scheme: light) {
   .hero-dual-title {
+    color: #111827;
+    background: linear-gradient(135deg, #0052CC 0%, #6D28D9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-dual-title {
     color: var(--text-primary-dark, #F9FAFB);
     -webkit-text-fill-color: var(--text-primary-dark, #F9FAFB);
     background: none;
@@ -98,13 +119,24 @@
   font-size: 1.25rem;
   font-weight: 400;
   margin: 0;
-  color: var(--text-secondary-light, #6B7280);
+  color: #4B5563; /* Darker gray for better contrast in light mode */
   line-height: 1.6;
   animation: subtitleFadeIn 0.8s ease-out 0.5s both;
 }
 
-@media (prefers-color-scheme: dark) {
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-dual-subtitle {
+  color: #4B5563;
+}
+
+@media (prefers-color-scheme: light) {
   .hero-dual-subtitle {
+    color: #4B5563;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-dual-subtitle {
     color: var(--text-secondary-dark, #9CA3AF);
   }
 }
@@ -124,34 +156,47 @@
   animation: cardsFadeIn 0.8s ease-out 0.7s both;
 }
 
-/* Individual Card */
+/* Individual Card - LIGHT MODE (default) */
 .hero-dual-card {
   position: relative;
   min-height: 500px;
   border-radius: 32px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.9); /* More opaque white for better contrast */
   backdrop-filter: blur(40px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(229, 231, 235, 0.8); /* Light gray border */
   box-shadow: 
-    0 20px 60px rgba(0, 102, 255, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 20px 60px rgba(0, 102, 255, 0.15),
+    0 0 0 1px rgba(229, 231, 235, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
 }
 
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-dual-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(229, 231, 235, 0.8);
+}
+
+@media (prefers-color-scheme: light) {
+  .hero-dual-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(229, 231, 235, 0.8);
+  }
+}
+
 .hero-dual-card:hover {
   transform: translateY(-8px);
   box-shadow: 
-    0 30px 80px rgba(0, 102, 255, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.9),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 30px 80px rgba(0, 102, 255, 0.2),
+    0 0 0 1px rgba(229, 231, 235, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 @media (prefers-color-scheme: dark) {
-  .hero-dual-card {
+  :root:not([data-theme="light"]) .hero-dual-card {
     background: rgba(10, 10, 11, 0.85);
     border-color: rgba(51, 136, 255, 0.3);
     box-shadow: 
@@ -160,7 +205,7 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
-  .hero-dual-card:hover {
+  :root:not([data-theme="light"]) .hero-dual-card:hover {
     border-color: rgba(51, 136, 255, 0.5);
     box-shadow: 
       0 30px 80px rgba(0, 0, 0, 0.8),
@@ -238,6 +283,7 @@
   flex: 1;
 }
 
+/* Card Icon - LIGHT MODE (default) */
 .hero-dual-card-icon {
   width: 80px;
   height: 80px;
@@ -246,41 +292,83 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, rgba(0, 102, 255, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
   border: 1px solid rgba(0, 102, 255, 0.2);
-  color: var(--color-ai-blue, #0066FF);
+  color: #0066FF; /* Dark blue for light mode */
 }
 
 .hero-dual-card-candidate .hero-dual-card-icon {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
   border-color: rgba(124, 58, 237, 0.2);
+  color: #7C3AED; /* Dark purple for light mode */
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-dual-card-icon {
+  color: #0066FF;
+}
+
+[data-theme="light"] .hero-dual-card-candidate .hero-dual-card-icon {
   color: #7C3AED;
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   .hero-dual-card-icon {
+    color: #0066FF;
+  }
+
+  .hero-dual-card-candidate .hero-dual-card-icon {
+    color: #7C3AED;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-dual-card-icon {
     background: linear-gradient(135deg, rgba(51, 136, 255, 0.2) 0%, rgba(159, 122, 234, 0.2) 100%);
     border-color: rgba(51, 136, 255, 0.3);
     color: var(--color-ai-blue-dark, #3388FF);
   }
 
-  .hero-dual-card-candidate .hero-dual-card-icon {
+  :root:not([data-theme="light"]) .hero-dual-card-candidate .hero-dual-card-icon {
     background: linear-gradient(135deg, rgba(159, 122, 234, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
     border-color: rgba(159, 122, 234, 0.3);
     color: #9F7AEA;
   }
 }
 
+[data-theme="dark"] .hero-dual-card-icon {
+  background: linear-gradient(135deg, rgba(51, 136, 255, 0.2) 0%, rgba(159, 122, 234, 0.2) 100%);
+  border-color: rgba(51, 136, 255, 0.3);
+  color: var(--color-ai-blue-dark, #3388FF);
+}
+
+[data-theme="dark"] .hero-dual-card-candidate .hero-dual-card-icon {
+  background: linear-gradient(135deg, rgba(159, 122, 234, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
+  border-color: rgba(159, 122, 234, 0.3);
+  color: #9F7AEA;
+}
+
 .hero-dual-card-title {
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 1rem 0;
-  color: var(--text-primary-light, #111827);
+  color: #111827; /* Always dark for better contrast in light mode */
   line-height: 1.2;
 }
 
-@media (prefers-color-scheme: dark) {
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-dual-card-title {
+  color: #111827;
+}
+
+@media (prefers-color-scheme: light) {
   .hero-dual-card-title {
+    color: #111827;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-dual-card-title {
     color: var(--text-primary-dark, #F9FAFB);
   }
 }
@@ -293,13 +381,24 @@
   font-size: 1.125rem;
   font-weight: 400;
   margin: 0 0 2rem 0;
-  color: var(--text-secondary-light, #6B7280);
+  color: #4B5563; /* Darker gray for better contrast */
   line-height: 1.6;
   flex: 1;
 }
 
-@media (prefers-color-scheme: dark) {
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-dual-card-description {
+  color: #4B5563;
+}
+
+@media (prefers-color-scheme: light) {
   .hero-dual-card-description {
+    color: #4B5563;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-dual-card-description {
     color: var(--text-secondary-dark, #9CA3AF);
   }
 }
@@ -321,13 +420,44 @@
   align-items: center;
   gap: 0.75rem;
   font-size: 0.9375rem;
-  color: var(--text-secondary-light, #6B7280);
+  color: #4B5563; /* Darker gray for better contrast */
   font-weight: 500;
 }
 
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-dual-card-feature {
+  color: #4B5563;
+}
+
+@media (prefers-color-scheme: light) {
+  .hero-dual-card-feature {
+    color: #4B5563;
+  }
+}
+
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-dual-card-feature svg {
+  color: #0066FF;
+}
+
+[data-theme="light"] .hero-dual-card-candidate .hero-dual-card-feature svg {
+  color: #7C3AED;
+}
+
+@media (prefers-color-scheme: light) {
+  .hero-dual-card-feature svg {
+    color: #0066FF;
+  }
+
+  .hero-dual-card-candidate .hero-dual-card-feature svg {
+    color: #7C3AED;
+  }
+}
+
+/* Default (works for light mode) */
 .hero-dual-card-feature svg {
   flex-shrink: 0;
-  color: var(--color-ai-blue, #0066FF);
+  color: #0066FF;
 }
 
 .hero-dual-card-candidate .hero-dual-card-feature svg {
@@ -335,17 +465,29 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .hero-dual-card-feature {
+  :root:not([data-theme="light"]) .hero-dual-card-feature {
     color: var(--text-secondary-dark, #9CA3AF);
   }
 
-  .hero-dual-card-feature svg {
+  :root:not([data-theme="light"]) .hero-dual-card-feature svg {
     color: var(--color-ai-blue-dark, #3388FF);
   }
 
-  .hero-dual-card-candidate .hero-dual-card-feature svg {
+  :root:not([data-theme="light"]) .hero-dual-card-candidate .hero-dual-card-feature svg {
     color: #9F7AEA;
   }
+}
+
+[data-theme="dark"] .hero-dual-card-feature {
+  color: var(--text-secondary-dark, #9CA3AF);
+}
+
+[data-theme="dark"] .hero-dual-card-feature svg {
+  color: var(--color-ai-blue-dark, #3388FF);
+}
+
+[data-theme="dark"] .hero-dual-card-candidate .hero-dual-card-feature svg {
+  color: #9F7AEA;
 }
 
 /* Card CTA */
@@ -454,13 +596,24 @@
   text-align: center;
   margin-top: 2rem;
   font-size: 0.875rem;
-  color: var(--text-secondary-light, #6B7280);
+  color: #4B5563; /* Darker gray for better contrast in light mode */
   font-weight: 500;
   animation: noteFadeIn 0.8s ease-out 1s both;
 }
 
-@media (prefers-color-scheme: dark) {
+/* LIGHT MODE - explicit */
+[data-theme="light"] .hero-dual-note {
+  color: #4B5563;
+}
+
+@media (prefers-color-scheme: light) {
   .hero-dual-note {
+    color: #4B5563;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-dual-note {
     color: var(--text-secondary-dark, #9CA3AF);
   }
 }
