@@ -1475,21 +1475,23 @@ async def step6_progress(session_id: UUID):
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
         
-        progress = session["data"].get("analysis_progress", {})
-        status = session["data"].get("analysis_status", "not_started")
-        is_complete = session["data"].get("analysis_complete", False)
+        # Safely access session data with defaults
+        session_data = session.get("data", {})
+        progress = session_data.get("analysis_progress", {})
+        status = session_data.get("analysis_status", "not_started")
+        is_complete = session_data.get("analysis_complete", False)
         
         return JSONResponse({
             "status": status,
             "complete": is_complete,
             "progress": progress,
-            "has_results": bool(session["data"].get("analysis_results"))
+            "has_results": bool(session_data.get("analysis_results"))
         })
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting progress: {e}", exc_info=True)
+        logger.error(f"Error getting progress for session {session_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Internal server error getting progress"
@@ -1729,12 +1731,12 @@ async def step7_results(
                 detail="Analysis not complete. Run step 6 first."
             )
         
-        results = session["data"].get("analysis_results")
-        executive_recommendation = session["data"].get("executive_recommendation")
+        results = session_data.get("analysis_results")
+        executive_recommendation = session_data.get("executive_recommendation")
         
         # Extract company name from structured job posting
         company_name = None
-        structured_job_posting = session["data"].get("structured_job_posting")
+        structured_job_posting = session_data.get("structured_job_posting")
         if structured_job_posting and isinstance(structured_job_posting, dict):
             company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
         
