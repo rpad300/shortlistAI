@@ -1219,7 +1219,37 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 
                 cv = await cv_service.get_by_id(UUID(cv_id))
                 if not cv:
-                    logger.warning(f"CV {cv_id} not found, skipping")
+                    logger.warning(f"CV {cv_id} not found, adding to results with error")
+                    error_msg = f"CV {idx}: CV record not found in database"
+                    errors.append(error_msg)
+                    # Still add to results so it appears in step7
+                    summary = candidate_info.get("summary") or {}
+                    candidate_label = (
+                        summary.get("full_name")
+                        or summary.get("current_role")
+                        or candidate_info.get("filename")
+                        or f"Candidate {idx}"
+                    )
+                    session_results.append({
+                        "analysis_id": None,
+                        "candidate_id": str(cv_id),
+                        "candidate_label": candidate_label,
+                        "file_name": candidate_info.get("filename"),
+                        "summary": summary,
+                        "global_score": 0,
+                        "categories": {},
+                        "strengths": [],
+                        "risks": [error_msg],
+                        "questions": [],
+                        "hard_blocker_flags": [],
+                        "recommendation": "CV record not found",
+                        "intro_pitch": "",
+                        "gap_strategies": [],
+                        "preparation_tips": [],
+                        "provider": None,
+                        "enrichment": None,
+                        "error": error_msg
+                    })
                     continue
                 extracted_text = cv.get("extracted_text") or ""
                 candidate_uuid: Optional[UUID] = None
