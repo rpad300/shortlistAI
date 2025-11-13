@@ -24,6 +24,382 @@ from .branding import get_branding, ShortlistAIBranding
 
 logger = logging.getLogger(__name__)
 
+# Translation dictionary for PDF reports
+PDF_TRANSLATIONS = {
+    'en': {
+        'title': 'Candidate Analysis Report',
+        'table_of_contents': 'Table of Contents',
+        'job_position_details': 'Job Position Details',
+        'job_description': 'Job Description',
+        'key_requirements': 'Key Requirements',
+        'evaluation_criteria': 'Evaluation Criteria',
+        'category_weights': 'Category Weights',
+        'hard_blockers': 'Hard Blockers (Must-Have Requirements)',
+        'nice_to_have': 'Nice to Have (Preferred)',
+        'executive_recommendation': 'Executive Recommendation',
+        'recommended_candidate': 'Recommended Candidate',
+        'summary': 'Summary',
+        'key_insights': 'Key Insights',
+        'candidate_rankings': 'Candidate Rankings',
+        'total': 'Total',
+        'rank': 'Rank',
+        'candidate': 'Candidate',
+        'score': 'Score',
+        'blockers': 'Blockers',
+        'yes': 'Yes',
+        'none': 'None',
+        'detailed_analysis': 'Detailed Candidate Analysis',
+        'global_score': 'Global Score',
+        'profile_summary': 'Profile Summary',
+        'category_scores': 'Category Scores',
+        'category': 'Category',
+        'swot_analysis': 'SWOT Analysis',
+        'strengths': 'Strengths',
+        'weaknesses': 'Weaknesses',
+        'opportunities': 'Opportunities',
+        'threats': 'Threats',
+        'and_more': '... and {count} more',
+        'technical_skills': 'Technical Skills Evaluation (Hard Skills)',
+        'technical_skills_legend': 'Legend: 1 = Basic, 2 = Intermediate, 3 = Advanced, 4 = Proficient, 5 = Expert',
+        'competency': 'Competency',
+        'justification': 'Justification',
+        'missing_technical_skills': 'Missing Critical Technical Skills',
+        'soft_skills': 'Interpersonal Skills Evaluation (Soft Skills)',
+        'soft_skills_legend': 'Legend: 1 = Little evident, 2 = Partially demonstrated, 3 = Adequately demonstrated, 4 = Well demonstrated, 5 = Strongly demonstrated',
+        'missing_soft_skills': 'Missing Important Interpersonal Skills',
+        'professional_experience': 'Professional Experience Analysis',
+        'relevance_to_position': 'Relevance to Position',
+        'career_progression': 'Career Progression',
+        'professional_stability': 'Professional Stability',
+        'education_certifications': 'Academic Background and Certifications',
+        'relevance_adequacy': 'Relevance and Adequacy',
+        'evaluation': 'Evaluation',
+        'certifications': 'Certifications',
+        'notable_achievements': 'Notable Achievements and Relevant Projects',
+        'impact': 'Impact',
+        'culture_fit': 'Organizational Culture Fit',
+        'culture_fit_legend': 'Legend: 1 = Poorly suited, 2 = Partially suited, 3 = Suited, 4 = Well suited, 5 = Highly suited',
+        'culture_fit_score': 'Score',
+        'score_breakdown': 'Score Breakdown',
+        'global_score_100': 'Global Score',
+        'criterion': 'Criterion',
+        'weight_percent': 'Weight (%)',
+        'technical_skills_label': 'Technical Skills',
+        'soft_skills_label': 'Interpersonal Skills',
+        'professional_experience_label': 'Professional Experience',
+        'education_certifications_label': 'Education & Certifications',
+        'culture_fit_label': 'Cultural Fit',
+        'global_score_justification': 'Global Score Justification',
+        'strengths_section': 'Strengths',
+        'risks_gaps': 'Risks & Gaps',
+        'hard_blocker_violations': 'Hard Blocker Violations',
+        'suggested_questions': 'Suggested Interview Questions',
+        'intro_pitch': 'Intro Pitch',
+        'gap_strategies': 'Strategies to Address Gaps & Risks',
+        'preparation_tips': 'Study Topics for Interview',
+        'ai_recommendation': 'AI Recommendation',
+        'enrichment_data': 'Enrichment Data (Brave Search)',
+        'company_information': 'Company Information',
+        'candidate_professional_profile': 'Candidate Professional Profile',
+        'name': 'Name',
+        'website': 'Website',
+        'industry': 'Industry',
+        'size': 'Size',
+        'linkedin': 'LinkedIn',
+        'github': 'GitHub',
+        'portfolio': 'Portfolio',
+        'generated': 'Generated',
+        'report_prepared_for': 'Report prepared for',
+        'company_id': 'Company ID',
+        'report_id': 'Report ID',
+        'report_code': 'Report Code',
+        'detailed_analysis_and_evaluation': 'Detailed analysis and evaluation',
+        'overview_job_posting': 'Overview of the job posting and key requirements',
+        'weights_hard_blockers': 'Weights, hard blockers, and nice-to-have requirements',
+        'ai_generated_summary': 'AI-generated summary and top candidate recommendation',
+        'ranked_list_candidates': 'Ranked list of all {count} candidates',
+    },
+    'pt': {
+        'title': 'Relatório de Análise de Candidatos',
+        'table_of_contents': 'Índice',
+        'job_position_details': 'Detalhes da Posição',
+        'job_description': 'Descrição da Posição',
+        'key_requirements': 'Requisitos Principais',
+        'evaluation_criteria': 'Critérios de Avaliação',
+        'category_weights': 'Pesos por Categoria',
+        'hard_blockers': 'Bloqueadores Obrigatórios (Requisitos Essenciais)',
+        'nice_to_have': 'Desejável (Preferencial)',
+        'executive_recommendation': 'Recomendação Executiva',
+        'recommended_candidate': 'Candidato Recomendado',
+        'summary': 'Resumo',
+        'key_insights': 'Insights Principais',
+        'candidate_rankings': 'Classificação de Candidatos',
+        'total': 'Total',
+        'rank': 'Posição',
+        'candidate': 'Candidato',
+        'score': 'Pontuação',
+        'blockers': 'Bloqueadores',
+        'yes': 'Sim',
+        'none': 'Nenhum',
+        'detailed_analysis': 'Análise Detalhada de Candidatos',
+        'global_score': 'Pontuação Global',
+        'profile_summary': 'Resumo do Perfil',
+        'category_scores': 'Pontuações por Categoria',
+        'category': 'Categoria',
+        'swot_analysis': 'Análise SWOT',
+        'strengths': 'Forças',
+        'weaknesses': 'Fraquezas',
+        'opportunities': 'Oportunidades',
+        'threats': 'Ameaças',
+        'and_more': '... e mais {count}',
+        'technical_skills': 'Avaliação de Competências Técnicas (Hard Skills)',
+        'technical_skills_legend': 'Legenda: 1 = Básico, 2 = Intermediário, 3 = Avançado, 4 = Proficiente, 5 = Especialista',
+        'competency': 'Competência',
+        'justification': 'Justificação',
+        'missing_technical_skills': 'Competências Técnicas em Falta',
+        'soft_skills': 'Avaliação de Competências Interpessoais (Soft Skills)',
+        'soft_skills_legend': 'Legenda: 1 = Pouco evidente, 2 = Parcialmente demonstrada, 3 = Adequadamente demonstrada, 4 = Bem demonstrada, 5 = Fortemente demonstrada',
+        'missing_soft_skills': 'Competências Interpessoais em Falta',
+        'professional_experience': 'Análise de Experiência Profissional',
+        'relevance_to_position': 'Relevância para a Posição',
+        'career_progression': 'Progressão de Carreira',
+        'professional_stability': 'Estabilidade Profissional',
+        'education_certifications': 'Formação Académica e Certificações',
+        'relevance_adequacy': 'Relevância e Adequação',
+        'evaluation': 'Avaliação',
+        'certifications': 'Certificações',
+        'notable_achievements': 'Realizações e Projetos Notáveis',
+        'impact': 'Impacto',
+        'culture_fit': 'Adequação à Cultura Organizacional',
+        'culture_fit_legend': 'Legenda: 1 = Pouco adequado, 2 = Parcialmente adequado, 3 = Adequado, 4 = Bem adequado, 5 = Altamente adequado',
+        'culture_fit_score': 'Pontuação',
+        'score_breakdown': 'Decomposição da Pontuação',
+        'global_score_100': 'Pontuação Global',
+        'criterion': 'Critério',
+        'weight_percent': 'Peso (%)',
+        'technical_skills_label': 'Competências Técnicas',
+        'soft_skills_label': 'Competências Interpessoais',
+        'professional_experience_label': 'Experiência Profissional',
+        'education_certifications_label': 'Formação e Certificações',
+        'culture_fit_label': 'Adequação Cultural',
+        'global_score_justification': 'Justificação da Pontuação Global',
+        'strengths_section': 'Forças',
+        'risks_gaps': 'Riscos e Lacunas',
+        'hard_blocker_violations': 'Violações de Bloqueadores Obrigatórios',
+        'suggested_questions': 'Questões Sugeridas para Entrevista',
+        'intro_pitch': 'Apresentação Inicial',
+        'gap_strategies': 'Estratégias para Abordar Lacunas e Riscos',
+        'preparation_tips': 'Tópicos de Estudo para Entrevista',
+        'ai_recommendation': 'Recomendação da IA',
+        'enrichment_data': 'Dados de Enriquecimento (Brave Search)',
+        'company_information': 'Informação da Empresa',
+        'candidate_professional_profile': 'Perfil Profissional do Candidato',
+        'name': 'Nome',
+        'website': 'Website',
+        'industry': 'Indústria',
+        'size': 'Dimensão',
+        'linkedin': 'LinkedIn',
+        'github': 'GitHub',
+        'portfolio': 'Portfólio',
+        'generated': 'Gerado',
+        'report_prepared_for': 'Relatório preparado para',
+        'company_id': 'ID da Empresa',
+        'report_id': 'ID do Relatório',
+        'report_code': 'Código do Relatório',
+        'detailed_analysis_and_evaluation': 'Análise detalhada e avaliação',
+        'overview_job_posting': 'Visão geral da posição e requisitos principais',
+        'weights_hard_blockers': 'Pesos, bloqueadores obrigatórios e requisitos desejáveis',
+        'ai_generated_summary': 'Resumo gerado por IA e recomendação do melhor candidato',
+        'ranked_list_candidates': 'Lista classificada de todos os {count} candidatos',
+    },
+    'fr': {
+        'title': 'Rapport d\'Analyse des Candidats',
+        'table_of_contents': 'Table des Matières',
+        'job_position_details': 'Détails du Poste',
+        'job_description': 'Description du Poste',
+        'key_requirements': 'Exigences Principales',
+        'evaluation_criteria': 'Critères d\'Évaluation',
+        'category_weights': 'Pondérations par Catégorie',
+        'hard_blockers': 'Bloqueurs Obligatoires (Exigences Essentielles)',
+        'nice_to_have': 'Souhaitable (Préférentiel)',
+        'executive_recommendation': 'Recommandation Exécutive',
+        'recommended_candidate': 'Candidat Recommandé',
+        'summary': 'Résumé',
+        'key_insights': 'Insights Principaux',
+        'candidate_rankings': 'Classement des Candidats',
+        'total': 'Total',
+        'rank': 'Rang',
+        'candidate': 'Candidat',
+        'score': 'Score',
+        'blockers': 'Bloqueurs',
+        'yes': 'Oui',
+        'none': 'Aucun',
+        'detailed_analysis': 'Analyse Détaillée des Candidats',
+        'global_score': 'Score Global',
+        'profile_summary': 'Résumé du Profil',
+        'category_scores': 'Scores par Catégorie',
+        'category': 'Catégorie',
+        'swot_analysis': 'Analyse SWOT',
+        'strengths': 'Forces',
+        'weaknesses': 'Faiblesses',
+        'opportunities': 'Opportunités',
+        'threats': 'Menaces',
+        'and_more': '... et {count} de plus',
+        'technical_skills': 'Évaluation des Compétences Techniques (Hard Skills)',
+        'technical_skills_legend': 'Légende: 1 = Basique, 2 = Intermédiaire, 3 = Avancé, 4 = Compétent, 5 = Expert',
+        'competency': 'Compétence',
+        'justification': 'Justification',
+        'missing_technical_skills': 'Compétences Techniques Manquantes',
+        'soft_skills': 'Évaluation des Compétences Interpersonnelles (Soft Skills)',
+        'soft_skills_legend': 'Légende: 1 = Peu évident, 2 = Partiellement démontré, 3 = Adéquatement démontré, 4 = Bien démontré, 5 = Fortement démontré',
+        'missing_soft_skills': 'Compétences Interpersonnelles Manquantes',
+        'professional_experience': 'Analyse de l\'Expérience Professionnelle',
+        'relevance_to_position': 'Pertinence pour le Poste',
+        'career_progression': 'Progression de Carrière',
+        'professional_stability': 'Stabilité Professionnelle',
+        'education_certifications': 'Formation Académique et Certifications',
+        'relevance_adequacy': 'Pertinence et Adéquation',
+        'evaluation': 'Évaluation',
+        'certifications': 'Certifications',
+        'notable_achievements': 'Réalisations et Projets Notables',
+        'impact': 'Impact',
+        'culture_fit': 'Adéquation à la Culture Organisationnelle',
+        'culture_fit_legend': 'Légende: 1 = Peu adapté, 2 = Partiellement adapté, 3 = Adapté, 4 = Bien adapté, 5 = Très adapté',
+        'culture_fit_score': 'Score',
+        'score_breakdown': 'Décomposition du Score',
+        'global_score_100': 'Score Global',
+        'criterion': 'Critère',
+        'weight_percent': 'Poids (%)',
+        'technical_skills_label': 'Compétences Techniques',
+        'soft_skills_label': 'Compétences Interpersonnelles',
+        'professional_experience_label': 'Expérience Professionnelle',
+        'education_certifications_label': 'Formation et Certifications',
+        'culture_fit_label': 'Adéquation Culturelle',
+        'global_score_justification': 'Justification du Score Global',
+        'strengths_section': 'Forces',
+        'risks_gaps': 'Risques et Lacunes',
+        'hard_blocker_violations': 'Violations des Bloqueurs Obligatoires',
+        'suggested_questions': 'Questions Suggérées pour l\'Entretien',
+        'intro_pitch': 'Présentation Initiale',
+        'gap_strategies': 'Stratégies pour Aborder les Lacunes et Risques',
+        'preparation_tips': 'Sujets d\'Étude pour l\'Entretien',
+        'ai_recommendation': 'Recommandation de l\'IA',
+        'enrichment_data': 'Données d\'Enrichissement (Brave Search)',
+        'company_information': 'Informations sur l\'Entreprise',
+        'candidate_professional_profile': 'Profil Professionnel du Candidat',
+        'name': 'Nom',
+        'website': 'Site Web',
+        'industry': 'Industrie',
+        'size': 'Taille',
+        'linkedin': 'LinkedIn',
+        'github': 'GitHub',
+        'portfolio': 'Portfolio',
+        'generated': 'Généré',
+        'report_prepared_for': 'Rapport préparé pour',
+        'company_id': 'ID de l\'Entreprise',
+        'report_id': 'ID du Rapport',
+        'report_code': 'Code du Rapport',
+        'detailed_analysis_and_evaluation': 'Analyse détaillée et évaluation',
+        'overview_job_posting': 'Vue d\'ensemble du poste et exigences principales',
+        'weights_hard_blockers': 'Pondérations, bloqueurs obligatoires et exigences souhaitables',
+        'ai_generated_summary': 'Résumé généré par IA et recommandation du meilleur candidat',
+        'ranked_list_candidates': 'Liste classée de tous les {count} candidats',
+    },
+    'es': {
+        'title': 'Informe de Análisis de Candidatos',
+        'table_of_contents': 'Índice',
+        'job_position_details': 'Detalles del Puesto',
+        'job_description': 'Descripción del Puesto',
+        'key_requirements': 'Requisitos Principales',
+        'evaluation_criteria': 'Criterios de Evaluación',
+        'category_weights': 'Ponderaciones por Categoría',
+        'hard_blockers': 'Bloqueadores Obligatorios (Requisitos Esenciales)',
+        'nice_to_have': 'Deseable (Preferencial)',
+        'executive_recommendation': 'Recomendación Ejecutiva',
+        'recommended_candidate': 'Candidato Recomendado',
+        'summary': 'Resumen',
+        'key_insights': 'Insights Principales',
+        'candidate_rankings': 'Clasificación de Candidatos',
+        'total': 'Total',
+        'rank': 'Posición',
+        'candidate': 'Candidato',
+        'score': 'Puntuación',
+        'blockers': 'Bloqueadores',
+        'yes': 'Sí',
+        'none': 'Ninguno',
+        'detailed_analysis': 'Análisis Detallado de Candidatos',
+        'global_score': 'Puntuación Global',
+        'profile_summary': 'Resumen del Perfil',
+        'category_scores': 'Puntuaciones por Categoría',
+        'category': 'Categoría',
+        'swot_analysis': 'Análisis SWOT',
+        'strengths': 'Fortalezas',
+        'weaknesses': 'Debilidades',
+        'opportunities': 'Oportunidades',
+        'threats': 'Amenazas',
+        'and_more': '... y {count} más',
+        'technical_skills': 'Evaluación de Competencias Técnicas (Hard Skills)',
+        'technical_skills_legend': 'Leyenda: 1 = Básico, 2 = Intermedio, 3 = Avanzado, 4 = Competente, 5 = Experto',
+        'competency': 'Competencia',
+        'justification': 'Justificación',
+        'missing_technical_skills': 'Competencias Técnicas Faltantes',
+        'soft_skills': 'Evaluación de Competencias Interpersonales (Soft Skills)',
+        'soft_skills_legend': 'Leyenda: 1 = Poco evidente, 2 = Parcialmente demostrado, 3 = Adecuadamente demostrado, 4 = Bien demostrado, 5 = Fuertemente demostrado',
+        'missing_soft_skills': 'Competencias Interpersonales Faltantes',
+        'professional_experience': 'Análisis de Experiencia Profesional',
+        'relevance_to_position': 'Relevancia para el Puesto',
+        'career_progression': 'Progresión de Carrera',
+        'professional_stability': 'Estabilidad Profesional',
+        'education_certifications': 'Formación Académica y Certificaciones',
+        'relevance_adequacy': 'Relevancia y Adecuación',
+        'evaluation': 'Evaluación',
+        'certifications': 'Certificaciones',
+        'notable_achievements': 'Logros y Proyectos Notables',
+        'impact': 'Impacto',
+        'culture_fit': 'Adecuación a la Cultura Organizacional',
+        'culture_fit_legend': 'Leyenda: 1 = Poco adecuado, 2 = Parcialmente adecuado, 3 = Adecuado, 4 = Bien adecuado, 5 = Altamente adecuado',
+        'culture_fit_score': 'Puntuación',
+        'score_breakdown': 'Desglose de Puntuación',
+        'global_score_100': 'Puntuación Global',
+        'criterion': 'Criterio',
+        'weight_percent': 'Peso (%)',
+        'technical_skills_label': 'Competencias Técnicas',
+        'soft_skills_label': 'Competencias Interpersonales',
+        'professional_experience_label': 'Experiencia Profesional',
+        'education_certifications_label': 'Formación y Certificaciones',
+        'culture_fit_label': 'Adecuación Cultural',
+        'global_score_justification': 'Justificación de la Puntuación Global',
+        'strengths_section': 'Fortalezas',
+        'risks_gaps': 'Riesgos y Brechas',
+        'hard_blocker_violations': 'Violaciones de Bloqueadores Obligatorios',
+        'suggested_questions': 'Preguntas Sugeridas para la Entrevista',
+        'intro_pitch': 'Presentación Inicial',
+        'gap_strategies': 'Estrategias para Abordar Brechas y Riesgos',
+        'preparation_tips': 'Temas de Estudio para la Entrevista',
+        'ai_recommendation': 'Recomendación de la IA',
+        'enrichment_data': 'Datos de Enriquecimiento (Brave Search)',
+        'company_information': 'Información de la Empresa',
+        'candidate_professional_profile': 'Perfil Profesional del Candidato',
+        'name': 'Nombre',
+        'website': 'Sitio Web',
+        'industry': 'Industria',
+        'size': 'Tamaño',
+        'linkedin': 'LinkedIn',
+        'github': 'GitHub',
+        'portfolio': 'Portafolio',
+        'generated': 'Generado',
+        'report_prepared_for': 'Informe preparado para',
+        'company_id': 'ID de la Empresa',
+        'report_id': 'ID del Informe',
+        'report_code': 'Código del Informe',
+        'detailed_analysis_and_evaluation': 'Análisis detallado y evaluación',
+        'overview_job_posting': 'Resumen del puesto y requisitos principales',
+        'weights_hard_blockers': 'Ponderaciones, bloqueadores obligatorios y requisitos deseables',
+        'ai_generated_summary': 'Resumen generado por IA y recomendación del mejor candidato',
+        'ranked_list_candidates': 'Lista clasificada de todos los {count} candidatos',
+    }
+}
+
 
 class PDFReportGenerator:
     """Generate PDF reports for interviewer analysis results with ShortlistAI branding."""
@@ -45,6 +421,22 @@ class PDFReportGenerator:
             return self.styles[preferred_name]
         except KeyError:
             return self.styles[fallback_name]
+    
+    def _get_language(self, session_data: Dict[str, Any]) -> str:
+        """Get language from session data, default to 'en'."""
+        return session_data.get('data', {}).get('language', 'en')
+    
+    def _t(self, key: str, language: str, **kwargs) -> str:
+        """Translate a key to the specified language."""
+        translations = PDF_TRANSLATIONS.get(language, PDF_TRANSLATIONS['en'])
+        text = translations.get(key, PDF_TRANSLATIONS['en'].get(key, key))
+        # Format with kwargs if provided
+        if kwargs:
+            try:
+                text = text.format(**kwargs)
+            except (KeyError, ValueError):
+                pass
+        return text
     
     def _normalize_list_field(self, value):
         """Normalize a field that might be a list, dict, or None."""
@@ -156,17 +548,20 @@ class PDFReportGenerator:
         story.extend(self._build_criteria_section(session_data))
         story.append(PageBreak())
         
+        # Get language for all sections
+        language = self._get_language(session_data)
+        
         # Executive recommendation (if available)
         if executive_recommendation:
-            story.extend(self._build_executive_recommendation(executive_recommendation))
+            story.extend(self._build_executive_recommendation(executive_recommendation, language))
             story.append(PageBreak())
         
         # Candidate rankings
-        story.extend(self._build_rankings_section(results))
+        story.extend(self._build_rankings_section(results, language))
         story.append(PageBreak())
         
         # Detailed candidate profiles
-        story.extend(self._build_candidate_details(results))
+        story.extend(self._build_candidate_details(results, language))
         
         # Build PDF with branded header and footer
         doc.build(
@@ -239,9 +634,10 @@ class PDFReportGenerator:
         ))
         
         # Main title
+        language = self._get_language(session_data)
         elements.append(Spacer(1, 0.4*inch))
         elements.append(Paragraph(
-            '<font color="#0066FF"><b>Candidate Analysis Report</b></font>',
+            f'<font color="#0066FF"><b>{self._t("title", language)}</b></font>',
             self.styles['CustomTitle']
         ))
         
@@ -252,7 +648,7 @@ class PDFReportGenerator:
         report_code = interviewer_data.get('report_code')
         if report_code:
             elements.append(Paragraph(
-                f'<font face="Courier-Bold" size="13" color="#7C3AED">Report Code: {report_code}</font>',
+                f'<font face="Courier-Bold" size="13" color="#7C3AED">{self._t("report_code", language)}: {report_code}</font>',
                 ParagraphStyle(
                     name='ReportCodeDisplay',
                     parent=self.styles['Normal'],
@@ -267,7 +663,7 @@ class PDFReportGenerator:
         # Subtitle with date
         date_str = datetime.now().strftime("%B %d, %Y")
         elements.append(Paragraph(
-            f"<b>Generated:</b> {date_str}",
+            f"<b>{self._t('generated', language)}:</b> {date_str}",
             ParagraphStyle(
                 name='Subtitle',
                 parent=self.styles['Normal'],
@@ -282,7 +678,7 @@ class PDFReportGenerator:
         # Report metadata
         if interviewer_data.get('interviewer_id'):
             elements.append(Paragraph(
-                "<b>Report prepared for:</b>",
+                f"<b>{self._t('report_prepared_for', language)}:</b>",
                 self.styles['Normal']
             ))
             elements.append(Spacer(1, 0.1*inch))
@@ -291,7 +687,7 @@ class PDFReportGenerator:
             company_id = interviewer_data.get('company_id')
             if company_id:
                 elements.append(Paragraph(
-                    f"Company ID: {company_id}",
+                    f"{self._t('company_id', language)}: {company_id}",
                     self.styles['Normal']
                 ))
             
@@ -299,7 +695,7 @@ class PDFReportGenerator:
             report_id = interviewer_data.get('report_id')
             if report_id:
                 elements.append(Paragraph(
-                    f"Report ID: {report_id}",
+                    f"{self._t('report_id', language)}: {report_id}",
                     ParagraphStyle(
                         name='ReportID',
                         parent=self.styles['Normal'],
@@ -313,10 +709,11 @@ class PDFReportGenerator:
     def _build_table_of_contents(self, session_data: Dict[str, Any], results: List[Dict[str, Any]], executive_recommendation: Optional[Dict[str, Any]]) -> List:
         """Build professional table of contents."""
         elements = []
+        language = self._get_language(session_data)
         
         # Title
         elements.append(Paragraph(
-            "Table of Contents",
+            self._t("table_of_contents", language),
             ParagraphStyle(
                 name='TOCTitle',
                 parent=self.styles['Title'],
@@ -339,23 +736,23 @@ class PDFReportGenerator:
         )
         
         toc_items = [
-            ("1. Job Position Details", "Overview of the job posting and key requirements"),
-            ("2. Evaluation Criteria", "Weights, hard blockers, and nice-to-have requirements"),
+            (f"1. {self._t('job_position_details', language)}", self._t('overview_job_posting', language)),
+            (f"2. {self._t('evaluation_criteria', language)}", self._t('weights_hard_blockers', language)),
         ]
         
         if executive_recommendation:
-            toc_items.append(("3. Executive Recommendation", "AI-generated summary and top candidate recommendation"))
+            toc_items.append((f"3. {self._t('executive_recommendation', language)}", self._t('ai_generated_summary', language)))
             start_num = 4
         else:
             start_num = 3
         
-        toc_items.append((f"{start_num}. Candidate Rankings", f"Ranked list of all {len(results)} candidates"))
+        toc_items.append((f"{start_num}. {self._t('candidate_rankings', language)}", self._t('ranked_list_candidates', language, count=len(results))))
         
         # Detailed candidate profiles
         sorted_results = sorted(results, key=lambda x: x.get('global_score', 0), reverse=True)
         for idx, result in enumerate(sorted_results, 1):
             name = self._get_candidate_name(result, idx)
-            toc_items.append((f"{start_num + idx}. {name}", f"Detailed analysis and evaluation"))
+            toc_items.append((f"{start_num + idx}. {name}", self._t('detailed_analysis_and_evaluation', language)))
         
         # Build TOC with dots
         for title, description in toc_items:
@@ -384,13 +781,14 @@ class PDFReportGenerator:
         """Build job description section."""
         elements = []
         data = session_data.get('data', {})
+        language = self._get_language(session_data)
         
-        elements.append(Paragraph("Job Position Details", self.styles['SectionHeader']))
+        elements.append(Paragraph(self._t("job_position_details", language), self.styles['SectionHeader']))
         
         # Job posting text - COMPLETE and FORMATTED
         job_text = data.get('job_posting_text', 'Not provided')
         elements.append(Paragraph(
-            f"<b>Job Description:</b>",
+            f"<b>{self._t('job_description', language)}:</b>",
             self.styles['SubSection']
         ))
         
@@ -403,7 +801,7 @@ class PDFReportGenerator:
         if key_points:
             elements.append(Spacer(1, 0.2*inch))
             elements.append(Paragraph(
-                "<b>Key Requirements:</b>",
+                f"<b>{self._t('key_requirements', language)}:</b>",
                 self.styles['SubSection']
             ))
             # Split by bullet points or newlines
@@ -420,18 +818,19 @@ class PDFReportGenerator:
         """Build evaluation criteria section."""
         elements = []
         data = session_data.get('data', {})
+        language = self._get_language(session_data)
         
-        elements.append(Paragraph("Evaluation Criteria", self.styles['SectionHeader']))
+        elements.append(Paragraph(self._t("evaluation_criteria", language), self.styles['SectionHeader']))
         
         # Weights table
         weights = data.get('weights', {})
         if weights:
             elements.append(Paragraph(
-                "<b>Category Weights:</b>",
+                f"<b>{self._t('category_weights', language)}:</b>",
                 self.styles['SubSection']
             ))
             
-            weight_data = [['Category', 'Weight']]
+            weight_data = [[self._t('category', language), self._t('weight_percent', language)]]
             for category, weight in weights.items():
                 weight_data.append([
                     category.replace('_', ' ').title(),
@@ -449,7 +848,7 @@ class PDFReportGenerator:
         hard_blockers = data.get('hard_blockers', [])
         if hard_blockers:
             elements.append(Paragraph(
-                "<b>Hard Blockers (Must-Have Requirements):</b>",
+                f"<b>{self._t('hard_blockers', language)}:</b>",
                 self.styles['SubSection']
             ))
             for blocker in hard_blockers:
@@ -467,7 +866,7 @@ class PDFReportGenerator:
         if nice_to_have:
             elements.append(Spacer(1, 0.1*inch))
             elements.append(Paragraph(
-                "<b>Nice to Have (Preferred):</b>",
+                f"<b>{self._t('nice_to_have', language)}:</b>",
                 self.styles['SubSection']
             ))
             for item in nice_to_have:
@@ -478,12 +877,12 @@ class PDFReportGenerator:
         
         return elements
     
-    def _build_executive_recommendation(self, recommendation: Dict[str, Any]) -> List:
+    def _build_executive_recommendation(self, recommendation: Dict[str, Any], language: str) -> List:
         """Build executive recommendation section."""
         elements = []
         
         elements.append(Paragraph(
-            "📊 Executive Recommendation",
+            f"📊 {self._t('executive_recommendation', language)}",
             self.styles['SectionHeader']
         ))
         
@@ -491,7 +890,7 @@ class PDFReportGenerator:
         top_rec = recommendation.get('top_recommendation')
         if top_rec:
             elements.append(Paragraph(
-                f"<b>✅ Recommended Candidate:</b> {top_rec.get('candidate_name', 'N/A')}",
+                f"<b>✅ {self._t('recommended_candidate', language)}:</b> {top_rec.get('candidate_name', 'N/A')}",
                 ParagraphStyle(
                     name='TopCandidate',
                     parent=self.styles['BodyText'],
@@ -511,7 +910,7 @@ class PDFReportGenerator:
         exec_summary = recommendation.get('executive_summary')
         if exec_summary:
             elements.append(Paragraph(
-                "<b>Summary:</b>",
+                f"<b>{self._t('summary', language)}:</b>",
                 self.styles['SubSection']
             ))
             # Split into paragraphs
@@ -527,7 +926,7 @@ class PDFReportGenerator:
         if insights:
             elements.append(Spacer(1, 0.2*inch))
             elements.append(Paragraph(
-                "<b>Key Insights:</b>",
+                f"<b>{self._t('key_insights', language)}:</b>",
                 self.styles['SubSection']
             ))
             for insight in insights:
@@ -538,12 +937,12 @@ class PDFReportGenerator:
         
         return elements
     
-    def _build_rankings_section(self, results: List[Dict[str, Any]]) -> List:
+    def _build_rankings_section(self, results: List[Dict[str, Any]], language: str) -> List:
         """Build candidate rankings table."""
         elements = []
         
         elements.append(Paragraph(
-            f"Candidate Rankings ({len(results)} Total)",
+            f"{self._t('candidate_rankings', language)} ({len(results)} {self._t('total', language)})",
             self.styles['SectionHeader']
         ))
         
@@ -554,14 +953,14 @@ class PDFReportGenerator:
             reverse=True
         )
         
-        # Prepare table data
-        table_data = [['Rank', 'Candidate', 'Score', 'Blockers']]
+        # Prepare table data with better column widths
+        table_data = [[self._t('rank', language), self._t('candidate', language), self._t('score', language), self._t('blockers', language)]]
         
         for idx, result in enumerate(sorted_results, 1):
             name = self._get_candidate_name(result, idx)
             score = result.get('global_score', 0)
             blockers = result.get('hard_blocker_flags', [])
-            blocker_text = '⚠️ Yes' if blockers else '✓ None'
+            blocker_text = f"⚠️ {self._t('yes', language)}" if blockers else f"✓ {self._t('none', language)}"
             
             table_data.append([
                 f"#{idx}",
@@ -570,20 +969,20 @@ class PDFReportGenerator:
                 blocker_text
             ])
         
-        # Create table with branded style
-        table = Table(table_data, colWidths=[0.6*inch, 3*inch, 0.8*inch, 1*inch])
+        # Create table with branded style and improved column widths
+        table = Table(table_data, colWidths=[0.7*inch, 3.2*inch, 0.9*inch, 1.2*inch])
         table.setStyle(self.branding.create_branded_table_style(has_header=True))
         
         elements.append(table)
         
         return elements
     
-    def _build_candidate_details(self, results: List[Dict[str, Any]]) -> List:
+    def _build_candidate_details(self, results: List[Dict[str, Any]], language: str) -> List:
         """Build detailed candidate profiles with all sections from step 7."""
         elements = []
         
         elements.append(Paragraph(
-            "Detailed Candidate Analysis",
+            self._t("detailed_analysis", language),
             self.styles['SectionHeader']
         ))
         
@@ -619,7 +1018,7 @@ class PDFReportGenerator:
             score = result.get('global_score', 0)
             score_color = colors.HexColor('#10B981') if score >= 4 else colors.HexColor('#F59E0B') if score >= 3 else colors.HexColor('#EF4444')
             candidate_elements.append(Paragraph(
-                f"<b>Global Score:</b> <font color='{score_color.hexval()}'><b>{score:.1f}/5</b></font>",
+                f"<b>{self._t('global_score', language)}:</b> <font color='{score_color.hexval()}'><b>{score:.1f}/5</b></font>",
                 ParagraphStyle(
                     name='ScoreDisplay',
                     parent=self.styles['BodyText'],
@@ -634,7 +1033,7 @@ class PDFReportGenerator:
             if profile_summary:
                 summary_section = [
                     Paragraph(
-                        "<b>📋 Profile Summary</b>",
+                        f"<b>📋 {self._t('profile_summary', language)}</b>",
                         ParagraphStyle(
                             name='SectionTitle',
                             parent=self.styles['Heading2'],
@@ -660,10 +1059,10 @@ class PDFReportGenerator:
             categories = result.get('categories', {})
             if categories:
                 candidate_elements.append(Paragraph(
-                    "<b>Category Scores:</b>",
+                    f"<b>{self._t('category_scores', language)}:</b>",
                     self.styles['SubSection']
                 ))
-                cat_data = [['Category', 'Score']]
+                cat_data = [[self._t('category', language), self._t('score', language)]]
                 for cat, score in categories.items():
                     cat_data.append([
                         cat.replace('_', ' ').title(),
@@ -679,39 +1078,39 @@ class PDFReportGenerator:
             swot = result.get('swot_analysis', {})
             if swot:
                 candidate_elements.append(Paragraph(
-                    "<b>📊 Análise SWOT</b>",
+                    f"<b>📊 {self._t('swot_analysis', language)}</b>",
                     self.styles['SubSection']
                 ))
                 
                 # Create SWOT table
                 swot_data = [
-                    ['Forças (Strengths)', 'Fraquezas (Weaknesses)'],
-                    ['Oportunidades (Opportunities)', 'Ameaças (Threats)']
+                    [self._t('strengths', language), self._t('weaknesses', language)],
+                    [self._t('opportunities', language), self._t('threats', language)]
                 ]
                 
                 # Fill strengths
                 strengths = swot.get('strengths', [])
                 strengths_text = '\n'.join([f"• {s}" for s in strengths[:5]])  # Limit to 5 for table
                 if len(strengths) > 5:
-                    strengths_text += f"\n... e mais {len(strengths) - 5}"
+                    strengths_text += f"\n{self._t('and_more', language, count=len(strengths) - 5)}"
                 
                 # Fill weaknesses
                 weaknesses = swot.get('weaknesses', [])
                 weaknesses_text = '\n'.join([f"• {w}" for w in weaknesses[:5]])
                 if len(weaknesses) > 5:
-                    weaknesses_text += f"\n... e mais {len(weaknesses) - 5}"
+                    weaknesses_text += f"\n{self._t('and_more', language, count=len(weaknesses) - 5)}"
                 
                 # Fill opportunities
                 opportunities = swot.get('opportunities', [])
                 opp_text = '\n'.join([f"• {o}" for o in opportunities[:5]])
                 if len(opportunities) > 5:
-                    opp_text += f"\n... e mais {len(opportunities) - 5}"
+                    opp_text += f"\n{self._t('and_more', language, count=len(opportunities) - 5)}"
                 
                 # Fill threats
                 threats = swot.get('threats', [])
                 threats_text = '\n'.join([f"• {t}" for t in threats[:5]])
                 if len(threats) > 5:
-                    threats_text += f"\n... e mais {len(threats) - 5}"
+                    threats_text += f"\n{self._t('and_more', language, count=len(threats) - 5)}"
                 
                 swot_table = Table([
                     [
@@ -770,11 +1169,11 @@ class PDFReportGenerator:
             tech_skills = result.get('technical_skills_detailed', [])
             if tech_skills:
                 candidate_elements.append(Paragraph(
-                    "<b>🔧 Avaliação de Competências Técnicas (Hard Skills)</b>",
+                    f"<b>🔧 {self._t('technical_skills', language)}</b>",
                     self.styles['SubSection']
                 ))
                 candidate_elements.append(Paragraph(
-                    "Legenda: 1 = Básico, 2 = Intermediário, 3 = Avançado, 4 = Proficiente, 5 = Especialista",
+                    self._t('technical_skills_legend', language),
                     ParagraphStyle(
                         name='Legend',
                         parent=self.styles['BodyText'],
@@ -784,15 +1183,19 @@ class PDFReportGenerator:
                     )
                 ))
                 
-                tech_data = [['Competência', 'Pontuação', 'Justificação']]
+                tech_data = [[self._t('competency', language), self._t('score', language), self._t('justification', language)]]
                 for skill in tech_skills:
+                    justification = skill.get('justification', '')
+                    # Truncate justification but allow wrapping
+                    justification_short = justification[:250] + ('...' if len(justification) > 250 else '')
                     tech_data.append([
                         skill.get('skill', ''),
                         f"{skill.get('score', 0)}/5",
-                        skill.get('justification', '')[:200] + ('...' if len(skill.get('justification', '')) > 200 else '')
+                        justification_short
                     ])
                 
-                tech_table = Table(tech_data, colWidths=[1.5*inch, 0.8*inch, 3.7*inch])
+                # Improved table widths for better formatting
+                tech_table = Table(tech_data, colWidths=[1.8*inch, 0.9*inch, 3.3*inch])
                 tech_table.setStyle(self.branding.create_branded_table_style(has_header=True))
                 candidate_elements.append(tech_table)
                 
@@ -801,7 +1204,7 @@ class PDFReportGenerator:
                 if missing_tech:
                     candidate_elements.append(Spacer(1, 0.1*inch))
                     candidate_elements.append(Paragraph(
-                        "<b>⚠️ Competências Técnicas em Falta:</b>",
+                        f"<b>⚠️ {self._t('missing_technical_skills', language)}:</b>",
                         ParagraphStyle(
                             name='Warning',
                             parent=self.styles['BodyText'],
@@ -826,11 +1229,11 @@ class PDFReportGenerator:
             soft_skills = result.get('soft_skills_detailed', [])
             if soft_skills:
                 candidate_elements.append(Paragraph(
-                    "<b>🤝 Avaliação de Competências Interpessoais (Soft Skills)</b>",
+                    f"<b>🤝 {self._t('soft_skills', language)}</b>",
                     self.styles['SubSection']
                 ))
                 candidate_elements.append(Paragraph(
-                    "Legenda: 1 = Pouco evidente, 2 = Parcialmente demonstrada, 3 = Adequadamente demonstrada, 4 = Bem demonstrada, 5 = Fortemente demonstrada",
+                    self._t('soft_skills_legend', language),
                     ParagraphStyle(
                         name='Legend',
                         parent=self.styles['BodyText'],
@@ -840,15 +1243,19 @@ class PDFReportGenerator:
                     )
                 ))
                 
-                soft_data = [['Competência', 'Pontuação', 'Justificação']]
+                soft_data = [[self._t('competency', language), self._t('score', language), self._t('justification', language)]]
                 for skill in soft_skills:
+                    justification = skill.get('justification', '')
+                    # Truncate justification but allow wrapping
+                    justification_short = justification[:250] + ('...' if len(justification) > 250 else '')
                     soft_data.append([
                         skill.get('skill', ''),
                         f"{skill.get('score', 0)}/5",
-                        skill.get('justification', '')[:200] + ('...' if len(skill.get('justification', '')) > 200 else '')
+                        justification_short
                     ])
                 
-                soft_table = Table(soft_data, colWidths=[1.5*inch, 0.8*inch, 3.7*inch])
+                # Improved table widths for better formatting
+                soft_table = Table(soft_data, colWidths=[1.8*inch, 0.9*inch, 3.3*inch])
                 soft_table.setStyle(self.branding.create_branded_table_style(has_header=True))
                 candidate_elements.append(soft_table)
                 
@@ -857,7 +1264,7 @@ class PDFReportGenerator:
                 if missing_soft:
                     candidate_elements.append(Spacer(1, 0.1*inch))
                     candidate_elements.append(Paragraph(
-                        "<b>⚠️ Competências Interpessoais em Falta:</b>",
+                        f"<b>⚠️ {self._t('missing_soft_skills', language)}:</b>",
                         ParagraphStyle(
                             name='Warning',
                             parent=self.styles['BodyText'],
@@ -882,13 +1289,13 @@ class PDFReportGenerator:
             exp_analysis = result.get('professional_experience_analysis', {})
             if exp_analysis:
                 candidate_elements.append(Paragraph(
-                    "<b>💼 Análise de Experiência Profissional</b>",
+                    f"<b>💼 {self._t('professional_experience', language)}</b>",
                     self.styles['SubSection']
                 ))
                 
                 if exp_analysis.get('relevance_to_position'):
                     candidate_elements.append(Paragraph(
-                        "<b>Relevância para a Posição:</b>",
+                        f"<b>{self._t('relevance_to_position', language)}:</b>",
                         self.styles['BodyText']
                     ))
                     candidate_elements.append(Paragraph(
@@ -899,7 +1306,7 @@ class PDFReportGenerator:
                 
                 if exp_analysis.get('career_progression'):
                     candidate_elements.append(Paragraph(
-                        "<b>Progressão de Carreira:</b>",
+                        f"<b>{self._t('career_progression', language)}:</b>",
                         self.styles['BodyText']
                     ))
                     candidate_elements.append(Paragraph(
@@ -910,7 +1317,7 @@ class PDFReportGenerator:
                 
                 if exp_analysis.get('professional_stability'):
                     candidate_elements.append(Paragraph(
-                        "<b>Estabilidade Profissional:</b>",
+                        f"<b>{self._t('professional_stability', language)}:</b>",
                         self.styles['BodyText']
                     ))
                     candidate_elements.append(Paragraph(
@@ -924,13 +1331,13 @@ class PDFReportGenerator:
             education = result.get('education_and_certifications', {})
             if education:
                 candidate_elements.append(Paragraph(
-                    "<b>🎓 Formação Académica e Certificações</b>",
+                    f"<b>🎓 {self._t('education_certifications', language)}</b>",
                     self.styles['SubSection']
                 ))
                 
                 if education.get('relevance'):
                     candidate_elements.append(Paragraph(
-                        "<b>Relevância e Adequação:</b>",
+                        f"<b>{self._t('relevance_adequacy', language)}:</b>",
                         self.styles['BodyText']
                     ))
                     candidate_elements.append(Paragraph(
@@ -941,7 +1348,7 @@ class PDFReportGenerator:
                 
                 if education.get('adequacy'):
                     candidate_elements.append(Paragraph(
-                        "<b>Avaliação:</b>",
+                        f"<b>{self._t('evaluation', language)}:</b>",
                         self.styles['BodyText']
                     ))
                     candidate_elements.append(Paragraph(
@@ -953,7 +1360,7 @@ class PDFReportGenerator:
                 certs = education.get('certifications', [])
                 if certs:
                     candidate_elements.append(Paragraph(
-                        "<b>Certificações:</b>",
+                        f"<b>{self._t('certifications', language)}:</b>",
                         self.styles['BodyText']
                     ))
                     for cert in certs:
@@ -973,7 +1380,7 @@ class PDFReportGenerator:
             achievements = result.get('notable_achievements', [])
             if achievements:
                 candidate_elements.append(Paragraph(
-                    "<b>🏆 Realizações e Projetos Notáveis</b>",
+                    f"<b>🏆 {self._t('notable_achievements', language)}</b>",
                     self.styles['SubSection']
                 ))
                 for achievement in achievements:
@@ -982,7 +1389,7 @@ class PDFReportGenerator:
                         self.styles['BodyText']
                     ))
                     candidate_elements.append(Paragraph(
-                        f"<i>Impacto:</i> {achievement.get('impact', '')}",
+                        f"<i>{self._t('impact', language)}:</i> {achievement.get('impact', '')}",
                         ParagraphStyle(
                             name='AchievementImpact',
                             parent=self.styles['BodyText'],
@@ -997,11 +1404,11 @@ class PDFReportGenerator:
             culture_fit = result.get('culture_fit_assessment', {})
             if culture_fit:
                 candidate_elements.append(Paragraph(
-                    "<b>🌐 Adequação à Cultura Organizacional</b>",
+                    f"<b>🌐 {self._t('culture_fit', language)}</b>",
                     self.styles['SubSection']
                 ))
                 candidate_elements.append(Paragraph(
-                    "Legenda: 1 = Pouco adequado, 2 = Parcialmente adequado, 3 = Adequado, 4 = Bem adequado, 5 = Altamente adequado",
+                    self._t('culture_fit_legend', language),
                     ParagraphStyle(
                         name='Legend',
                         parent=self.styles['BodyText'],
@@ -1013,7 +1420,7 @@ class PDFReportGenerator:
                 
                 culture_score = culture_fit.get('score', 0)
                 candidate_elements.append(Paragraph(
-                    f"<b>Pontuação:</b> {culture_score}/5",
+                    f"<b>{self._t('culture_fit_score', language)}:</b> {culture_score}/5",
                     ParagraphStyle(
                         name='CultureScore',
                         parent=self.styles['BodyText'],
@@ -1035,14 +1442,14 @@ class PDFReportGenerator:
             score_breakdown = result.get('score_breakdown', {})
             if score_breakdown:
                 candidate_elements.append(Paragraph(
-                    "<b>📊 Decomposição da Pontuação</b>",
+                    f"<b>📊 {self._t('score_breakdown', language)}</b>",
                     self.styles['SubSection']
                 ))
                 
                 global_score = score_breakdown.get('global_score')
                 if global_score is not None:
                     candidate_elements.append(Paragraph(
-                        f"<b>Pontuação Global: {global_score}/100</b>",
+                        f"<b>{self._t('global_score_100', language)}: {global_score}/100</b>",
                         ParagraphStyle(
                             name='GlobalScore',
                             parent=self.styles['BodyText'],
@@ -1056,12 +1463,12 @@ class PDFReportGenerator:
                     ))
                 
                 # Score breakdown table
-                breakdown_data = [['Critério', 'Peso (%)', 'Pontuação']]
+                breakdown_data = [[self._t('criterion', language), self._t('weight_percent', language), self._t('score', language)]]
                 
                 if score_breakdown.get('technical_skills'):
                     ts = score_breakdown['technical_skills']
                     breakdown_data.append([
-                        'Competências Técnicas',
+                        self._t('technical_skills_label', language),
                         f"{ts.get('weight_percent', 0)}%",
                         f"{ts.get('score', 0)}/100"
                     ])
@@ -1069,7 +1476,7 @@ class PDFReportGenerator:
                 if score_breakdown.get('soft_skills'):
                     ss = score_breakdown['soft_skills']
                     breakdown_data.append([
-                        'Competências Interpessoais',
+                        self._t('soft_skills_label', language),
                         f"{ss.get('weight_percent', 0)}%",
                         f"{ss.get('score', 0)}/100"
                     ])
@@ -1077,7 +1484,7 @@ class PDFReportGenerator:
                 if score_breakdown.get('professional_experience'):
                     pe = score_breakdown['professional_experience']
                     breakdown_data.append([
-                        'Experiência Profissional',
+                        self._t('professional_experience_label', language),
                         f"{pe.get('weight_percent', 0)}%",
                         f"{pe.get('score', 0)}/100"
                     ])
@@ -1085,7 +1492,7 @@ class PDFReportGenerator:
                 if score_breakdown.get('education_certifications'):
                     ec = score_breakdown['education_certifications']
                     breakdown_data.append([
-                        'Formação e Certificações',
+                        self._t('education_certifications_label', language),
                         f"{ec.get('weight_percent', 0)}%",
                         f"{ec.get('score', 0)}/100"
                     ])
@@ -1093,13 +1500,14 @@ class PDFReportGenerator:
                 if score_breakdown.get('culture_fit'):
                     cf = score_breakdown['culture_fit']
                     breakdown_data.append([
-                        'Adequação Cultural',
+                        self._t('culture_fit_label', language),
                         f"{cf.get('weight_percent', 0)}%",
                         f"{cf.get('score', 0)}/100"
                     ])
                 
                 if len(breakdown_data) > 1:  # Has data beyond header
-                    breakdown_table = Table(breakdown_data, colWidths=[2.5*inch, 1*inch, 1*inch])
+                    # Improved table widths
+                    breakdown_table = Table(breakdown_data, colWidths=[2.8*inch, 1.1*inch, 1.1*inch])
                     breakdown_table.setStyle(self.branding.create_branded_table_style(has_header=True))
                     candidate_elements.append(breakdown_table)
                 
@@ -1107,7 +1515,7 @@ class PDFReportGenerator:
                 if score_breakdown.get('global_score_justification'):
                     candidate_elements.append(Spacer(1, 0.1*inch))
                     candidate_elements.append(Paragraph(
-                        "<b>Justificação da Pontuação Global:</b>",
+                        f"<b>{self._t('global_score_justification', language)}:</b>",
                         self.styles['BodyText']
                     ))
                     candidate_elements.append(Paragraph(
@@ -1121,7 +1529,7 @@ class PDFReportGenerator:
             strengths = result.get('strengths', [])
             if strengths:
                 candidate_elements.append(Paragraph(
-                    "<b>✓ Strengths:</b>",
+                    f"<b>✓ {self._t('strengths_section', language)}:</b>",
                     self.styles['SubSection']
                 ))
                 for strength in strengths:
@@ -1140,7 +1548,7 @@ class PDFReportGenerator:
             risks = result.get('risks', [])
             if risks:
                 candidate_elements.append(Paragraph(
-                    "<b>⚠️ Risks & Gaps:</b>",
+                    f"<b>⚠️ {self._t('risks_gaps', language)}:</b>",
                     self.styles['SubSection']
                 ))
                 for risk in risks:
@@ -1160,7 +1568,7 @@ class PDFReportGenerator:
             blocker_flags = result.get('hard_blocker_flags', [])
             if blocker_flags:
                 candidate_elements.append(Paragraph(
-                    "<b>🔴 Hard Blocker Violations:</b>",
+                    f"<b>🔴 {self._t('hard_blocker_violations', language)}:</b>",
                     self.styles['SubSection']
                 ))
                 for blocker in blocker_flags:
@@ -1181,7 +1589,7 @@ class PDFReportGenerator:
             questions = result.get('questions', [])
             if questions:
                 candidate_elements.append(Paragraph(
-                    f"<b>❓ Suggested Interview Questions ({len(questions)} total):</b>",
+                    f"<b>❓ {self._t('suggested_questions', language)} ({len(questions)} {self._t('total', language).lower()}):</b>",
                     self.styles['SubSection']
                 ))
                 for i, q in enumerate(questions, 1):
@@ -1201,7 +1609,7 @@ class PDFReportGenerator:
             intro_pitch = result.get('intro_pitch', '')
             if intro_pitch:
                 candidate_elements.append(Paragraph(
-                    "<b>🎤 Intro Pitch:</b>",
+                    f"<b>🎤 {self._t('intro_pitch', language)}:</b>",
                     self.styles['SubSection']
                 ))
                 candidate_elements.append(Paragraph(
@@ -1221,7 +1629,7 @@ class PDFReportGenerator:
             gap_strategies = self._normalize_list_field(result.get('gap_strategies', []))
             if gap_strategies:
                 candidate_elements.append(Paragraph(
-                    "<b>💡 Strategies to Address Gaps & Risks:</b>",
+                    f"<b>💡 {self._t('gap_strategies', language)}:</b>",
                     self.styles['SubSection']
                 ))
                 for strategy in gap_strategies:
@@ -1241,7 +1649,7 @@ class PDFReportGenerator:
             preparation_tips = self._normalize_list_field(result.get('preparation_tips', []))
             if preparation_tips:
                 candidate_elements.append(Paragraph(
-                    "<b>📚 Study Topics for Interview:</b>",
+                    f"<b>📚 {self._t('preparation_tips', language)}:</b>",
                     self.styles['SubSection']
                 ))
                 for tip in preparation_tips:
@@ -1261,7 +1669,7 @@ class PDFReportGenerator:
             recommendation = result.get('recommendation', '')
             if recommendation:
                 candidate_elements.append(Paragraph(
-                    "<b>💡 AI Recommendation:</b>",
+                    f"<b>💡 {self._t('ai_recommendation', language)}:</b>",
                     self.styles['SubSection']
                 ))
                 candidate_elements.append(Paragraph(
@@ -1281,7 +1689,7 @@ class PDFReportGenerator:
             enrichment = result.get('enrichment', {})
             if enrichment and (enrichment.get('company') or enrichment.get('candidate')):
                 candidate_elements.append(Paragraph(
-                    "<b>🔍 Enrichment Data (Brave Search):</b>",
+                    f"<b>🔍 {self._t('enrichment_data', language)}:</b>",
                     self.styles['SubSection']
                 ))
                 
@@ -1289,7 +1697,7 @@ class PDFReportGenerator:
                 if enrichment.get('company'):
                     company = enrichment['company']
                     candidate_elements.append(Paragraph(
-                        "<b>Company Information:</b>",
+                        f"<b>{self._t('company_information', language)}:</b>",
                         ParagraphStyle(
                             name='EnrichmentSubHeader',
                             parent=self.styles['BodyText'],
@@ -1300,22 +1708,22 @@ class PDFReportGenerator:
                     ))
                     if company.get('name'):
                         candidate_elements.append(Paragraph(
-                            f"• Name: {company['name']}",
+                            f"• {self._t('name', language)}: {company['name']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
                         ))
                     if company.get('website'):
                         candidate_elements.append(Paragraph(
-                            f"• Website: {company['website']}",
+                            f"• {self._t('website', language)}: {company['website']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
                         ))
                     if company.get('industry'):
                         candidate_elements.append(Paragraph(
-                            f"• Industry: {company['industry']}",
+                            f"• {self._t('industry', language)}: {company['industry']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
                         ))
                     if company.get('size'):
                         candidate_elements.append(Paragraph(
-                            f"• Size: {company['size']}",
+                            f"• {self._t('size', language)}: {company['size']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
                         ))
                 
@@ -1323,7 +1731,7 @@ class PDFReportGenerator:
                 if enrichment.get('candidate'):
                     cand = enrichment['candidate']
                     candidate_elements.append(Paragraph(
-                        "<b>Candidate Professional Profile:</b>",
+                        f"<b>{self._t('candidate_professional_profile', language)}:</b>",
                         ParagraphStyle(
                             name='EnrichmentSubHeader',
                             parent=self.styles['BodyText'],
@@ -1334,17 +1742,17 @@ class PDFReportGenerator:
                     ))
                     if cand.get('linkedin_profile'):
                         candidate_elements.append(Paragraph(
-                            f"• LinkedIn: {cand['linkedin_profile']}",
+                            f"• {self._t('linkedin', language)}: {cand['linkedin_profile']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
                         ))
                     if cand.get('github_profile'):
                         candidate_elements.append(Paragraph(
-                            f"• GitHub: {cand['github_profile']}",
+                            f"• {self._t('github', language)}: {cand['github_profile']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
                         ))
                     if cand.get('portfolio_url'):
                         candidate_elements.append(Paragraph(
-                            f"• Portfolio: {cand['portfolio_url']}",
+                            f"• {self._t('portfolio', language)}: {cand['portfolio_url']}",
                             ParagraphStyle(name='EnrichmentDetail', parent=self.styles['BodyText'], leftIndent=30, fontSize=9, spaceAfter=2)
                         ))
             
