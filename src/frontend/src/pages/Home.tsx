@@ -5,7 +5,7 @@
  * Features: Hero section, features overview, benefits, CTAs, SEO optimized.
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HeroDualMode } from '../components/HeroDualMode';
@@ -15,6 +15,26 @@ import './Home.css';
 
 export const Home: React.FC = () => {
   const { t } = useTranslation();
+  const [totalAnalyses, setTotalAnalyses] = useState<number | null>(null);
+
+  // Fetch total analyses count
+  useEffect(() => {
+    const fetchTotalAnalyses = async () => {
+      try {
+        const response = await fetch('/api/stats/total-analyses');
+        if (response.ok) {
+          const data = await response.json();
+          setTotalAnalyses(data.total_analyses || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching total analyses:', error);
+        setTotalAnalyses(0);
+      }
+    };
+
+    fetchTotalAnalyses();
+  }, []);
+
   const interviewerFeaturesRaw = t('home.features.interviewer.features', { returnObjects: true }) as unknown;
   const interviewerFeatures = Array.isArray(interviewerFeaturesRaw) ? (interviewerFeaturesRaw as string[]) : [];
   const candidateFeaturesRaw = t('home.features.candidate.features', { returnObjects: true }) as unknown;
@@ -42,7 +62,7 @@ export const Home: React.FC = () => {
       />
         
         {/* Hero Section - Dual Mode */}
-        <HeroDualMode />
+        <HeroDualMode totalAnalyses={totalAnalyses} />
 
       {/* Value Proposition */}
       <section className="value-prop-section">

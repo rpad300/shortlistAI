@@ -10,7 +10,42 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import './HeroDualMode.css';
 
-export const HeroDualMode: React.FC = () => {
+// Component for animated counter
+const AnimatedCounter: React.FC<{ value: number; duration?: number }> = ({ value, duration = 2000 }) => {
+  const [displayValue, setDisplayValue] = React.useState(0);
+
+  React.useEffect(() => {
+    if (value === 0) return;
+
+    let startTime: number | null = null;
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      
+      // Easing function for smooth animation
+      const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+      const currentValue = Math.floor(easeOutCubic * value);
+      
+      setDisplayValue(currentValue);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(value);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value, duration]);
+
+  return <span>{displayValue.toLocaleString()}</span>;
+};
+
+interface HeroDualModeProps {
+  totalAnalyses?: number | null;
+}
+
+export const HeroDualMode: React.FC<HeroDualModeProps> = ({ totalAnalyses = null }) => {
   const { t } = useTranslation();
 
   return (
@@ -21,6 +56,31 @@ export const HeroDualMode: React.FC = () => {
         </div>
         <h1 className="hero-dual-title">{t('home.heroDual.title')}</h1>
         <p className="hero-dual-subtitle">{t('home.heroDual.subtitle')}</p>
+        
+        {/* Total Analyses Counter */}
+        {totalAnalyses !== null && totalAnalyses > 0 && (
+          <div className="hero-dual-stats">
+            <div className="hero-dual-stat-card">
+              <div className="hero-dual-stat-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="hero-dual-stat-content">
+                <div className="hero-dual-stat-number">
+                  <AnimatedCounter value={totalAnalyses} />
+                </div>
+                <div className="hero-dual-stat-label">
+                  {t('home.heroDual.stats.label', 'Total Analyses Performed')}
+                </div>
+                <div className="hero-dual-stat-description">
+                  {t('home.heroDual.stats.description', 'Trusted by professionals worldwide')}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="hero-dual-cards">

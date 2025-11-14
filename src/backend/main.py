@@ -25,6 +25,9 @@ logging.basicConfig(
 for logger_name in ['services.ai_analysis', 'services.ai.gemini_provider', 'services.ai.manager']:
     logging.getLogger(logger_name).setLevel(logging.INFO)
 
+# Get logger for this module
+logger = logging.getLogger(__name__)
+
 # Create FastAPI app instance
 app = FastAPI(
     title="CV Analysis Platform API",
@@ -87,6 +90,36 @@ async def root():
         "version": "0.1.0",
         "docs": "/api/docs"
     }
+
+
+@app.get("/api/stats/total-analyses")
+async def get_total_analyses():
+    """
+    Public endpoint to get the total number of analyses performed.
+    
+    This endpoint is used to display social proof on the homepage
+    without exposing sensitive data about individual analyses.
+    
+    Returns:
+        JSON with total_analyses count
+    """
+    try:
+        from services.database.analysis_service import get_analysis_service
+        
+        analysis_service = get_analysis_service()
+        total = await analysis_service.count_all()
+        
+        return {
+            "total_analyses": total,
+            "status": "success"
+        }
+    except Exception as e:
+        logger.error(f"Error getting total analyses count: {e}")
+        # Return 0 on error to avoid breaking the frontend
+        return {
+            "total_analyses": 0,
+            "status": "error"
+        }
 
 
 @app.get("/health")
