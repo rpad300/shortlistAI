@@ -60,6 +60,14 @@ async def get_current_admin(authorization: Optional[str] = Header(None)):
     
     token = authorization.replace("Bearer ", "")
     
+    if not token or len(token) < 10:
+        logger.warning("Token verification failed: Empty or invalid token format")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token format",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
     try:
         # Create a separate client for auth verification to avoid affecting the global client
         from supabase import create_client
@@ -72,13 +80,31 @@ async def get_current_admin(authorization: Optional[str] = Header(None)):
             os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         )
         
+        if not supabase_url or not supabase_key:
+            logger.error("Missing Supabase configuration for token verification")
+            raise HTTPException(
+                status_code=500,
+                detail="Server configuration error"
+            )
+        
         # Use a separate client for auth verification
         auth_client = create_client(supabase_url, supabase_key)
         
+        logger.debug(f"Verifying token (length: {len(token)}, starts with: {token[:10]}...)")
+        
         # Verify token with Supabase Auth
-        user_response = auth_client.auth.get_user(token)
+        try:
+            user_response = auth_client.auth.get_user(token)
+        except Exception as auth_error:
+            logger.error(f"Supabase get_user error: {str(auth_error)}")
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or expired token",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
         
         if not user_response or not user_response.user:
+            logger.warning("Token verification failed: No user in response")
             raise HTTPException(
                 status_code=401,
                 detail="Invalid or expired token",
@@ -88,9 +114,12 @@ async def get_current_admin(authorization: Optional[str] = Header(None)):
         user = user_response.user
         user_metadata = user.user_metadata or {}
         
+        logger.debug(f"Token verified for user: {user.email}, Role: {user_metadata.get('role', 'none')}")
+        
         # Verify admin role
         user_role = user_metadata.get("role", "")
         if user_role not in ["admin", "super_admin"]:
+            logger.warning(f"Token verification failed: User {user.email} does not have admin role (role: {user_role})")
             raise HTTPException(
                 status_code=403,
                 detail="Admin access required"
@@ -106,7 +135,7 @@ async def get_current_admin(authorization: Optional[str] = Header(None)):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Token verification error: {e}")
+        logger.error(f"Token verification error: {e}", exc_info=True)
         raise HTTPException(
             status_code=401,
             detail="Invalid token"
