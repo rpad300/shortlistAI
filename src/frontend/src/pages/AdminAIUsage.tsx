@@ -15,6 +15,9 @@ interface AIUsageLog {
   job_posting_id: string;
   global_score?: number;
   estimated_cost: number;
+  total_cost: number;
+  input_cost: number;
+  output_cost: number;
   input_tokens?: number;
   output_tokens?: number;
   total_tokens?: number;
@@ -23,9 +26,13 @@ interface AIUsageLog {
 interface UsageSummary {
   total_calls: number;
   total_cost: number;
+  total_input_cost: number;
+  total_output_cost: number;
   provider_breakdown: Record<string, { 
     calls: number; 
     cost: number;
+    input_cost: number;
+    output_cost: number;
     input_tokens: number;
     output_tokens: number;
     total_tokens: number;
@@ -206,7 +213,10 @@ const AdminAIUsage: React.FC = () => {
               </div>
               <div className="stat-card">
                 <div className="stat-number">${summary.total_cost.toFixed(6)}</div>
-                <div className="stat-label">Total Cost (Token-Based)</div>
+                <div className="stat-label">Total Cost</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                  Input: ${summary.total_input_cost.toFixed(6)} | Output: ${summary.total_output_cost.toFixed(6)}
+                </div>
               </div>
             </div>
             
@@ -219,16 +229,19 @@ const AdminAIUsage: React.FC = () => {
                       <h3>{provider.toUpperCase()}</h3>
                       <div className="provider-stats">
                         <div>Calls: {data.calls.toLocaleString()}</div>
-                        <div>Cost: ${data.cost.toFixed(6)}</div>
+                        <div style={{ fontWeight: 600 }}>Total: ${data.cost.toFixed(6)}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          Input: ${data.input_cost.toFixed(6)}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          Output: ${data.output_cost.toFixed(6)}
+                        </div>
                         {(data.total_tokens || 0) > 0 && (
-                          <>
-                            <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              Tokens: {(data.total_tokens || 0).toLocaleString()}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              In: {(data.input_tokens || 0).toLocaleString()} | Out: {(data.output_tokens || 0).toLocaleString()}
-                            </div>
-                          </>
+                          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
+                            Tokens: {(data.total_tokens || 0).toLocaleString()}
+                            <br />
+                            In: {(data.input_tokens || 0).toLocaleString()} | Out: {(data.output_tokens || 0).toLocaleString()}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -366,7 +379,9 @@ const AdminAIUsage: React.FC = () => {
                       <th>Language</th>
                       <th>Tokens</th>
                       <th>Score</th>
-                      <th>Cost</th>
+                      <th>Cost (Input)</th>
+                      <th>Cost (Output)</th>
+                      <th>Cost (Total)</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -399,7 +414,15 @@ const AdminAIUsage: React.FC = () => {
                             <span style={{ color: 'var(--text-secondary)' }}>N/A</span>
                           )}
                         </td>
-                        <td>${log.estimated_cost.toFixed(6)}</td>
+                        <td style={{ fontSize: '0.875rem' }}>
+                          ${((log.input_cost || 0)).toFixed(6)}
+                        </td>
+                        <td style={{ fontSize: '0.875rem' }}>
+                          ${((log.output_cost || 0)).toFixed(6)}
+                        </td>
+                        <td style={{ fontWeight: 600 }}>
+                          ${((log.total_cost || log.estimated_cost || 0)).toFixed(6)}
+                        </td>
                         <td>
                           <Link
                             to={`/admin/analyses/${log.id}`}

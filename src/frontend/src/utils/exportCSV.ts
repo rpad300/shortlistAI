@@ -122,7 +122,9 @@ export const exportAIUsageToCSV = (logs: any[]) => {
     Score: log.global_score !== undefined && log.global_score !== null 
       ? (log.global_score * 100).toFixed(1) + '%' 
       : 'N/A',
-    Cost: `$${log.estimated_cost?.toFixed(6) || '0.000000'}`,
+    'Cost (Input)': `$${(log.input_cost || 0).toFixed(6)}`,
+    'Cost (Output)': `$${(log.output_cost || 0).toFixed(6)}`,
+    'Cost (Total)': `$${(log.total_cost || log.estimated_cost || 0).toFixed(6)}`,
     'Candidate ID': log.candidate_id,
     'Job Posting ID': log.job_posting_id,
     'Analysis ID': log.id
