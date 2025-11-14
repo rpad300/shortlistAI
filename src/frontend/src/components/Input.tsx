@@ -14,6 +14,7 @@ interface InputProps {
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  autoComplete?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -24,7 +25,8 @@ const Input: React.FC<InputProps> = ({
   placeholder,
   required = false,
   error,
-  disabled = false
+  disabled = false,
+  autoComplete
 }) => {
   return (
     <div className="input-wrapper">
@@ -39,6 +41,7 @@ const Input: React.FC<InputProps> = ({
         placeholder={placeholder}
         required={required}
         disabled={disabled}
+        autoComplete={autoComplete}
         className={`input-field ${error ? 'input-error' : ''}`}
       />
       {error && <span className="input-error-message">{error}</span>}

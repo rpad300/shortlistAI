@@ -156,13 +156,20 @@ async def admin_login(credentials: AdminLogin, request: Request):
         logger.info(f"Admin login attempt - {credentials.email} - IP: {client_ip}")
         
         # Authenticate with Supabase Auth using separate client
-        auth_response = auth_client.auth.sign_in_with_password({
-            "email": credentials.email,
-            "password": credentials.password
-        })
+        try:
+            auth_response = auth_client.auth.sign_in_with_password({
+                "email": credentials.email,
+                "password": credentials.password
+            })
+        except Exception as auth_error:
+            logger.error(f"Supabase auth error for {credentials.email}: {str(auth_error)}")
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid credentials"
+            )
         
         if not auth_response or not auth_response.user:
-            logger.warning(f"Admin login failed - {credentials.email}")
+            logger.warning(f"Admin login failed - {credentials.email} - No user in response")
             raise HTTPException(
                 status_code=401,
                 detail="Invalid credentials"
@@ -172,9 +179,11 @@ async def admin_login(credentials: AdminLogin, request: Request):
         user_metadata = user.user_metadata or {}
         user_role = user_metadata.get("role", "")
         
+        logger.info(f"User {credentials.email} authenticated. Role: {user_role}, Metadata: {user_metadata}")
+        
         # Verify admin role
         if user_role not in ["admin", "super_admin"]:
-            logger.warning(f"Non-admin login attempt - {credentials.email}")
+            logger.warning(f"Non-admin login attempt - {credentials.email} - Role: {user_role}")
             raise HTTPException(
                 status_code=403,
                 detail="Admin access required"

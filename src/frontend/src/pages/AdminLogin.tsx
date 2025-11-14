@@ -76,6 +76,7 @@ const AdminLogin: React.FC = () => {
               onChange={setEmail}
               required
               placeholder="admin@shortlistai.com"
+              autoComplete="email"
             />
             
             <Input
@@ -85,6 +86,7 @@ const AdminLogin: React.FC = () => {
               onChange={setPassword}
               required
               placeholder="••••••••"
+              autoComplete="current-password"
             />
           </div>
           
