@@ -7,6 +7,13 @@ failed to do request: Head "https://registry-1.docker.io/v2/library/python/manif
 dial tcp: lookup registry-1.docker.io on 127.0.0.53:53: read udp 127.0.0.1:37993->127.0.0.53:53: i/o timeout
 ```
 
+Ou para frontend:
+```
+failed to solve: node:20-alpine: failed to resolve source metadata for docker.io/library/node:20-alpine: 
+failed to authorize: failed to fetch anonymous token: Get "https://auth.docker.io/token?scope=repository%3Alibrary%2Fnode%3Apull&service=registry.docker.io": 
+dial tcp: lookup auth.docker.io on 127.0.0.53:53: read udp 127.0.0.1:37155->127.0.0.53:53: i/o timeout
+```
+
 ## 🔍 Causa
 O servidor não consegue resolver o DNS para `registry-1.docker.io` (Docker Hub). Isto pode ser:
 - Problema de DNS no servidor
@@ -69,15 +76,19 @@ docker images | grep python
 sudo docker-compose build
 ```
 
-### Solução 6: Pull Manual da Imagem
-Tentar fazer pull manual primeiro:
+### Solução 6: Pull Manual das Imagens
+Tentar fazer pull manual primeiro (útil se backend build funcionou mas frontend falha):
 ```bash
-# Com DNS alternativo
+# Pull das imagens necessárias
+sudo docker pull node:20-alpine
+sudo docker pull nginx:1.27-alpine
 sudo docker pull python:3.13-slim
 
 # Se funcionar, depois fazer build
 sudo docker-compose build
 ```
+
+**Nota**: Se o backend build funcionou mas o frontend falha, pode ser problema intermitente de DNS. Tente fazer pull manual das imagens do frontend primeiro.
 
 ### Solução 7: Verificar Conectividade de Rede
 ```bash
@@ -113,9 +124,14 @@ sudo systemctl restart docker
 
 ## 🎯 Solução Rápida Recomendada
 
-1. **Configurar DNS no Docker** (Solução 2) - Mais provável de resolver
+### Se Backend Build Funcionou mas Frontend Falha:
+1. **Fazer pull manual das imagens do frontend** (Solução 6) - Mais rápido
+2. **Depois fazer build normalmente**: `sudo docker-compose build frontend`
+
+### Se Ambos Falham:
+1. **Configurar DNS no Docker** (Solução 2) - Mais provável de resolver permanentemente
 2. **Verificar conectividade** (Solução 7) - Diagnosticar problema
-3. **Se urgente**: Usar versão Python mais antiga temporariamente (Solução 4)
+3. **Se urgente**: Usar versões mais antigas temporariamente (Solução 4)
 
 ## 📝 Notas
 
