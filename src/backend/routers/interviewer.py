@@ -798,50 +798,76 @@ async def get_weighting_suggestions(session_id: UUID):
     
     try:
         session_service = get_session_service()
+        if not session_service:
+            logger.error("Session service is not available")
+            raise HTTPException(
+                status_code=500,
+                detail="Session service unavailable"
+            )
+        
         job_posting_service = get_job_posting_service()
         ai_service = get_ai_analysis_service()
         
-        session = session_service.get_session(session_id)
+        # Get session with error handling
+        try:
+            session = session_service.get_session(session_id)
+        except Exception as session_err:
+            logger.error(f"Error retrieving session {session_id}: {session_err}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error retrieving session: {str(session_err)}"
+            )
+        
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
+        # Safely access session data
+        session_data = session.get("data", {})
+        if not isinstance(session_data, dict):
+            logger.warning(f"Session data is not a dict for session {session_id}, using empty dict")
+            session_data = {}
+        
         # Return cached suggestions if already generated in this session
-        cached = session["data"].get("weighting_suggestions")
+        cached = session_data.get("weighting_suggestions")
         if cached:
             return JSONResponse({
                 "status": "success",
                 "has_suggestions": True,
-                "weights": cached.get("weights", {}),
-                "hard_blockers": cached.get("hard_blockers", []),
-                "nice_to_have": cached.get("nice_to_have", []),
-                "summary": cached.get("summary", "")
+                "weights": cached.get("weights", {}) if isinstance(cached, dict) else {},
+                "hard_blockers": cached.get("hard_blockers", []) if isinstance(cached, dict) else [],
+                "nice_to_have": cached.get("nice_to_have", []) if isinstance(cached, dict) else [],
+                "summary": cached.get("summary", "") if isinstance(cached, dict) else ""
             })
         
         # Check if processing is already running
-        if session["data"].get("step4_suggestions_status") == "running":
+        if session_data.get("step4_suggestions_status") == "running":
             return JSONResponse({
                 "status": "processing",
                 "has_suggestions": False,
                 "message": "AI suggestions are being generated. Check progress endpoint."
             })
         
-        job_posting_id = session["data"].get("job_posting_id")
+        job_posting_id = session_data.get("job_posting_id")
         if not job_posting_id:
             raise HTTPException(
                 status_code=400,
                 detail="Job posting not found. Complete steps 2 and 3 first."
             )
         
-        key_points = session["data"].get("key_points") or session["data"].get("suggested_key_points", "")
-        job_posting_text = session["data"].get("job_posting_text")
-        structured_job_posting = session["data"].get("structured_job_posting")
+        key_points = session_data.get("key_points") or session_data.get("suggested_key_points", "")
+        job_posting_text = session_data.get("job_posting_text")
+        structured_job_posting = session_data.get("structured_job_posting")
         
         # Fallback: load from database if session does not have full context
         if not job_posting_text or not structured_job_posting:
-            job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
-            if job_posting:
-                job_posting_text = job_posting_text or job_posting.get("raw_text")
-                structured_job_posting = structured_job_posting or job_posting.get("structured_data")
+            try:
+                job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
+                if job_posting:
+                    job_posting_text = job_posting_text or job_posting.get("raw_text")
+                    structured_job_posting = structured_job_posting or job_posting.get("structured_data")
+            except Exception as db_err:
+                logger.error(f"Error loading job posting {job_posting_id}: {db_err}", exc_info=True)
+                # Continue with what we have
         
         if not job_posting_text:
             return JSONResponse({
@@ -856,16 +882,23 @@ async def get_weighting_suggestions(session_id: UUID):
             company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
         
         # Start background processing
-        asyncio.create_task(_run_weighting_suggestions_background(
-            session_id,
-            job_posting_text,
-            structured_job_posting,
-            key_points,
-            session["data"].get("language", "en"),
-            company_name,
-            session_service,
-            ai_service
-        ))
+        try:
+            asyncio.create_task(_run_weighting_suggestions_background(
+                session_id,
+                job_posting_text,
+                structured_job_posting,
+                key_points,
+                session_data.get("language", "en"),
+                company_name,
+                session_service,
+                ai_service
+            ))
+        except Exception as task_err:
+            logger.error(f"Error starting background task for suggestions: {task_err}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to start AI suggestions generation"
+            )
         
         return JSONResponse({
             "status": "processing",
@@ -876,10 +909,10 @@ async def get_weighting_suggestions(session_id: UUID):
     except HTTPException:
         raise
     except Exception as exc:
-        logger.error("Error generating weighting suggestions: %s", exc)
+        logger.error(f"Error generating weighting suggestions for session {session_id}: {exc}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Internal server error generating weighting suggestions"
+            detail=f"Internal server error generating weighting suggestions: {str(exc)}"
         )
 
 
@@ -894,25 +927,68 @@ async def step4_suggestions_progress(session_id: UUID):
     
     try:
         session_service = get_session_service()
-        session = session_service.get_session(session_id)
+        
+        # Validate session service is available
+        if not session_service:
+            logger.error("Session service is not available")
+            raise HTTPException(
+                status_code=500,
+                detail="Session service unavailable"
+            )
+        
+        # Get session with error handling
+        try:
+            session = session_service.get_session(session_id)
+        except Exception as session_err:
+            logger.error(f"Error retrieving session {session_id}: {session_err}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error retrieving session: {str(session_err)}"
+            )
         
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
         
         # Safely access session data with defaults
-        session_data = session.get("data", {})
-        progress = session_data.get("step4_suggestions_progress", {})
-        status = session_data.get("step4_suggestions_status", "not_started")
-        is_complete = status == "complete"
-        has_suggestions = bool(session_data.get("weighting_suggestions"))
-        
-        return JSONResponse({
-            "status": status,
-            "complete": is_complete,
-            "progress": progress,
-            "has_suggestions": has_suggestions,
-            "suggestions": session_data.get("weighting_suggestions") if has_suggestions else None
-        })
+        try:
+            session_data = session.get("data", {})
+            if not isinstance(session_data, dict):
+                logger.warning(f"Session data is not a dict for session {session_id}, using empty dict")
+                session_data = {}
+            
+            progress = session_data.get("step4_suggestions_progress", {})
+            if not isinstance(progress, dict):
+                progress = {}
+            
+            status = session_data.get("step4_suggestions_status", "not_started")
+            if not isinstance(status, str):
+                status = "not_started"
+            
+            is_complete = status == "complete"
+            has_suggestions = bool(session_data.get("weighting_suggestions"))
+            
+            suggestions = None
+            if has_suggestions:
+                suggestions = session_data.get("weighting_suggestions")
+            
+            return JSONResponse({
+                "status": status,
+                "complete": is_complete,
+                "progress": progress,
+                "has_suggestions": has_suggestions,
+                "suggestions": suggestions
+            })
+        except Exception as data_err:
+            logger.error(f"Error accessing session data for {session_id}: {data_err}", exc_info=True)
+            # Return safe defaults instead of crashing
+            return JSONResponse({
+                "status": "error",
+                "complete": False,
+                "progress": {},
+                "has_suggestions": False,
+                "suggestions": None,
+                "error": "Error accessing session data"
+            })
         
     except HTTPException:
         raise
@@ -920,7 +996,7 @@ async def step4_suggestions_progress(session_id: UUID):
         logger.error(f"Error getting step4 suggestions progress for session {session_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Internal server error getting progress"
+            detail=f"Internal server error getting progress: {str(e)}"
         )
 
 
