@@ -14,8 +14,26 @@ import sys
 import os
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add backend directory to path
+backend_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(backend_dir))
+
+# Load environment variables (same as connection.py)
+from dotenv import load_dotenv, find_dotenv
+env_file = find_dotenv()
+if env_file:
+    load_dotenv(dotenv_path=env_file)
+else:
+    # Try common locations
+    project_root = backend_dir.parent.parent
+    possible_paths = [
+        project_root / '.env',
+        Path.cwd() / '.env',
+    ]
+    for env_path in possible_paths:
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path)
+            break
 
 from database import get_supabase_client
 import logging
