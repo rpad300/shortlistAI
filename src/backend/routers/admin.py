@@ -61,11 +61,22 @@ async def get_current_admin(authorization: Optional[str] = Header(None)):
     token = authorization.replace("Bearer ", "")
     
     try:
-        from database import get_supabase_client
-        client = get_supabase_client()
+        # Create a separate client for auth verification to avoid affecting the global client
+        from supabase import create_client
+        import os
+        
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = (
+            os.getenv("SUPABASE_SECRET_KEY") or 
+            os.getenv("SUPABESE_SECRETE_KEY") or
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        )
+        
+        # Use a separate client for auth verification
+        auth_client = create_client(supabase_url, supabase_key)
         
         # Verify token with Supabase Auth
-        user_response = client.auth.get_user(token)
+        user_response = auth_client.auth.get_user(token)
         
         if not user_response or not user_response.user:
             raise HTTPException(
