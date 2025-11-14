@@ -390,6 +390,7 @@ const AdminAIUsage: React.FC = () => {
                     <tr>
                       <th>Timestamp</th>
                       <th>Provider</th>
+                      <th>Model</th>
                       <th>Mode</th>
                       <th>Language</th>
                       <th>Tokens</th>
@@ -405,6 +406,15 @@ const AdminAIUsage: React.FC = () => {
                       <tr key={log.id}>
                         <td>{formatDate(log.created_at)}</td>
                         <td>{getProviderBadge(log.provider)}</td>
+                        <td>
+                          {log.model ? (
+                            <span style={{ fontSize: '0.875rem', fontFamily: 'monospace' }}>
+                              {log.model}
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>N/A</span>
+                          )}
+                        </td>
                         <td>{getModeBadge(log.mode)}</td>
                         <td>{log.language.toUpperCase()}</td>
                         <td>

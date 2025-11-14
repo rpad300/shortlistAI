@@ -114,6 +114,7 @@ export const exportAIUsageToCSV = (logs: any[]) => {
   const exportData = logs.map(log => ({
     Timestamp: new Date(log.created_at).toISOString(),
     Provider: log.provider,
+    Model: log.model || 'N/A',
     Mode: log.mode,
     Language: log.language,
     'Input Tokens': log.input_tokens || 0,
