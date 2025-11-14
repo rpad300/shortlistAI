@@ -284,7 +284,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             )}
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
