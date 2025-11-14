@@ -28,6 +28,7 @@ import AdminDashboard from '@pages/AdminDashboard';
 import AdminCandidates from '@pages/AdminCandidates';
 import AdminCandidateDetail from '@pages/AdminCandidateDetail';
 import AdminAnalyses from '@pages/AdminAnalyses';
+import AdminAnalysisDetail from '@pages/AdminAnalysisDetail';
 import AdminCompanies from '@pages/AdminCompanies';
 import AdminInterviewers from '@pages/AdminInterviewers';
 import AdminJobPostings from '@pages/AdminJobPostings';
@@ -71,6 +72,7 @@ function App() {
           <Route path="/admin/candidates" element={<AdminCandidates />} />
           <Route path="/admin/candidates/:id" element={<AdminCandidateDetail />} />
           <Route path="/admin/analyses" element={<AdminAnalyses />} />
+          <Route path="/admin/analyses/:id" element={<AdminAnalysisDetail />} />
           <Route path="/admin/companies" element={<AdminCompanies />} />
           <Route path="/admin/interviewers" element={<AdminInterviewers />} />
           <Route path="/admin/job-postings" element={<AdminJobPostings />} />
