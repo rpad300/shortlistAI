@@ -22,6 +22,11 @@ const api: AxiosInstance = axios.create({
 // Request interceptor for logging and auth
 api.interceptors.request.use(
   (config) => {
+    // Ensure Authorization header is set from localStorage if available
+    const token = localStorage.getItem('admin_token');
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },

@@ -37,8 +37,11 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadDashboardStats();
-  }, []);
+    // Only load stats when user is authenticated
+    if (user) {
+      loadDashboardStats();
+    }
+  }, [user]);
 
   const loadDashboardStats = async () => {
     try {
@@ -54,6 +57,7 @@ const AdminDashboard: React.FC = () => {
       if (response.data) {
         console.log('[AdminDashboard] Setting stats with:', response.data);
         setStats(response.data);
+        setError(''); // Clear any previous errors on success
         console.log('[AdminDashboard] Stats set, checking overview:', response.data.overview);
       } else {
         console.warn('[AdminDashboard] Response data is empty');
