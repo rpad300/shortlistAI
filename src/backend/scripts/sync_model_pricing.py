@@ -8,9 +8,18 @@ Since most providers don't expose pricing via API, we use documented pricing.
 import asyncio
 import sys
 import os
+from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+# Add backend directory to path
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, backend_dir)
+
+# Load environment variables
+from dotenv import load_dotenv
+project_root = Path(__file__).parent.parent.parent
+env_file = project_root / '.env'
+if env_file.exists():
+    load_dotenv(env_file)
 
 from services.database.pricing_service import get_pricing_service
 import logging
