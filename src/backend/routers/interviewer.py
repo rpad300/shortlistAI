@@ -944,14 +944,25 @@ async def _run_cv_upload_background(session_id: UUID, files_data: List[Dict[str,
                 
                 # Generate unique email to avoid duplicates during batch upload
                 generated_email = f"interviewer_session_{session_id}_{idx}@shortlistai.test"
-                candidate = await candidate_service.create(
-                    email=generated_email,
-                    name=f"Candidate {idx}",
-                    consent_given=False  # Consent from interviewer, not candidate
-                )
+                try:
+                    candidate = await candidate_service.create(
+                        email=generated_email,
+                        name=f"Candidate {idx}",
+                        consent_given=False  # Consent from interviewer, not candidate
+                    )
+                except Exception as e:
+                    error_detail = str(e)
+                    logger.error(
+                        f"Failed to create candidate for {filename}: {error_detail}",
+                        exc_info=True
+                    )
+                    errors.append(f"{filename}: Failed to create candidate - {error_detail}")
+                    continue
                 
                 if not candidate:
-                    errors.append(f"{filename}: Failed to create candidate")
+                    error_msg = f"candidate_service.create() returned None for {filename}"
+                    logger.error(error_msg)
+                    errors.append(f"{filename}: Failed to create candidate (service returned None)")
                     continue
                 
                 # Upload CV file FIRST (before AI processing to avoid memory issues)
@@ -1391,8 +1402,32 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                         or candidate_info.get("filename")
                         or f"Candidate {idx}"
                     )
+                    candidate_id_str = str(cv.get("candidate_id")) if cv and cv.get("candidate_id") else str(cv_id)
+                    # Create partial analysis record even when AI fails, so it appears in step7
+                    try:
+                        partial_analysis = await analysis_service.create(
+                            mode="interviewer",
+                            job_posting_id=UUID(job_posting_id),
+                            cv_id=UUID(cv_id),
+                            candidate_id=UUID(candidate_id_str),
+                            provider="error",
+                            categories={},
+                            global_score=0,
+                            strengths=[],
+                            risks=[error_msg],
+                            questions={"items": []},
+                            intro_pitch="",
+                            hard_blocker_flags=[],
+                            language=language,
+                            detailed_analysis={"error": error_msg, "status": "failed"}
+                        )
+                        analysis_id = partial_analysis["id"] if partial_analysis else None
+                    except Exception as analysis_err:
+                        logger.error(f"Failed to create partial analysis for CV {cv_id}: {analysis_err}", exc_info=True)
+                        analysis_id = None
+                    
                     session_results.append({
-                        "analysis_id": None,
+                        "analysis_id": str(analysis_id) if analysis_id else None,
                         "candidate_id": str(cv.get("candidate_id")) if cv and cv.get("candidate_id") else str(cv_id),
                         "candidate_label": candidate_label,
                         "file_name": candidate_info.get("filename"),
@@ -1587,8 +1622,32 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     or f"Candidate {idx}"
                 )
                 candidate_id_str = str(cv.get("candidate_id")) if cv and cv.get("candidate_id") else str(cv_id)
+                
+                # Create partial analysis record even when timeout, so it appears in step7
+                try:
+                    partial_analysis = await analysis_service.create(
+                        mode="interviewer",
+                        job_posting_id=UUID(job_posting_id),
+                        cv_id=UUID(cv_id),
+                        candidate_id=UUID(candidate_id_str),
+                        provider="timeout",
+                        categories={},
+                        global_score=0,
+                        strengths=[],
+                        risks=[error_msg],
+                        questions={"items": []},
+                        intro_pitch="",
+                        hard_blocker_flags=[],
+                        language=language,
+                        detailed_analysis={"error": error_msg, "status": "timeout"}
+                    )
+                    analysis_id = partial_analysis["id"] if partial_analysis else None
+                except Exception as analysis_err:
+                    logger.error(f"Failed to create partial analysis for CV {cv_id}: {analysis_err}", exc_info=True)
+                    analysis_id = None
+                
                 session_results.append({
-                    "analysis_id": None,
+                    "analysis_id": str(analysis_id) if analysis_id else None,
                     "candidate_id": candidate_id_str,
                     "candidate_label": candidate_label,
                     "file_name": candidate_info.get("filename"),
@@ -1620,8 +1679,32 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     or f"Candidate {idx}"
                 )
                 candidate_id_str = str(cv.get("candidate_id")) if cv and cv.get("candidate_id") else str(cv_id)
+                
+                # Create partial analysis record even when error, so it appears in step7
+                try:
+                    partial_analysis = await analysis_service.create(
+                        mode="interviewer",
+                        job_posting_id=UUID(job_posting_id),
+                        cv_id=UUID(cv_id),
+                        candidate_id=UUID(candidate_id_str),
+                        provider="error",
+                        categories={},
+                        global_score=0,
+                        strengths=[],
+                        risks=[error_msg],
+                        questions={"items": []},
+                        intro_pitch="",
+                        hard_blocker_flags=[],
+                        language=language,
+                        detailed_analysis={"error": error_msg, "status": "failed", "exception": str(cv_err)[:500]}
+                    )
+                    analysis_id = partial_analysis["id"] if partial_analysis else None
+                except Exception as analysis_err:
+                    logger.error(f"Failed to create partial analysis for CV {cv_id}: {analysis_err}", exc_info=True)
+                    analysis_id = None
+                
                 session_results.append({
-                    "analysis_id": None,
+                    "analysis_id": str(analysis_id) if analysis_id else None,
                     "candidate_id": candidate_id_str,
                     "candidate_label": candidate_label,
                     "file_name": candidate_info.get("filename"),

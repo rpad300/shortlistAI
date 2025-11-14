@@ -10,10 +10,15 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
-      // Force update on new builds
+      // Disable PWA completely in development to avoid service worker conflicts
       devOptions: {
-        enabled: false
+        enabled: false,
+        type: 'module',
+        // Disable service worker registration in dev
+        disableDevRuntime: true
       },
+      // Only register service worker in production builds
+      injectRegister: 'script', // Auto-inject register script only in production
       // Clean up old caches on update
       cleanupOutdatedCaches: true,
       manifest: {

@@ -88,19 +88,49 @@ class CandidateService:
                 "consent_timestamp": datetime.utcnow().isoformat() if consent_given else None
             }
             
+            logger.info(f"Attempting to create candidate: email={email}, name={name}")
+            
             result = self.client.table(self.table)\
                 .insert(candidate_data)\
                 .execute()
             
-            if result.data and len(result.data) > 0:
-                logger.info(f"Created new candidate: {email}")
+            # Check for errors in response
+            if hasattr(result, 'error') and result.error:
+                error_msg = f"Supabase error creating candidate: {result.error}"
+                logger.error(error_msg)
+                # Log detailed error information
+                if hasattr(result.error, 'message'):
+                    logger.error(f"Supabase error message: {result.error.message}")
+                if hasattr(result.error, 'details'):
+                    logger.error(f"Supabase error details: {result.error.details}")
+                if hasattr(result.error, 'hint'):
+                    logger.error(f"Supabase error hint: {result.error.hint}")
+                if hasattr(result.error, 'code'):
+                    logger.error(f"Supabase error code: {result.error.code}")
+                # Raise exception instead of returning None
+                raise Exception(f"Database error creating candidate: {result.error}")
+            
+            # Check if result has data
+            if not result.data:
+                error_msg = "Insert succeeded but no data returned from Supabase"
+                logger.warning(error_msg)
+                raise Exception(error_msg)
+            
+            if len(result.data) > 0:
+                logger.info(f"Created new candidate: {email} (id: {result.data[0]['id']})")
                 return result.data[0]
             
-            return None
+            error_msg = "Insert succeeded but result.data is empty"
+            logger.warning(error_msg)
+            raise Exception(error_msg)
             
         except Exception as e:
-            logger.error(f"Error creating candidate: {e}")
-            return None
+            logger.error(
+                f"Exception creating candidate: {type(e).__name__}: {e}",
+                exc_info=True
+            )
+            # Re-raise exception so router can handle it properly
+            raise
     
     async def find_or_create(
         self,

@@ -283,10 +283,37 @@ class KimiProvider(AIProvider):
                 cost_usd=cost_usd
             )
             
+        except httpx.ConnectError as e:
+            latency_ms = int((time.time() - start_time) * 1000)
+            error_msg = f"Kimi connection failed: Unable to connect to {self.api_base}. Check network connectivity."
+            logger.error(f"Kimi API connection error: {e}")
+            logger.error(f"API base URL: {self.api_base}")
+            
+            return AIResponse(
+                success=False,
+                error=error_msg,
+                provider=self.provider_name,
+                model=self.model_name,
+                latency_ms=latency_ms
+            )
+        except httpx.TimeoutException as e:
+            latency_ms = int((time.time() - start_time) * 1000)
+            error_msg = f"Kimi request timed out after 300 seconds. The request may be too large or the API is slow."
+            logger.error(f"Kimi API timeout error: {e}")
+            
+            return AIResponse(
+                success=False,
+                error=error_msg,
+                provider=self.provider_name,
+                model=self.model_name,
+                latency_ms=latency_ms
+            )
         except httpx.HTTPStatusError as e:
             latency_ms = int((time.time() - start_time) * 1000)
-            error_msg = str(e)
+            error_msg = f"Kimi API HTTP error {e.response.status_code}: {str(e)}"
             logger.error(f"Kimi API HTTP error: {e}")
+            if e.response:
+                logger.error(f"Response body: {e.response.text[:500]}")
             
             # Try next model if model not found
             if e.response.status_code == 404 and "model" in error_msg.lower():
@@ -301,13 +328,28 @@ class KimiProvider(AIProvider):
                 model=self.model_name,
                 latency_ms=latency_ms
             )
-        except Exception as e:
+        except httpx.RequestError as e:
             latency_ms = int((time.time() - start_time) * 1000)
-            logger.error(f"Kimi API error: {e}")
+            error_msg = f"Kimi request error: {str(e)}. This may indicate network issues or API unavailability."
+            logger.error(f"Kimi API request error: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
             
             return AIResponse(
                 success=False,
-                error=str(e),
+                error=error_msg,
+                provider=self.provider_name,
+                model=self.model_name,
+                latency_ms=latency_ms
+            )
+        except Exception as e:
+            latency_ms = int((time.time() - start_time) * 1000)
+            error_type = type(e).__name__
+            error_msg = f"Kimi API error ({error_type}): {str(e)}"
+            logger.error(f"Kimi API unexpected error: {e}", exc_info=True)
+            
+            return AIResponse(
+                success=False,
+                error=error_msg,
                 provider=self.provider_name,
                 model=self.model_name,
                 latency_ms=latency_ms

@@ -113,7 +113,7 @@ class AIManager:
                 # Try to parse as JSON (new format)
                 try:
                     fallback_chain = json.loads(setting_value) if isinstance(setting_value, str) else setting_value
-                    if isinstance(fallback_chain, list):
+                    if isinstance(fallback_chain, list) and len(fallback_chain) > 0:
                         # Filter to only include available providers
                         filtered_chain = [
                             item for item in fallback_chain
@@ -121,16 +121,24 @@ class AIManager:
                         ]
                         if filtered_chain:
                             self._db_fallback_chain = filtered_chain
-                            logger.info(f"Loaded fallback chain from database: {len(filtered_chain)} provider(s)")
+                            logger.info(f"Loaded fallback chain from database: {len(filtered_chain)} provider(s): {[item.get('provider') for item in filtered_chain]}")
                             return filtered_chain
+                        else:
+                            logger.warning(f"Fallback chain from database has no available providers. Configured: {fallback_chain}, Available: {list(self.providers.keys())}")
+                    elif isinstance(fallback_chain, list) and len(fallback_chain) == 0:
+                        logger.warning("Fallback chain from database is empty list")
                 except (json.JSONDecodeError, TypeError):
                     # Old format (single provider string)
                     if setting_value in self.providers:
                         self._db_fallback_chain = [{"provider": setting_value, "model": None, "order": 1}]
+                        logger.info(f"Loaded single provider from database (old format): {setting_value}")
                         return self._db_fallback_chain
+                    else:
+                        logger.warning(f"Provider from database not available: {setting_value}. Available: {list(self.providers.keys())}")
         except Exception as e:
             logger.warning(f"Could not load fallback chain from database: {e}")
         
+        # No valid fallback chain found - return empty to trigger error
         self._db_fallback_chain = []
         return []
     
@@ -212,15 +220,16 @@ class AIManager:
         fallback_chain = await self._load_fallback_chain_from_db()
         
         if not fallback_chain:
-            # Fallback to default provider if no chain configured
-            if self.default_provider:
-                provider = self.get_provider(self.default_provider)
-                if provider:
-                    response = await provider.complete(request)
-                    await self._log_usage(request, response)
-                    return response
+            # No fallback chain configured in database - return error
+            # Do NOT use default_provider as it may not be what admin configured
+            logger.error("No AI provider fallback chain configured in database. Please configure it in admin settings.")
+            return AIResponse(
+                success=False,
+                error="No AI provider fallback chain configured. Please configure providers in admin settings.",
+                provider="none"
+            )
         
-        # Try each item in fallback chain
+        # Try each item in fallback chain (ONLY providers configured in database)
         last_error = None
         for item in fallback_chain:
             provider_name_item = item.get("provider")
