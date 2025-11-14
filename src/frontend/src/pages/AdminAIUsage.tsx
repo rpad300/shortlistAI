@@ -28,7 +28,7 @@ interface UsageSummary {
   total_cost: number;
   total_input_cost: number;
   total_output_cost: number;
-  provider_breakdown: Record<string, { 
+  provider_breakdown: Record<string, Record<string, { 
     calls: number; 
     cost: number;
     input_cost: number;
@@ -36,7 +36,7 @@ interface UsageSummary {
     input_tokens: number;
     output_tokens: number;
     total_tokens: number;
-  }>;
+  }>>;
 }
 
 const AdminAIUsage: React.FC = () => {
@@ -222,28 +222,43 @@ const AdminAIUsage: React.FC = () => {
             
             {Object.keys(summary.provider_breakdown).length > 0 && (
               <div>
-                <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem' }}>Provider Breakdown</h3>
+                <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem' }}>Provider & Model Breakdown</h3>
                 <div className="providers-grid">
-                  {Object.entries(summary.provider_breakdown).map(([provider, data]) => (
-                    <div key={provider} className="provider-card">
-                      <h3>{provider.toUpperCase()}</h3>
-                      <div className="provider-stats">
-                        <div>Calls: {data.calls.toLocaleString()}</div>
-                        <div style={{ fontWeight: 600 }}>Total: ${data.cost.toFixed(6)}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          Input: ${data.input_cost.toFixed(6)}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          Output: ${data.output_cost.toFixed(6)}
-                        </div>
-                        {(data.total_tokens || 0) > 0 && (
-                          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
-                            Tokens: {(data.total_tokens || 0).toLocaleString()}
-                            <br />
-                            In: {(data.input_tokens || 0).toLocaleString()} | Out: {(data.output_tokens || 0).toLocaleString()}
+                  {Object.entries(summary.provider_breakdown).map(([provider, models]) => (
+                    <div key={provider} className="provider-card" style={{ marginBottom: '1rem' }}>
+                      <h3 style={{ marginBottom: '0.75rem', fontSize: '1.125rem', borderBottom: '2px solid var(--border)', paddingBottom: '0.5rem' }}>
+                        {provider.toUpperCase()}
+                      </h3>
+                      {Object.entries(models).map(([model, data]) => (
+                        <div key={`${provider}-${model}`} style={{ 
+                          marginBottom: '1rem', 
+                          padding: '1rem', 
+                          backgroundColor: 'var(--bg-secondary)', 
+                          borderRadius: '8px',
+                          border: '1px solid var(--border)'
+                        }}>
+                          <div style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                            Model: {model !== 'unknown' ? model : 'N/A'}
                           </div>
-                        )}
-                      </div>
+                          <div className="provider-stats" style={{ fontSize: '0.875rem' }}>
+                            <div>Calls: {data.calls.toLocaleString()}</div>
+                            <div style={{ fontWeight: 600, marginTop: '0.25rem' }}>Total: ${data.cost.toFixed(6)}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                              Input: ${data.input_cost.toFixed(6)}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              Output: ${data.output_cost.toFixed(6)}
+                            </div>
+                            {(data.total_tokens || 0) > 0 && (
+                              <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
+                                Tokens: {(data.total_tokens || 0).toLocaleString()}
+                                <br />
+                                In: {(data.input_tokens || 0).toLocaleString()} | Out: {(data.output_tokens || 0).toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>

@@ -615,11 +615,11 @@ async def get_ai_usage_logs(
         total_cost = 0.0
         total_input_cost = 0.0
         total_output_cost = 0.0
-        provider_breakdown = {}
+        provider_breakdown = {}  # Structure: {provider: {model: {stats...}}}
         
         for log in logs:
             provider = log.get("provider", "unknown")
-            model = log.get("model")  # Model is now persisted in analyses table
+            model = log.get("model") or "unknown"  # Model is now persisted in analyses table
             input_tokens = log.get("input_tokens")
             output_tokens = log.get("output_tokens")
             
@@ -654,9 +654,12 @@ async def get_ai_usage_logs(
             total_input_cost += input_cost
             total_output_cost += output_cost
             
-            # Update provider breakdown
+            # Update provider breakdown by provider AND model
             if provider not in provider_breakdown:
-                provider_breakdown[provider] = {
+                provider_breakdown[provider] = {}
+            
+            if model not in provider_breakdown[provider]:
+                provider_breakdown[provider][model] = {
                     "calls": 0, 
                     "cost": 0.0, 
                     "input_cost": 0.0,
@@ -664,12 +667,13 @@ async def get_ai_usage_logs(
                     "input_tokens": 0, 
                     "output_tokens": 0
                 }
-            provider_breakdown[provider]["calls"] += 1
-            provider_breakdown[provider]["cost"] += total_log_cost
-            provider_breakdown[provider]["input_cost"] += input_cost
-            provider_breakdown[provider]["output_cost"] += output_cost
-            provider_breakdown[provider]["input_tokens"] += (input_tokens or 0)
-            provider_breakdown[provider]["output_tokens"] += (output_tokens or 0)
+            
+            provider_breakdown[provider][model]["calls"] += 1
+            provider_breakdown[provider][model]["cost"] += total_log_cost
+            provider_breakdown[provider][model]["input_cost"] += input_cost
+            provider_breakdown[provider][model]["output_cost"] += output_cost
+            provider_breakdown[provider][model]["input_tokens"] += (input_tokens or 0)
+            provider_breakdown[provider][model]["output_tokens"] += (output_tokens or 0)
         
         # Calculate summary statistics
         total_calls = total
@@ -692,15 +696,18 @@ async def get_ai_usage_logs(
                 "total_output_cost": round(total_output_cost, 6),
                 "provider_breakdown": {
                     provider: {
-                        "calls": data["calls"],
-                        "cost": round(data["cost"], 6),
-                        "input_cost": round(data["input_cost"], 6),
-                        "output_cost": round(data["output_cost"], 6),
-                        "input_tokens": data["input_tokens"],
-                        "output_tokens": data["output_tokens"],
-                        "total_tokens": data["input_tokens"] + data["output_tokens"]
+                        model: {
+                            "calls": model_data["calls"],
+                            "cost": round(model_data["cost"], 6),
+                            "input_cost": round(model_data["input_cost"], 6),
+                            "output_cost": round(model_data["output_cost"], 6),
+                            "input_tokens": model_data["input_tokens"],
+                            "output_tokens": model_data["output_tokens"],
+                            "total_tokens": model_data["input_tokens"] + model_data["output_tokens"]
+                        }
+                        for model, model_data in provider_data.items()
                     }
-                    for provider, data in provider_breakdown.items()
+                    for provider, provider_data in provider_breakdown.items()
                 }
             },
             "logs": logs
