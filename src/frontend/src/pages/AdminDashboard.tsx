@@ -22,6 +22,7 @@ interface DashboardStats {
   ai_usage: {
     total_api_calls: number;
     cost_this_month: number;
+    total_cost: number;
     average_response_time: number;
     success_rate: number;
   };

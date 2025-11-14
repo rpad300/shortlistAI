@@ -285,18 +285,52 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
         
         logger.info(f"Recent: candidates={new_candidates}, companies={new_companies}, job_postings={new_job_postings}, analyses={new_analyses}")
         
-        # Get provider distribution
-        logger.info("Getting provider distribution...")
-        provider_counts = await analysis_service.count_by_provider()
+        # Get provider distribution with real costs
+        logger.info("Getting provider distribution with costs...")
+        client = analysis_service.client
+        table = analysis_service.table
+        
+        # Get provider stats with costs from database
+        provider_stats_query = client.table(table)\
+            .select("provider, total_cost")\
+            .execute()
+        
+        provider_stats = {}
+        for row in (provider_stats_query.data or []):
+            provider = row.get("provider", "unknown")
+            if provider not in ["unknown", "error", "timeout"]:
+                if provider not in provider_stats:
+                    provider_stats[provider] = {"calls": 0, "cost": 0.0}
+                provider_stats[provider]["calls"] += 1
+                total_cost = row.get("total_cost")
+                if total_cost is not None:
+                    provider_stats[provider]["cost"] += float(total_cost)
+        
+        # Ensure all providers are present (even with 0) and round costs
         providers = {
-            "gemini": {"calls": provider_counts.get("gemini", 0), "cost": 0},
-            "openai": {"calls": provider_counts.get("openai", 0), "cost": 0},
-            "claude": {"calls": provider_counts.get("claude", 0), "cost": 0},
-            "kimi": {"calls": provider_counts.get("kimi", 0), "cost": 0},
-            "minimax": {"calls": provider_counts.get("minimax", 0), "cost": 0}
+            "gemini": {
+                "calls": provider_stats.get("gemini", {}).get("calls", 0),
+                "cost": round(provider_stats.get("gemini", {}).get("cost", 0.0), 6)
+            },
+            "openai": {
+                "calls": provider_stats.get("openai", {}).get("calls", 0),
+                "cost": round(provider_stats.get("openai", {}).get("cost", 0.0), 6)
+            },
+            "claude": {
+                "calls": provider_stats.get("claude", {}).get("calls", 0),
+                "cost": round(provider_stats.get("claude", {}).get("cost", 0.0), 6)
+            },
+            "kimi": {
+                "calls": provider_stats.get("kimi", {}).get("calls", 0),
+                "cost": round(provider_stats.get("kimi", {}).get("cost", 0.0), 6)
+            },
+            "minimax": {
+                "calls": provider_stats.get("minimax", {}).get("calls", 0),
+                "cost": round(provider_stats.get("minimax", {}).get("cost", 0.0), 6)
+            }
         }
         
-        logger.info(f"Provider counts: {provider_counts}")
+        logger.info(f"Provider stats: {providers}")
         
         # Get language distribution
         logger.info("Getting language distribution...")
