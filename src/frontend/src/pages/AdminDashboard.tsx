@@ -148,10 +148,14 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
         
-        {stats && stats.overview && (
+        {/* Force render test */}
+        {stats && stats.overview ? (
           <>
             {/* Overview Statistics */}
-            <div className="stats-grid">
+            <div className="stats-grid" style={{ border: '2px solid red', padding: '1rem' }}>
+              <div style={{ color: 'red', fontSize: '1.5rem', marginBottom: '1rem' }}>
+                DEBUG: Stats grid is rendering! Stats.overview exists: {stats.overview ? 'YES' : 'NO'}
+              </div>
               <div className="stat-card">
                 <div className="stat-number">{stats.overview.total_candidates}</div>
                 <div className="stat-label">Total Candidates</div>
