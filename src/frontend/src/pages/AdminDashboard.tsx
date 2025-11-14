@@ -45,8 +45,9 @@ const AdminDashboard: React.FC = () => {
       // Reset stats when user logs out
       setStats(null);
       setLoading(false);
+      setIsLoading(false);
     }
-  }, [user, stats, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadDashboardStats = async () => {
     // Prevent multiple simultaneous calls
