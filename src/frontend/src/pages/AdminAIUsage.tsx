@@ -9,6 +9,7 @@ interface AIUsageLog {
   id: string;
   mode: 'interviewer' | 'candidate';
   provider: string;
+  model?: string;
   language: string;
   created_at: string;
   candidate_id: string;
