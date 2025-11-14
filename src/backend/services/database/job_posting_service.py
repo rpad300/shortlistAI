@@ -94,17 +94,35 @@ class JobPostingService:
                 .insert(job_data)\
                 .execute()
             
-            # Check for errors in response
+            # Check for errors in response (Supabase may return errors in different formats)
             if hasattr(result, 'error') and result.error:
-                logger.error(f"Supabase error creating job posting: {result.error}")
-                return None
+                error_msg = f"Supabase error creating job posting: {result.error}"
+                logger.error(error_msg)
+                # Log the full error details for debugging
+                if hasattr(result.error, 'message'):
+                    logger.error(f"Supabase error message: {result.error.message}")
+                if hasattr(result.error, 'details'):
+                    logger.error(f"Supabase error details: {result.error.details}")
+                if hasattr(result.error, 'hint'):
+                    logger.error(f"Supabase error hint: {result.error.hint}")
+                if hasattr(result.error, 'code'):
+                    logger.error(f"Supabase error code: {result.error.code}")
+                # Raise exception with error details instead of returning None
+                raise Exception(f"Database error: {result.error}")
             
-            if result.data and len(result.data) > 0:
+            # Check if result has data
+            if not result.data:
+                error_msg = "Insert succeeded but no data returned from Supabase"
+                logger.warning(error_msg)
+                raise Exception(error_msg)
+            
+            if len(result.data) > 0:
                 logger.info(f"Successfully created job posting: {result.data[0]['id']}")
                 return result.data[0]
             
-            logger.warning("Insert succeeded but no data returned from Supabase")
-            return None
+            error_msg = "Insert succeeded but result.data is empty"
+            logger.warning(error_msg)
+            raise Exception(error_msg)
             
         except ValueError:
             # Re-raise validation errors
@@ -114,7 +132,8 @@ class JobPostingService:
                 f"Exception creating job posting: {type(e).__name__}: {e}",
                 exc_info=True
             )
-            return None
+            # Re-raise exception instead of returning None so router can handle it properly
+            raise
     
     async def get_by_id(self, job_posting_id: UUID) -> Optional[Dict[str, Any]]:
         """Get job posting by ID."""
