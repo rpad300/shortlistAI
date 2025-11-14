@@ -292,12 +292,16 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
         
         # Get provider stats with costs from database
         provider_stats_query = client.table(table)\
-            .select("provider, total_cost, input_cost, output_cost")\
+            .select("provider, total_cost, input_cost, output_cost, model, input_tokens, output_tokens")\
             .execute()
         
         provider_stats = {}
         total_rows = len(provider_stats_query.data or [])
         rows_with_cost = 0
+        rows_calculated = 0
+        
+        # Import cost calculator for dynamic calculation
+        from utils.cost_calculator import calculate_cost_from_tokens
         
         for row in (provider_stats_query.data or []):
             provider = row.get("provider", "unknown")
@@ -306,27 +310,51 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
                     provider_stats[provider] = {"calls": 0, "cost": 0.0}
                 provider_stats[provider]["calls"] += 1
                 
-                # Try total_cost first, then calculate from input/output if needed
+                cost_to_add = 0.0
+                
+                # Try total_cost first
                 total_cost = row.get("total_cost")
                 if total_cost is not None:
                     try:
-                        provider_stats[provider]["cost"] += float(total_cost)
+                        cost_to_add = float(total_cost)
                         rows_with_cost += 1
                     except (ValueError, TypeError):
                         pass
-                else:
-                    # Fallback: calculate from input_cost + output_cost if available
+                
+                # Fallback 1: calculate from input_cost + output_cost if available
+                if cost_to_add == 0.0:
                     input_cost = row.get("input_cost")
                     output_cost = row.get("output_cost")
                     if input_cost is not None and output_cost is not None:
                         try:
-                            calculated_cost = float(input_cost) + float(output_cost)
-                            provider_stats[provider]["cost"] += calculated_cost
+                            cost_to_add = float(input_cost) + float(output_cost)
                             rows_with_cost += 1
                         except (ValueError, TypeError):
                             pass
+                
+                # Fallback 2: calculate from tokens if available
+                if cost_to_add == 0.0:
+                    input_tokens = row.get("input_tokens")
+                    output_tokens = row.get("output_tokens")
+                    model = row.get("model")
+                    if input_tokens is not None and output_tokens is not None:
+                        try:
+                            # Calculate cost dynamically from tokens
+                            cost_breakdown = await calculate_cost_from_tokens(
+                                provider=provider,
+                                model=model,
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens
+                            )
+                            cost_to_add = cost_breakdown["total_cost"]
+                            rows_calculated += 1
+                        except Exception as e:
+                            logger.warning(f"Error calculating cost for {provider}/{model}: {e}")
+                            pass
+                
+                provider_stats[provider]["cost"] += cost_to_add
         
-        logger.info(f"Provider stats calculation: {total_rows} total rows, {rows_with_cost} with cost data")
+        logger.info(f"Provider stats calculation: {total_rows} total rows, {rows_with_cost} with persisted cost, {rows_calculated} calculated from tokens")
         
         # Ensure all providers are present (even with 0) and round costs
         providers = {
