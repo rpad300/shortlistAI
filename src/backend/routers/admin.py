@@ -619,7 +619,7 @@ async def get_ai_usage_logs(
         
         for log in logs:
             provider = log.get("provider", "unknown")
-            model = log.get("model")  # Note: model might not be stored in analyses table
+            model = log.get("model")  # Model is now persisted in analyses table
             input_tokens = log.get("input_tokens")
             output_tokens = log.get("output_tokens")
             

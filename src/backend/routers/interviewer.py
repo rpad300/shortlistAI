@@ -1411,6 +1411,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                             cv_id=UUID(cv_id),
                             candidate_id=UUID(candidate_id_str),
                             provider="error",
+                            model=None,
                             categories={},
                             global_score=0,
                             strengths=[],
@@ -1468,11 +1469,11 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 input_tokens = ai_result.get("input_tokens")
                 output_tokens = ai_result.get("output_tokens")
                 
-                # Calculate costs based on tokens
+                # Calculate costs based on tokens and model
                 from utils.cost_calculator import calculate_cost_from_tokens
                 cost_breakdown = calculate_cost_from_tokens(
                     provider=provider_used,
-                    model=model_used,
+                    model=model_used,  # Model is critical for accurate cost calculation
                     input_tokens=input_tokens,
                     output_tokens=output_tokens
                 )
@@ -1580,6 +1581,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     cv_id=UUID(cv_id),
                     candidate_id=UUID(cv["candidate_id"]),
                     provider=provider_used,
+                    model=model_used,
                     categories=categories,
                     global_score=round(global_score, 2),
                     strengths=strengths,
@@ -1653,6 +1655,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                         cv_id=UUID(cv_id),
                         candidate_id=UUID(candidate_id_str),
                         provider="timeout",
+                        model=None,
                         categories={},
                         global_score=0,
                         strengths=[],
@@ -1715,6 +1718,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                         cv_id=UUID(cv_id),
                         candidate_id=UUID(candidate_id_str),
                         provider="error",
+                        model=None,
                         categories={},
                         global_score=0,
                         strengths=[],

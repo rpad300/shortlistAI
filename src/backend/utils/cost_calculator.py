@@ -59,35 +59,60 @@ def calculate_cost_from_tokens(
     output_cost = 0.0
     
     if provider == "gemini":
-        # Gemini 2.0 Flash pricing - cobra por AMBOS
-        input_cost = (input_tokens / 1_000_000) * 0.075
-        output_cost = (output_tokens / 1_000_000) * 0.30
+        model_name = (model or "").lower()
+        # Gemini pricing varies by model - all charge for BOTH input and output
+        if "2.0-flash" in model_name or "flash-exp" in model_name:
+            # Gemini 2.0 Flash: Input $0.075/1M, Output $0.30/1M
+            input_cost = (input_tokens / 1_000_000) * 0.075
+            output_cost = (output_tokens / 1_000_000) * 0.30
+        elif "1.5" in model_name or "pro" in model_name:
+            # Gemini 1.5 Pro: Input $1.25/1M, Output $5/1M
+            input_cost = (input_tokens / 1_000_000) * 1.25
+            output_cost = (output_tokens / 1_000_000) * 5.0
+        else:
+            # Default to Flash pricing (most common)
+            input_cost = (input_tokens / 1_000_000) * 0.075
+            output_cost = (output_tokens / 1_000_000) * 0.30
     
     elif provider == "openai":
         model_name = (model or "").lower()
-        if "gpt-4" in model_name:
-            # GPT-4 pricing - cobra por AMBOS
+        # OpenAI pricing varies by model - all charge for BOTH input and output
+        if "gpt-4o-mini" in model_name or "gpt-4.1-mini" in model_name:
+            # GPT-4o-mini: Input $0.15/1M, Output $0.60/1M
+            input_cost = (input_tokens / 1_000_000) * 0.15
+            output_cost = (output_tokens / 1_000_000) * 0.60
+        elif "gpt-4-turbo" in model_name or "gpt-4o" in model_name:
+            # GPT-4 Turbo/GPT-4o: Input $5/1M, Output $15/1M
+            input_cost = (input_tokens / 1_000_000) * 5.0
+            output_cost = (output_tokens / 1_000_000) * 15.0
+        elif "gpt-4" in model_name:
+            # GPT-4 (standard): Input $30/1M, Output $60/1M
             input_cost = (input_tokens / 1_000_000) * 30.0
             output_cost = (output_tokens / 1_000_000) * 60.0
         else:
-            # GPT-3.5 pricing - cobra por AMBOS
+            # GPT-3.5-turbo or other: Input $1.50/1M, Output $2/1M
             input_cost = (input_tokens / 1_000_000) * 1.5
             output_cost = (output_tokens / 1_000_000) * 2.0
     
     elif provider == "claude":
         model_name = (model or "").lower()
+        # Claude pricing varies by model - all charge for BOTH input and output
         if "opus" in model_name:
-            # Claude Opus - cobra por AMBOS
+            # Claude Opus: Input $15/1M, Output $75/1M
             input_cost = (input_tokens / 1_000_000) * 15.0
             output_cost = (output_tokens / 1_000_000) * 75.0
-        elif "sonnet" in model_name:
-            # Claude Sonnet - cobra por AMBOS
+        elif "sonnet" in model_name or "3.5" in model_name:
+            # Claude 3.5 Sonnet: Input $3/1M, Output $15/1M
             input_cost = (input_tokens / 1_000_000) * 3.0
             output_cost = (output_tokens / 1_000_000) * 15.0
-        else:  # Haiku
-            # Claude Haiku - cobra por AMBOS
+        elif "haiku" in model_name:
+            # Claude Haiku: Input $0.25/1M, Output $1.25/1M
             input_cost = (input_tokens / 1_000_000) * 0.25
             output_cost = (output_tokens / 1_000_000) * 1.25
+        else:
+            # Default to Sonnet pricing if model not specified
+            input_cost = (input_tokens / 1_000_000) * 3.0
+            output_cost = (output_tokens / 1_000_000) * 15.0
     
     elif provider == "kimi":
         # Kimi uses credit-based pricing (não cobra por tokens, mas por request)

@@ -28,6 +28,7 @@ class AnalysisService:
         provider: str,
         categories: Dict[str, Any],
         language: str,
+        model: Optional[str] = None,
         prompt_id: Optional[UUID] = None,
         global_score: Optional[float] = None,
         strengths: Optional[List[str]] = None,
@@ -54,6 +55,7 @@ class AnalysisService:
             provider: AI provider used
             categories: Dict of category scores
             language: Language of analysis
+            model: Optional specific AI model used (e.g., gpt-4o-mini, gemini-2.0-flash-exp)
             prompt_id: Optional prompt UUID
             global_score: Optional weighted global score
             strengths: Optional list of strengths
@@ -79,6 +81,7 @@ class AnalysisService:
                 "candidate_id": str(candidate_id),
                 "prompt_id": str(prompt_id) if prompt_id else None,
                 "provider": provider,
+                "model": model,
                 "categories": categories,
                 "global_score": global_score,
                 "strengths": {"items": strengths} if strengths else None,
