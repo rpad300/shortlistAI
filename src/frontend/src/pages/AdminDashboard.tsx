@@ -46,9 +46,15 @@ const AdminDashboard: React.FC = () => {
       setError('');
       console.log('[AdminDashboard] Fetching dashboard stats...');
       const response = await api.get('/admin/dashboard/detailed-stats');
-      console.log('[AdminDashboard] Response received:', response.data);
+      console.log('[AdminDashboard] Response received:', response);
+      console.log('[AdminDashboard] Response.data:', response.data);
+      console.log('[AdminDashboard] Response.data type:', typeof response.data);
+      console.log('[AdminDashboard] Response.data keys:', response.data ? Object.keys(response.data) : 'null');
+      
       if (response.data) {
+        console.log('[AdminDashboard] Setting stats with:', response.data);
         setStats(response.data);
+        console.log('[AdminDashboard] Stats set, checking overview:', response.data.overview);
       } else {
         console.warn('[AdminDashboard] Response data is empty');
         setError('No data received from server');
@@ -108,7 +114,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
         
-        {stats && (
+        {stats && stats.overview && (
           <>
             {/* Overview Statistics */}
             <div className="stats-grid">
