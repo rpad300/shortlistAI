@@ -90,13 +90,13 @@ async def get_current_admin(authorization: Optional[str] = Header(None)):
         # Use a separate client for auth verification
         auth_client = create_client(supabase_url, supabase_key)
         
-        logger.debug(f"Verifying token (length: {len(token)}, starts with: {token[:10]}...)")
+        logger.info(f"Verifying token (length: {len(token)}, starts with: {token[:10]}...)")
         
         # Verify token with Supabase Auth
         try:
             user_response = auth_client.auth.get_user(token)
         except Exception as auth_error:
-            logger.error(f"Supabase get_user error: {str(auth_error)}")
+            logger.error(f"Supabase get_user error: {str(auth_error)}", exc_info=True)
             raise HTTPException(
                 status_code=401,
                 detail="Invalid or expired token",
@@ -114,7 +114,7 @@ async def get_current_admin(authorization: Optional[str] = Header(None)):
         user = user_response.user
         user_metadata = user.user_metadata or {}
         
-        logger.debug(f"Token verified for user: {user.email}, Role: {user_metadata.get('role', 'none')}")
+        logger.info(f"Token verified for user: {user.email}, Role: {user_metadata.get('role', 'none')}")
         
         # Verify admin role
         user_role = user_metadata.get("role", "")
