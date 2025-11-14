@@ -670,6 +670,15 @@ async def step4_analysis(session_id: str):
         input_tokens = ai_result.get("input_tokens")
         output_tokens = ai_result.get("output_tokens")
         
+        # Calculate costs based on tokens
+        from utils.cost_calculator import calculate_cost_from_tokens
+        cost_breakdown = calculate_cost_from_tokens(
+            provider=provider_used,
+            model=model_used,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens
+        )
+        
         # Calculate global score (same as interviewer)
         global_score = sum(categories.values()) / len(categories) if categories else 0
         
@@ -695,7 +704,10 @@ async def step4_analysis(session_id: str):
             intro_pitch=intro_pitch,
             language=language,
             input_tokens=input_tokens,
-            output_tokens=output_tokens
+            output_tokens=output_tokens,
+            input_cost=cost_breakdown["input_cost"],
+            output_cost=cost_breakdown["output_cost"],
+            total_cost=cost_breakdown["total_cost"]
         )
         
         if not analysis:

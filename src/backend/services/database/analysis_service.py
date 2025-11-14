@@ -38,7 +38,10 @@ class AnalysisService:
         report_id: Optional[UUID] = None,
         detailed_analysis: Optional[Dict[str, Any]] = None,
         input_tokens: Optional[int] = None,
-        output_tokens: Optional[int] = None
+        output_tokens: Optional[int] = None,
+        input_cost: Optional[float] = None,
+        output_cost: Optional[float] = None,
+        total_cost: Optional[float] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Create a new analysis record.
@@ -61,6 +64,9 @@ class AnalysisService:
             report_id: Optional report UUID to associate analysis with
             input_tokens: Optional number of input tokens used
             output_tokens: Optional number of output tokens generated
+            input_cost: Optional cost in USD for input tokens
+            output_cost: Optional cost in USD for output tokens
+            total_cost: Optional total cost in USD
             
         Returns:
             Created analysis dict or None if failed
@@ -84,7 +90,10 @@ class AnalysisService:
                 "report_id": str(report_id) if report_id else None,
                 "detailed_analysis": detailed_analysis,
                 "input_tokens": input_tokens,
-                "output_tokens": output_tokens
+                "output_tokens": output_tokens,
+                "input_cost": input_cost,
+                "output_cost": output_cost,
+                "total_cost": total_cost
             }
             
             result = self.client.table(self.table)\

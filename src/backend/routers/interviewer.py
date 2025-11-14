@@ -1419,7 +1419,12 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                             intro_pitch="",
                             hard_blocker_flags=[],
                             language=language,
-                            detailed_analysis={"error": error_msg, "status": "failed"}
+                            detailed_analysis={"error": error_msg, "status": "failed"},
+                            input_tokens=None,
+                            output_tokens=None,
+                            input_cost=0.0,
+                            output_cost=0.0,
+                            total_cost=0.0
                         )
                         analysis_id = partial_analysis["id"] if partial_analysis else None
                     except Exception as analysis_err:
@@ -1459,8 +1464,18 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 gap_strategies = _normalize_list(data.get("gap_strategies") or [])
                 preparation_tips = _normalize_list(data.get("preparation_tips") or [])
                 provider_used = ai_result.get("provider") or ai_result.get("model") or "ai"
+                model_used = ai_result.get("model")
                 input_tokens = ai_result.get("input_tokens")
                 output_tokens = ai_result.get("output_tokens")
+                
+                # Calculate costs based on tokens
+                from utils.cost_calculator import calculate_cost_from_tokens
+                cost_breakdown = calculate_cost_from_tokens(
+                    provider=provider_used,
+                    model=model_used,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens
+                )
                 
                 # Extract detailed analysis fields
                 profile_summary = data.get("profile_summary") or ""
@@ -1576,7 +1591,10 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     prompt_id=prompt_id_value,
                     detailed_analysis=detailed_analysis_data,
                     input_tokens=input_tokens,
-                    output_tokens=output_tokens
+                    output_tokens=output_tokens,
+                    input_cost=cost_breakdown["input_cost"],
+                    output_cost=cost_breakdown["output_cost"],
+                    total_cost=cost_breakdown["total_cost"]
                 )
                 
                 session_results.append({
@@ -1643,7 +1661,12 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                         intro_pitch="",
                         hard_blocker_flags=[],
                         language=language,
-                        detailed_analysis={"error": error_msg, "status": "timeout"}
+                        detailed_analysis={"error": error_msg, "status": "timeout"},
+                        input_tokens=None,
+                        output_tokens=None,
+                        input_cost=0.0,
+                        output_cost=0.0,
+                        total_cost=0.0
                     )
                     analysis_id = partial_analysis["id"] if partial_analysis else None
                 except Exception as analysis_err:
@@ -1700,7 +1723,12 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                         intro_pitch="",
                         hard_blocker_flags=[],
                         language=language,
-                        detailed_analysis={"error": error_msg, "status": "failed", "exception": str(cv_err)[:500]}
+                        detailed_analysis={"error": error_msg, "status": "failed", "exception": str(cv_err)[:500]},
+                        input_tokens=None,
+                        output_tokens=None,
+                        input_cost=0.0,
+                        output_cost=0.0,
+                        total_cost=0.0
                     )
                     analysis_id = partial_analysis["id"] if partial_analysis else None
                 except Exception as analysis_err:
