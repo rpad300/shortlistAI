@@ -35,6 +35,7 @@ import AdminJobPostings from '@pages/AdminJobPostings';
 import AdminUsers from '@pages/AdminUsers';
 import AdminPrompts from '@pages/AdminPrompts';
 import AdminAISettings from '@pages/AdminAISettings';
+import AdminAIUsage from '@pages/AdminAIUsage';
 import LegalTerms from '@pages/LegalTerms';
 import LegalPrivacy from '@pages/LegalPrivacy';
 import LegalCookies from '@pages/LegalCookies';
@@ -78,7 +79,7 @@ function App() {
           <Route path="/admin/job-postings" element={<AdminJobPostings />} />
           <Route path="/admin/prompts" element={<AdminPrompts />} />
           <Route path="/admin/ai-settings" element={<AdminAISettings />} />
-          <Route path="/admin/ai-usage" element={<PlaceholderPage step="AI Usage Logs" flow="admin" />} />
+          <Route path="/admin/ai-usage" element={<AdminAIUsage />} />
           <Route path="/admin/users" element={<AdminUsers />} />
         </Routes>
       </div>

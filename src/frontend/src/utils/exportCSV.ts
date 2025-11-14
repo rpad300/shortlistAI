@@ -110,3 +110,21 @@ export const exportJobPostingsToCSV = (postings: any[]) => {
   exportToCSV(exportData, 'job_postings');
 };
 
+export const exportAIUsageToCSV = (logs: any[]) => {
+  const exportData = logs.map(log => ({
+    Timestamp: new Date(log.created_at).toISOString(),
+    Provider: log.provider,
+    Mode: log.mode,
+    Language: log.language,
+    Score: log.global_score !== undefined && log.global_score !== null 
+      ? (log.global_score * 100).toFixed(1) + '%' 
+      : 'N/A',
+    'Estimated Cost': `$${log.estimated_cost?.toFixed(4) || '0.0000'}`,
+    'Candidate ID': log.candidate_id,
+    'Job Posting ID': log.job_posting_id,
+    'Analysis ID': log.id
+  }));
+  
+  exportToCSV(exportData, 'ai_usage_logs');
+};
+

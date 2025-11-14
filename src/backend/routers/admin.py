@@ -520,6 +520,126 @@ async def get_analysis_details(
         raise HTTPException(status_code=500, detail="Error retrieving analysis")
 
 
+@router.get("/ai-usage")
+async def get_ai_usage_logs(
+    provider: Optional[str] = None,
+    mode: Optional[str] = None,
+    language: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    admin=Depends(get_current_admin)
+):
+    """
+    Get AI usage logs with detailed information.
+    
+    Filters:
+    - provider: Filter by AI provider (gemini, openai, claude, kimi, minimax)
+    - mode: Filter by mode (interviewer, candidate)
+    - language: Filter by language (en, pt, fr, es)
+    - start_date: ISO format date (YYYY-MM-DD)
+    - end_date: ISO format date (YYYY-MM-DD)
+    """
+    from services.database import get_analysis_service
+    from datetime import datetime
+    
+    try:
+        analysis_service = get_analysis_service()
+        
+        # Build query with filters
+        query = analysis_service.client.table(analysis_service.table).select("*")
+        
+        if provider:
+            query = query.eq("provider", provider)
+        
+        if mode:
+            query = query.eq("mode", mode)
+        
+        if language:
+            query = query.eq("language", language)
+        
+        if start_date:
+            try:
+                # Parse and format date
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                query = query.gte("created_at", start_dt.isoformat())
+            except ValueError:
+                logger.warning(f"Invalid start_date format: {start_date}")
+        
+        if end_date:
+            try:
+                # Parse and format date, add 1 day to include the full end date
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                # Add 1 day to include the full end date
+                from datetime import timedelta
+                end_dt = end_dt + timedelta(days=1)
+                query = query.lt("created_at", end_dt.isoformat())
+            except ValueError:
+                logger.warning(f"Invalid end_date format: {end_date}")
+        
+        # Get total count (before pagination)
+        # We need to count before applying order and range
+        count_result = query.select("id", count="exact").execute()
+        total = count_result.count or 0
+        
+        # Get paginated results
+        query = query.order("created_at", desc=True).range(offset, offset + limit - 1)
+        result = query.execute()
+        
+        logs = result.data or []
+        
+        # Calculate estimated costs (placeholder - can be enhanced with actual pricing)
+        provider_costs = {
+            "gemini": 0.0001,  # Estimated cost per call
+            "openai": 0.0002,
+            "claude": 0.0003,
+            "kimi": 0.0001,
+            "minimax": 0.0001
+        }
+        
+        # Add estimated cost to each log
+        for log in logs:
+            log_provider = log.get("provider", "unknown")
+            estimated_cost = provider_costs.get(log_provider, 0.0001)
+            log["estimated_cost"] = estimated_cost
+        
+        # Calculate summary statistics
+        total_calls = total
+        total_cost = sum(provider_costs.get(log.get("provider", "unknown"), 0.0001) for log in logs)
+        
+        # Provider breakdown
+        provider_breakdown = {}
+        for log in logs:
+            provider = log.get("provider", "unknown")
+            if provider not in provider_breakdown:
+                provider_breakdown[provider] = {"calls": 0, "cost": 0}
+            provider_breakdown[provider]["calls"] += 1
+            provider_breakdown[provider]["cost"] += provider_costs.get(provider, 0.0001)
+        
+        return JSONResponse({
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "filters": {
+                "provider": provider,
+                "mode": mode,
+                "language": language,
+                "start_date": start_date,
+                "end_date": end_date
+            },
+            "summary": {
+                "total_calls": total_calls,
+                "total_cost": round(total_cost, 4),
+                "provider_breakdown": provider_breakdown
+            },
+            "logs": logs
+        })
+    except Exception as e:
+        logger.error(f"Error getting AI usage logs: {e}")
+        raise HTTPException(status_code=500, detail="Error retrieving AI usage logs")
+
+
 @router.get("/companies")
 async def list_companies(
     limit: int = 50,
