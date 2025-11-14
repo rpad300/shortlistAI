@@ -73,6 +73,12 @@ const AdminDashboard: React.FC = () => {
     navigate('/');
   };
 
+  // Debug: Log current state
+  console.log('[AdminDashboard] Render - loading:', loading, 'stats:', stats, 'error:', error);
+  if (stats) {
+    console.log('[AdminDashboard] Render - stats.overview:', stats.overview);
+  }
+
   if (loading) {
     return (
       <div className="admin-dashboard">
@@ -114,7 +120,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
         
-        {stats && stats.overview && (
+        {stats && stats.overview ? (
           <>
             {/* Overview Statistics */}
             <div className="stats-grid">
