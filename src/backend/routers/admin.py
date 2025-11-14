@@ -205,18 +205,39 @@ async def admin_login(credentials: AdminLogin, request: Request):
         
         logger.info(f"Admin login attempt - {credentials.email} - IP: {client_ip}")
         
-        # Authenticate with Supabase Auth using separate client
-        try:
-            auth_response = auth_client.auth.sign_in_with_password({
-                "email": credentials.email,
-                "password": credentials.password
-            })
-        except Exception as auth_error:
-            logger.error(f"Supabase auth error for {credentials.email}: {str(auth_error)}")
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid credentials"
-            )
+        # Authenticate with Supabase Auth using separate client (with retry for DNS/network errors)
+        max_retries = 3
+        retry_delay = 0.5  # seconds
+        auth_response = None
+        
+        for attempt in range(max_retries):
+            try:
+                auth_response = auth_client.auth.sign_in_with_password({
+                    "email": credentials.email,
+                    "password": credentials.password
+                })
+                break  # Success, exit retry loop
+            except Exception as auth_error:
+                error_str = str(auth_error)
+                is_network_error = any(keyword in error_str.lower() for keyword in [
+                    'no address associated with hostname',
+                    'name resolution',
+                    'connection',
+                    'timeout',
+                    'network'
+                ])
+                
+                if is_network_error and attempt < max_retries - 1:
+                    logger.warning(f"Network error on login attempt {attempt + 1}/{max_retries}: {error_str}. Retrying...")
+                    import asyncio
+                    await asyncio.sleep(retry_delay * (attempt + 1))  # Exponential backoff
+                    continue
+                else:
+                    logger.error(f"Supabase auth error for {credentials.email}: {error_str}")
+                    raise HTTPException(
+                        status_code=401,
+                        detail="Invalid credentials"
+                    )
         
         if not auth_response or not auth_response.user:
             logger.warning(f"Admin login failed - {credentials.email} - No user in response")
