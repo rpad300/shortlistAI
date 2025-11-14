@@ -27,7 +27,7 @@ async def calculate_retroactive_costs():
     try:
         # Get all analyses without persisted costs (or with null costs)
         result = client.table("analyses")\
-            .select("id, provider, input_tokens, output_tokens, input_cost, output_cost, total_cost")\
+            .select("id, provider, model, input_tokens, output_tokens, input_cost, output_cost, total_cost")\
             .or_("input_cost.is.null,output_cost.is.null,total_cost.is.null")\
             .execute()
         
@@ -55,9 +55,9 @@ async def calculate_retroactive_costs():
                     continue
                 
                 # Calculate costs
-                cost_breakdown = calculate_cost_from_tokens(
+                cost_breakdown = await calculate_cost_from_tokens(
                     provider=provider,
-                    model=None,  # Model not stored in analyses table
+                    model=analysis.get("model"),  # Use model from analysis if available
                     input_tokens=input_tokens,
                     output_tokens=output_tokens
                 )

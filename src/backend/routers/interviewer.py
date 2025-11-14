@@ -1471,7 +1471,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 
                 # Calculate costs based on tokens and model
                 from utils.cost_calculator import calculate_cost_from_tokens
-                cost_breakdown = calculate_cost_from_tokens(
+                cost_breakdown = await calculate_cost_from_tokens(
                     provider=provider_used,
                     model=model_used,  # Model is critical for accurate cost calculation
                     input_tokens=input_tokens,

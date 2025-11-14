@@ -635,7 +635,7 @@ async def get_ai_usage_logs(
                 total_log_cost = float(persisted_total_cost)
             else:
                 # Calculate cost breakdown for old records without persisted costs
-                cost_breakdown = calculate_cost_from_tokens(provider, model, input_tokens, output_tokens)
+                cost_breakdown = await calculate_cost_from_tokens(provider, model, input_tokens, output_tokens)
                 input_cost = cost_breakdown["input_cost"]
                 output_cost = cost_breakdown["output_cost"]
                 total_log_cost = cost_breakdown["total_cost"]

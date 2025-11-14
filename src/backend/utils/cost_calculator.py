@@ -2,13 +2,17 @@
 Cost calculation utilities for AI providers.
 
 Calculates costs based on token usage for different AI providers.
-All providers charge for BOTH input AND output tokens (with different prices).
+Uses pricing information from the database (ai_model_pricing table).
+Falls back to hardcoded pricing if database pricing is not available.
 """
 
 from typing import Optional, Dict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-def calculate_cost_from_tokens(
+async def calculate_cost_from_tokens(
     provider: str, 
     model: Optional[str], 
     input_tokens: Optional[int], 
@@ -17,17 +21,8 @@ def calculate_cost_from_tokens(
     """
     Calculate cost based on actual token usage.
     
-    ALL providers charge for BOTH input AND output tokens (with different prices).
-    
-    Pricing per 1M tokens:
-    - Gemini: Input $0.075/1M, Output $0.30/1M (gemini-2.0-flash-exp)
-    - OpenAI GPT-4: Input $30/1M, Output $60/1M
-    - OpenAI GPT-3.5: Input $1.50/1M, Output $2/1M
-    - Claude Opus: Input $15/1M, Output $75/1M
-    - Claude Sonnet: Input $3/1M, Output $15/1M
-    - Claude Haiku: Input $0.25/1M, Output $1.25/1M
-    - Kimi: ~$0.005 per request (credit-based, approximate) - não cobra por tokens
-    - Minimax: Input $1/1M, Output $2/1M
+    First tries to get pricing from database (ai_model_pricing table).
+    Falls back to hardcoded pricing if database pricing is not available.
     
     Args:
         provider: AI provider name (gemini, openai, claude, kimi, minimax)
@@ -38,6 +33,51 @@ def calculate_cost_from_tokens(
     Returns:
         Dict with 'input_cost', 'output_cost', and 'total_cost' in USD
     """
+    # Try to get pricing from database first
+    try:
+        from services.database.pricing_service import get_pricing_service
+        pricing_service = get_pricing_service()
+        pricing = await pricing_service.get_pricing(provider, model)
+        
+        if pricing:
+            # Use database pricing
+            input_price_per_1m = float(pricing.get("input_price_per_1m", 0))
+            output_price_per_1m = float(pricing.get("output_price_per_1m", 0))
+            pricing_type = pricing.get("pricing_type", "per_token")
+            per_request_price = pricing.get("per_request_price")
+            
+            if pricing_type == "credit_based" or pricing_type == "per_request":
+                # For credit-based or per-request pricing
+                if per_request_price:
+                    total_cost = float(per_request_price)
+                    # Distribute proportionally if we have tokens
+                    if input_tokens and output_tokens:
+                        total_tokens = input_tokens + output_tokens
+                        input_cost = (input_tokens / total_tokens) * total_cost
+                        output_cost = (output_tokens / total_tokens) * total_cost
+                    else:
+                        input_cost = total_cost * 0.5
+                        output_cost = total_cost * 0.5
+                    
+                    return {
+                        "input_cost": input_cost,
+                        "output_cost": output_cost,
+                        "total_cost": total_cost
+                    }
+            
+            # Standard per-token pricing
+            if input_tokens is not None and output_tokens is not None:
+                input_cost = (input_tokens / 1_000_000) * input_price_per_1m
+                output_cost = (output_tokens / 1_000_000) * output_price_per_1m
+                return {
+                    "input_cost": input_cost,
+                    "output_cost": output_cost,
+                    "total_cost": input_cost + output_cost
+                }
+    except Exception as e:
+        logger.warning(f"Error getting pricing from database: {e}, falling back to hardcoded pricing")
+    
+    # Fallback to hardcoded pricing
     if input_tokens is None or output_tokens is None:
         # Fallback to estimated cost per call if tokens not available
         fallback_costs = {
