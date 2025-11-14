@@ -18,26 +18,71 @@ import './index.css';
 
 // In development, unregister any existing service workers to avoid conflicts
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
-  // Force unregister all service workers immediately
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    registrations.forEach((registration) => {
-      registration.unregister().then((success) => {
-        if (success) {
-          console.log('[Dev] Unregistered service worker:', registration.scope);
-        } else {
-          console.warn('[Dev] Failed to unregister service worker:', registration.scope);
+  // More aggressive service worker cleanup for development
+  const cleanupServiceWorkers = async () => {
+    try {
+      // Get all registrations
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      
+      // Unregister all service workers
+      const unregisterPromises = registrations.map(async (registration) => {
+        try {
+          // Try to update first to get the latest version
+          await registration.update();
+          
+          // Unregister
+          const success = await registration.unregister();
+          if (success) {
+            console.log('[Dev] Unregistered service worker:', registration.scope);
+          } else {
+            console.warn('[Dev] Failed to unregister service worker:', registration.scope);
+          }
+        } catch (error) {
+          console.error('[Dev] Error unregistering service worker:', error);
         }
-      }).catch((error) => {
-        console.error('[Dev] Error unregistering service worker:', error);
       });
-    });
-  }).catch((error) => {
-    console.error('[Dev] Error getting service worker registrations:', error);
-  });
+      
+      await Promise.all(unregisterPromises);
+      
+      // If there's still a controller, try to unregister it
+      if (navigator.serviceWorker.controller) {
+        try {
+          // Post message to skip waiting
+          navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+          
+          // Try to unregister by scope
+          const controllerScope = navigator.serviceWorker.controller.scriptURL;
+          const unregisterResult = await navigator.serviceWorker.unregister(controllerScope);
+          if (unregisterResult) {
+            console.log('[Dev] Unregistered controller service worker');
+          }
+        } catch (error) {
+          console.warn('[Dev] Could not unregister controller:', error);
+        }
+      }
+      
+      // Force reload if service workers were found and unregistered
+      if (registrations.length > 0) {
+        console.log('[Dev] Service workers cleaned up. Reloading page...');
+        // Small delay to ensure cleanup is complete
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    } catch (error) {
+      console.error('[Dev] Error during service worker cleanup:', error);
+    }
+  };
   
-  // Also try to unregister by scope
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+  // Run cleanup immediately
+  cleanupServiceWorkers();
+  
+  // Also listen for service worker updates and unregister them
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('[Dev] Service worker controller changed, cleaning up...');
+      cleanupServiceWorkers();
+    });
   }
 }
 
