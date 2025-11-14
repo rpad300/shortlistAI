@@ -11,6 +11,10 @@ services:
       APP_PORT: "8000"
     ports:
       - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     restart: unless-stopped
 
   frontend:
@@ -23,5 +27,9 @@ services:
       - "3399:80"
     depends_on:
       - backend
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     restart: unless-stopped
 
