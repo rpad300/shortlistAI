@@ -250,12 +250,16 @@ const AdminDashboard: React.FC = () => {
             <div className="providers-section">
               <h2>AI Provider Usage</h2>
               <div className="providers-grid">
-                {Object.entries(stats.providers).map(([provider, data]) => (
+                {Object.entries(stats.providers)
+                  .filter(([_, data]) => data.calls > 0) // Only show providers with calls
+                  .map(([provider, data]) => (
                   <div key={provider} className="provider-card">
                     <h3>{provider.toUpperCase()}</h3>
                     <div className="provider-stats">
-                      <div>Calls: {data.calls}</div>
-                      <div>Cost: ${data.cost.toFixed(4)}</div>
+                      <div>Calls: {data.calls.toLocaleString()}</div>
+                      <div style={{ fontWeight: 600, marginTop: '0.5rem' }}>
+                        Cost: ${data.cost.toFixed(6)}
+                      </div>
                     </div>
                   </div>
                 ))}
