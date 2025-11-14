@@ -165,7 +165,9 @@ class AIAnalysisService:
                 "provider": response.provider,
                 "model": response.model,
                 "data": response.data or {},
-                "raw_text": response.raw_text
+                "raw_text": response.raw_text,
+                "input_tokens": response.input_tokens,
+                "output_tokens": response.output_tokens
             }
             
         except Exception as e:
@@ -234,7 +236,9 @@ class AIAnalysisService:
                 "provider": response.provider,
                 "model": response.model,
                 "data": response.data or {},
-                "raw_text": response.raw_text
+                "raw_text": response.raw_text,
+                "input_tokens": response.input_tokens,
+                "output_tokens": response.output_tokens
             }
             
         except Exception as e:

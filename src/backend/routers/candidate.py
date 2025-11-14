@@ -667,6 +667,8 @@ async def step4_analysis(session_id: str):
         preparation_tips = _normalize_list(data.get("notes") or data.get("key_advice") or data.get("key_tips") or data.get("preparation_tips") or data.get("preparation_focus"))
         provider_used = ai_result.get("provider") or "ai"
         model_used = ai_result.get("model")
+        input_tokens = ai_result.get("input_tokens")
+        output_tokens = ai_result.get("output_tokens")
         
         # Calculate global score (same as interviewer)
         global_score = sum(categories.values()) / len(categories) if categories else 0
@@ -691,7 +693,9 @@ async def step4_analysis(session_id: str):
                 "notes": preparation_tips  # Store all variants for compatibility
             },
             intro_pitch=intro_pitch,
-            language=language
+            language=language,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens
         )
         
         if not analysis:

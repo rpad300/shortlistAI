@@ -1459,6 +1459,8 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                 gap_strategies = _normalize_list(data.get("gap_strategies") or [])
                 preparation_tips = _normalize_list(data.get("preparation_tips") or [])
                 provider_used = ai_result.get("provider") or ai_result.get("model") or "ai"
+                input_tokens = ai_result.get("input_tokens")
+                output_tokens = ai_result.get("output_tokens")
                 
                 # Extract detailed analysis fields
                 profile_summary = data.get("profile_summary") or ""
@@ -1572,7 +1574,9 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     hard_blocker_flags=blocker_flags,
                     report_id=UUID(report_id) if report_id else None,
                     prompt_id=prompt_id_value,
-                    detailed_analysis=detailed_analysis_data
+                    detailed_analysis=detailed_analysis_data,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens
                 )
                 
                 session_results.append({
