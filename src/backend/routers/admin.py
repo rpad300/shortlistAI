@@ -648,6 +648,9 @@ async def get_ai_usage_logs(
             log["input_tokens"] = input_tokens
             log["output_tokens"] = output_tokens
             log["total_tokens"] = (input_tokens or 0) + (output_tokens or 0)
+            # Ensure model is included in the log (may be None for old records)
+            if "model" not in log:
+                log["model"] = model if model != "unknown" else None
             
             # Update totals
             total_cost += total_log_cost

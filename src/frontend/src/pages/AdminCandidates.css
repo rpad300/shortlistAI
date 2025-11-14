@@ -64,7 +64,7 @@
 }
 
 .admin-content {
-  max-width: 1200px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -140,12 +140,14 @@
 
 /* Table */
 .candidates-table {
-  overflow-x: auto;
+  overflow-x: visible;
+  width: 100%;
   margin-bottom: 2rem;
 }
 
 .candidates-table table {
   width: 100%;
+  min-width: 1400px;
   border-collapse: collapse;
   background: var(--surface);
 }
