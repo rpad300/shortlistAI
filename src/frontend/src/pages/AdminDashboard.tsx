@@ -35,15 +35,27 @@ const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Prevent multiple simultaneous calls
 
   useEffect(() => {
-    // Only load stats when user is authenticated
-    if (user) {
+    // Only load stats when user is authenticated and we don't have stats yet
+    if (user && !stats && !isLoading) {
       loadDashboardStats();
+    } else if (!user) {
+      // Reset stats when user logs out
+      setStats(null);
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, stats, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadDashboardStats = async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoading) {
+      console.log('[AdminDashboard] Already loading, skipping...');
+      return;
+    }
+    
+    setIsLoading(true);
     try {
       setLoading(true);
       setError('');
@@ -69,6 +81,7 @@ const AdminDashboard: React.FC = () => {
       setError(error.response?.data?.detail || error.message || 'Error loading dashboard statistics');
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
