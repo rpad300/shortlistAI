@@ -46,7 +46,41 @@ export default defineConfig({
         // Skip waiting - immediately activate new service worker
         skipWaiting: true,
         clientsClaim: true,
+        
+        // Exclude index.html from precaching - we'll handle it with NetworkFirst
+        // This ensures the latest version is always fetched
+        globIgnores: ['**/index.html'],
+        
+        // Use NetworkFirst for navigation requests (HTML pages) to always get latest version
+        navigationPreload: true,
+        
         runtimeCaching: [
+          {
+            // HTML pages - always check network first, fallback to cache only if offline
+            urlPattern: /^https?:\/\/.*\/.*\.html$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 0 // No cache expiration - always check network
+              },
+              networkTimeoutSeconds: 3 // Quick timeout to fallback to cache if offline
+            }
+          },
+          {
+            // Root path and SPA routes - NetworkFirst to always get latest index.html
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'navigation-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 0 // No cache expiration - always check network
+              },
+              networkTimeoutSeconds: 3
+            }
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',

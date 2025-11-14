@@ -86,6 +86,27 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   }
 }
 
+// In production, handle service worker updates to ensure users get latest version
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  // Listen for service worker updates
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // When service worker changes, reload to get latest version
+    console.log('[PWA] Service worker updated, reloading to get latest version...');
+    window.location.reload();
+  });
+  
+  // Check for updates periodically (every 5 minutes)
+  setInterval(() => {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        registration.update().catch((error) => {
+          console.warn('[PWA] Error checking for service worker updates:', error);
+        });
+      });
+    });
+  }, 5 * 60 * 1000); // 5 minutes
+}
+
 // Note: Service worker is automatically registered by VitePWA plugin in production only
 // In development, VitePWA is disabled to avoid conflicts with Vite dev server
 
