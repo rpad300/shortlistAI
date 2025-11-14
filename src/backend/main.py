@@ -109,17 +109,28 @@ async def get_total_analyses():
         analysis_service = get_analysis_service()
         total = await analysis_service.count_all()
         
-        return {
+        logger.info(f"Total analyses count: {total}")
+        
+        response = JSONResponse({
             "total_analyses": total,
             "status": "success"
-        }
+        })
+        # Add CORS headers explicitly
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
     except Exception as e:
-        logger.error(f"Error getting total analyses count: {e}")
+        logger.error(f"Error getting total analyses count: {e}", exc_info=True)
         # Return 0 on error to avoid breaking the frontend
-        return {
+        response = JSONResponse({
             "total_analyses": 0,
             "status": "error"
-        }
+        })
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
 
 
 @app.get("/health")

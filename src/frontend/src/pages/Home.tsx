@@ -21,14 +21,29 @@ export const Home: React.FC = () => {
   useEffect(() => {
     const fetchTotalAnalyses = async () => {
       try {
-        const response = await fetch('/api/stats/total-analyses');
+        const response = await fetch('/api/stats/total-analyses', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          // Add cache control to prevent stale data
+          cache: 'no-cache',
+        });
+        
         if (response.ok) {
           const data = await response.json();
-          setTotalAnalyses(data.total_analyses || 0);
+          const count = data.total_analyses || 0;
+          console.log('[Home] Total analyses fetched:', count);
+          setTotalAnalyses(count);
+        } else {
+          console.warn('[Home] Failed to fetch total analyses:', response.status, response.statusText);
+          // Set to null to hide the stat card instead of showing 0
+          setTotalAnalyses(null);
         }
       } catch (error) {
-        console.error('Error fetching total analyses:', error);
-        setTotalAnalyses(0);
+        console.error('[Home] Error fetching total analyses:', error);
+        // Set to null to hide the stat card instead of showing 0
+        setTotalAnalyses(null);
       }
     };
 
