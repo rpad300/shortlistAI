@@ -51,10 +51,26 @@ export default defineConfig({
         // This ensures the latest version is always fetched
         globIgnores: ['**/index.html'],
         
-        // Use NetworkFirst for navigation requests (HTML pages) to always get latest version
-        navigationPreload: true,
+        // Disable default navigation fallback since we're handling it with runtime caching
+        // This prevents the error about trying to create handler for non-precached index.html
+        navigateFallback: null,
+        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
         
         runtimeCaching: [
+          {
+            // Root path and SPA routes - NetworkFirst to always get latest index.html
+            // This must be FIRST to catch navigation requests before other patterns
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'navigation-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 0 // No cache expiration - always check network
+              },
+              networkTimeoutSeconds: 3 // Quick timeout to fallback to cache if offline
+            }
+          },
           {
             // HTML pages - always check network first, fallback to cache only if offline
             urlPattern: /^https?:\/\/.*\/.*\.html$/i,
@@ -66,19 +82,6 @@ export default defineConfig({
                 maxAgeSeconds: 0 // No cache expiration - always check network
               },
               networkTimeoutSeconds: 3 // Quick timeout to fallback to cache if offline
-            }
-          },
-          {
-            // Root path and SPA routes - NetworkFirst to always get latest index.html
-            urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'navigation-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 0 // No cache expiration - always check network
-              },
-              networkTimeoutSeconds: 3
             }
           },
           {
