@@ -16,8 +16,21 @@ import App from './App';
 import './i18n/config'; // Initialize i18n
 import './index.css';
 
-// Note: Service worker is automatically registered by VitePWA plugin
-// No manual registration needed - VitePWA handles it automatically
+// In development, unregister any existing service workers to avoid conflicts
+if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      registration.unregister().then((success) => {
+        if (success) {
+          console.log('[Dev] Unregistered old service worker:', registration.scope);
+        }
+      });
+    }
+  });
+}
+
+// Note: Service worker is automatically registered by VitePWA plugin in production only
+// In development, VitePWA is disabled to avoid conflicts with Vite dev server
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

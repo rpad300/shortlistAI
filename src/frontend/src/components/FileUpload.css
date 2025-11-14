@@ -306,3 +306,134 @@
   color: #9CA3AF;
 }
 
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Mobile - max-width: 768px */
+@media (max-width: 768px) {
+  .file-upload-wrapper {
+    margin-bottom: 1.25rem;
+  }
+
+  .file-upload-label {
+    font-size: 0.875rem;
+    margin-bottom: 0.625rem;
+  }
+
+  .file-upload-area {
+    padding: 2rem 1.25rem;
+    border-radius: 10px;
+  }
+
+  .file-upload-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .file-upload-text {
+    font-size: 0.9375rem;
+  }
+
+  .file-upload-hint {
+    font-size: 0.8125rem;
+  }
+
+  .file-upload-item {
+    padding: 0.875rem 1rem;
+    border-radius: 10px;
+  }
+
+  .file-upload-filename {
+    font-size: 0.875rem;
+  }
+
+  .file-upload-size {
+    font-size: 0.6875rem;
+  }
+
+  .file-upload-remove {
+    width: 26px;
+    height: 26px;
+    font-size: 16px;
+  }
+}
+
+/* Mobile Small - max-width: 640px */
+@media (max-width: 640px) {
+  .file-upload-area {
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
+  }
+
+  .file-upload-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .file-upload-text {
+    font-size: 0.875rem;
+  }
+
+  .file-upload-hint {
+    font-size: 0.75rem;
+  }
+
+  .file-upload-item {
+    padding: 0.75rem 0.875rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .file-upload-filename {
+    font-size: 0.8125rem;
+    flex: 1 1 100%;
+  }
+
+  .file-upload-size {
+    font-size: 0.625rem;
+    margin-left: 0;
+  }
+
+  .file-upload-remove {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    margin-left: auto;
+  }
+}
+
+/* Mobile Extra Small - max-width: 480px */
+@media (max-width: 480px) {
+  .file-upload-area {
+    padding: 1.25rem 0.875rem;
+  }
+
+  .file-upload-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .file-upload-text {
+    font-size: 0.8125rem;
+  }
+
+  .file-upload-hint {
+    font-size: 0.6875rem;
+  }
+
+  .file-upload-item {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .file-upload-filename {
+    font-size: 0.75rem;
+  }
+
+  .file-upload-remove {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+}
+

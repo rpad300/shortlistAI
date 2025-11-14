@@ -292,4 +292,105 @@
   }
 }
 
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Mobile - max-width: 768px */
+@media (max-width: 768px) {
+  .language-selector-button {
+    height: 38px;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+    font-size: 0.8125rem;
+    gap: 0.375rem;
+  }
+
+  .language-flag {
+    font-size: 1rem;
+  }
+
+  .language-name {
+    min-width: 60px;
+    font-size: 0.8125rem;
+  }
+
+  .language-arrow {
+    font-size: 0.6875rem;
+  }
+
+  .language-dropdown {
+    min-width: 160px;
+    right: 0;
+  }
+
+  .language-option {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    gap: 0.625rem;
+  }
+}
+
+/* Mobile Small - max-width: 640px */
+@media (max-width: 640px) {
+  .language-selector-button {
+    height: 36px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.3125rem;
+  }
+
+  .language-flag {
+    font-size: 0.9375rem;
+  }
+
+  .language-name {
+    min-width: 55px;
+    font-size: 0.75rem;
+  }
+
+  .language-arrow {
+    font-size: 0.625rem;
+  }
+
+  .language-dropdown {
+    min-width: 150px;
+  }
+
+  .language-option {
+    padding: 0.5625rem 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.5rem;
+  }
+}
+
+/* Mobile Extra Small - max-width: 480px */
+@media (max-width: 480px) {
+  .language-selector-button {
+    height: 34px;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    font-size: 0.6875rem;
+  }
+
+  .language-flag {
+    font-size: 0.875rem;
+  }
+
+  .language-name {
+    min-width: 50px;
+    font-size: 0.6875rem;
+  }
+
+  .language-dropdown {
+    min-width: 140px;
+  }
+
+  .language-option {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.6875rem;
+  }
+}
+
 

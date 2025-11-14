@@ -18,7 +18,8 @@ export default defineConfig({
         disableDevRuntime: true
       },
       // Only register service worker in production builds
-      injectRegister: 'script', // Auto-inject register script only in production
+      // Use 'null' to prevent any registration script injection in dev
+      injectRegister: process.env.NODE_ENV === 'production' ? 'script' : null,
       // Clean up old caches on update
       cleanupOutdatedCaches: true,
       manifest: {

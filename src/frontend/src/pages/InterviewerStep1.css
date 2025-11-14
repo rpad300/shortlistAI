@@ -2990,4 +2990,548 @@
   color: #F9FAFB;
 }
 
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Mobile - max-width: 768px */
+@media (max-width: 768px) {
+  /* File Upload Styles - Mobile */
+  .upload-files-container {
+    max-height: 250px;
+    padding: 0.5rem;
+  }
+
+  .upload-file-item {
+    padding: 0.75rem 0.875rem;
+    flex-wrap: wrap;
+  }
+
+  .upload-file-info {
+    font-size: 0.875rem;
+    min-width: 0;
+    flex: 1 1 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .upload-file-remove {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    margin-left: auto;
+  }
+
+  /* Analysis Loading - Mobile */
+  .analysis-loading-container {
+    padding: 2rem 1rem;
+  }
+
+  .loading-spinner-modern {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 1.5rem;
+  }
+
+  .analysis-status-text {
+    font-size: 1rem;
+  }
+
+  .progress-bar-container {
+    max-width: 100%;
+  }
+
+  /* InterviewerStep7 - Mobile */
+  .executive-rec-section,
+  .hard-blockers-section,
+  .detailed-view-section {
+    padding: 1.5rem 1.25rem;
+    border-radius: 12px;
+  }
+
+  .executive-rec-section h2,
+  .hard-blockers-section h2,
+  .detailed-view-section h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .executive-rec-section h3,
+  .detailed-view-section h3 {
+    font-size: 1.125rem;
+  }
+
+  .report-code-banner {
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+  }
+
+  .top-candidate-box {
+    padding: 1rem 1.25rem;
+  }
+
+  .top-candidate-box h3 {
+    font-size: 1.125rem;
+  }
+
+  .top-candidate-box p {
+    font-size: 1rem;
+  }
+
+  /* Ranking Table - Mobile */
+  .ranking-table-container {
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    padding: 0 1.25rem;
+  }
+
+  .ranking-table {
+    min-width: 500px;
+    font-size: 0.875rem;
+  }
+
+  .ranking-table th,
+  .ranking-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  /* SWOT Grid - Mobile */
+  .swot-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .swot-card {
+    padding: 1rem 1.25rem;
+  }
+
+  /* Category Scores Grid - Mobile */
+  .category-scores-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .category-score-card {
+    padding: 0.875rem;
+  }
+
+  .category-score-value {
+    font-size: 1.25rem;
+  }
+
+  /* Skills Table - Mobile */
+  .skills-table-container {
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    padding: 0 1.25rem;
+  }
+
+  .skills-table {
+    min-width: 500px;
+    font-size: 0.875rem;
+  }
+
+  .skills-table th,
+  .skills-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  /* Profile Summary Card - Mobile */
+  .profile-summary-card,
+  .summary-info-card,
+  .analysis-section-card {
+    padding: 1rem 1.25rem;
+  }
+
+  /* CandidateStep5 - Mobile */
+  .company-info-banner {
+    padding: 0.875rem 1rem;
+  }
+
+  .candidate-scores-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .candidate-score-card {
+    padding: 0.875rem;
+  }
+
+  .candidate-score-value {
+    font-size: 1.5rem;
+  }
+
+  .gap-strategy-card,
+  .question-card {
+    padding: 1rem 1.25rem;
+  }
+
+  .intro-pitch-card {
+    padding: 1rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+}
+
+/* Mobile Small - max-width: 640px */
+@media (max-width: 640px) {
+  /* File Upload - Mobile Small */
+  .upload-files-summary {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .upload-files-container {
+    max-height: 200px;
+    padding: 0.5rem;
+  }
+
+  .upload-file-item {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .upload-file-info {
+    font-size: 0.8125rem;
+  }
+
+  /* Analysis Loading - Mobile Small */
+  .analysis-loading-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .loading-spinner-modern {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 1rem;
+  }
+
+  .analysis-status-text {
+    font-size: 0.9375rem;
+  }
+
+  .analysis-progress-text {
+    font-size: 0.875rem;
+  }
+
+  .analysis-time-text {
+    font-size: 0.8125rem;
+  }
+
+  /* InterviewerStep7 - Mobile Small */
+  .executive-rec-section,
+  .hard-blockers-section,
+  .detailed-view-section {
+    padding: 1.25rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .executive-rec-section h2,
+  .hard-blockers-section h2,
+  .detailed-view-section h2 {
+    font-size: 1.125rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .executive-rec-section h3,
+  .detailed-view-section h3 {
+    font-size: 1rem;
+  }
+
+  .executive-rec-section p,
+  .executive-rec-section ul,
+  .hard-blockers-section ul,
+  .detailed-view-section p,
+  .detailed-view-section ul {
+    font-size: 0.9375rem;
+  }
+
+  .report-code-banner {
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .top-candidate-box {
+    padding: 0.875rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .top-candidate-box h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .top-candidate-box p {
+    font-size: 0.9375rem;
+  }
+
+  /* Ranking Table - Mobile Small */
+  .ranking-table {
+    min-width: 450px;
+    font-size: 0.8125rem;
+  }
+
+  .ranking-table th,
+  .ranking-table td {
+    padding: 0.625rem 0.375rem;
+  }
+
+  .candidate-name {
+    font-size: 0.875rem;
+  }
+
+  .candidate-role {
+    font-size: 0.8125rem;
+  }
+
+  .candidate-experience {
+    font-size: 0.6875rem;
+  }
+
+  .score-high,
+  .score-medium,
+  .score-low {
+    font-size: 1.125rem;
+  }
+
+  /* SWOT Grid - Mobile Small */
+  .swot-card {
+    padding: 0.875rem 1rem;
+  }
+
+  .swot-card h4 {
+    font-size: 1rem;
+    margin-bottom: 0.625rem;
+  }
+
+  .swot-card ul {
+    font-size: 0.875rem;
+    padding-left: 1.25rem;
+  }
+
+  /* Category Scores Grid - Mobile Small */
+  .category-scores-grid {
+    grid-template-columns: 1fr;
+    gap: 0.625rem;
+  }
+
+  .category-score-card {
+    padding: 0.75rem;
+  }
+
+  .category-score-value {
+    font-size: 1.125rem;
+  }
+
+  .category-score-label {
+    font-size: 0.6875rem;
+  }
+
+  /* Skills Table - Mobile Small */
+  .skills-table {
+    min-width: 450px;
+    font-size: 0.8125rem;
+  }
+
+  .skills-table th,
+  .skills-table td {
+    padding: 0.625rem 0.375rem;
+  }
+
+  .skills-legend {
+    font-size: 0.8125rem;
+  }
+
+  .missing-skills-warning {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Profile Summary Card - Mobile Small */
+  .profile-summary-card,
+  .summary-info-card,
+  .analysis-section-card {
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  /* CandidateStep5 - Mobile Small */
+  .company-info-banner {
+    padding: 0.75rem 0.875rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .company-info-banner p:first-child {
+    font-size: 0.9375rem;
+  }
+
+  .company-info-banner p:last-child {
+    font-size: 0.8125rem;
+  }
+
+  .candidate-scores-grid {
+    grid-template-columns: 1fr;
+    gap: 0.625rem;
+  }
+
+  .candidate-score-card {
+    padding: 0.75rem;
+  }
+
+  .candidate-score-value {
+    font-size: 1.375rem;
+  }
+
+  .candidate-score-label {
+    font-size: 0.8125rem;
+  }
+
+  .gap-strategy-card,
+  .question-card {
+    padding: 0.875rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .gap-strategy-card h3,
+  .question-card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.625rem;
+  }
+
+  .gap-strategy-card p,
+  .question-card p {
+    font-size: 0.875rem;
+  }
+
+  .question-category-badge {
+    font-size: 0.6875rem;
+    padding: 3px 10px;
+  }
+
+  .question-suggested-answer {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .intro-pitch-card {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .preparation-checklist li {
+    font-size: 0.875rem;
+    margin-bottom: 0.625rem;
+  }
+}
+
+/* Mobile Extra Small - max-width: 480px */
+@media (max-width: 480px) {
+  /* File Upload - Mobile Extra Small */
+  .upload-files-summary {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .upload-files-container {
+    max-height: 180px;
+  }
+
+  .upload-file-item {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .upload-file-info {
+    font-size: 0.75rem;
+  }
+
+  .upload-file-remove {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+
+  /* Analysis Loading - Mobile Extra Small */
+  .analysis-loading-container {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .loading-spinner-modern {
+    width: 36px;
+    height: 36px;
+    border-width: 3px;
+  }
+
+  .analysis-status-text {
+    font-size: 0.875rem;
+  }
+
+  /* InterviewerStep7 - Mobile Extra Small */
+  .executive-rec-section,
+  .hard-blockers-section,
+  .detailed-view-section {
+    padding: 1rem 0.875rem;
+  }
+
+  .report-code-banner {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .top-candidate-box {
+    padding: 0.75rem 0.875rem;
+  }
+
+  /* Ranking Table - Mobile Extra Small */
+  .ranking-table {
+    min-width: 400px;
+    font-size: 0.75rem;
+  }
+
+  .ranking-table th,
+  .ranking-table td {
+    padding: 0.5rem 0.25rem;
+  }
+
+  /* SWOT Grid - Mobile Extra Small */
+  .swot-card {
+    padding: 0.75rem 0.875rem;
+  }
+
+  /* Category Scores Grid - Mobile Extra Small */
+  .category-score-card {
+    padding: 0.625rem;
+  }
+
+  .category-score-value {
+    font-size: 1rem;
+  }
+
+  /* Skills Table - Mobile Extra Small */
+  .skills-table {
+    min-width: 400px;
+    font-size: 0.75rem;
+  }
+
+  /* CandidateStep5 - Mobile Extra Small */
+  .company-info-banner {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .candidate-score-card {
+    padding: 0.625rem;
+  }
+
+  .candidate-score-value {
+    font-size: 1.25rem;
+  }
+
+  .gap-strategy-card,
+  .question-card {
+    padding: 0.75rem 0.875rem;
+  }
+
+  .intro-pitch-card {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+}
+
 

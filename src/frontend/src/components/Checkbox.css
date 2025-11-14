@@ -137,3 +137,76 @@
   font-weight: 500;
 }
 
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Mobile - max-width: 768px */
+@media (max-width: 768px) {
+  .checkbox-wrapper {
+    margin-bottom: 0.875rem;
+  }
+
+  .checkbox-label {
+    font-size: 0.875rem;
+    padding: 0.6875rem;
+    border-radius: 10px;
+  }
+
+  .checkbox-input {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.625rem;
+    margin-top: 2px;
+  }
+
+  .checkbox-error-message {
+    font-size: 0.8125rem;
+    margin-left: 2.5rem;
+    margin-top: 0.4375rem;
+  }
+}
+
+/* Mobile Small - max-width: 640px */
+@media (max-width: 640px) {
+  .checkbox-wrapper {
+    margin-bottom: 0.75rem;
+  }
+
+  .checkbox-label {
+    font-size: 0.8125rem;
+    padding: 0.625rem;
+    border-radius: 8px;
+  }
+
+  .checkbox-input {
+    width: 17px;
+    height: 17px;
+    margin-right: 0.5625rem;
+  }
+
+  .checkbox-error-message {
+    font-size: 0.75rem;
+    margin-left: 2.25rem;
+  }
+}
+
+/* Mobile Extra Small - max-width: 480px */
+@media (max-width: 480px) {
+  .checkbox-label {
+    font-size: 0.75rem;
+    padding: 0.5625rem;
+  }
+
+  .checkbox-input {
+    width: 16px;
+    height: 16px;
+    margin-right: 0.5rem;
+  }
+
+  .checkbox-error-message {
+    font-size: 0.6875rem;
+    margin-left: 2rem;
+  }
+}
+
