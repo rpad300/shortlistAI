@@ -13,15 +13,11 @@ export default defineConfig({
       // Disable PWA completely in development to avoid service worker conflicts
       devOptions: {
         enabled: false,
-        type: 'module',
-        // Disable service worker registration in dev
-        disableDevRuntime: true
+        type: 'module'
       },
       // Only register service worker in production builds
       // Use 'null' to prevent any registration script injection in dev
       injectRegister: process.env.NODE_ENV === 'production' ? 'script' : null,
-      // Clean up old caches on update
-      cleanupOutdatedCaches: true,
       manifest: {
         name: 'CV Analysis Platform',
         short_name: 'CV Analysis',
