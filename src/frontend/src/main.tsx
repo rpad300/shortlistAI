@@ -16,19 +16,8 @@ import App from './App';
 import './i18n/config'; // Initialize i18n
 import './index.css';
 
-// PWA service worker registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(
-      (registration) => {
-        console.log('ServiceWorker registration successful:', registration.scope);
-      },
-      (error) => {
-        console.log('ServiceWorker registration failed:', error);
-      }
-    );
-  });
-}
+// Note: Service worker is automatically registered by VitePWA plugin
+// No manual registration needed - VitePWA handles it automatically
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

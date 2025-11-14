@@ -10,6 +10,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      // Force update on new builds
+      devOptions: {
+        enabled: false
+      },
+      // Clean up old caches on update
+      cleanupOutdatedCaches: true,
       manifest: {
         name: 'CV Analysis Platform',
         short_name: 'CV Analysis',
@@ -92,15 +98,32 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    // Ensure consistent asset hashing for cache busting
     rollupOptions: {
       output: {
+        // Use content hash for better cache busting
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+            return `assets/[name]-[hash][extname]`;
+          }
+          if (/css/i.test(ext)) {
+            return `assets/[name]-[hash][extname]`;
+          }
+          return `assets/[name]-[hash][extname]`;
+        },
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'i18n-vendor': ['i18next', 'react-i18next'],
           'supabase-vendor': ['@supabase/supabase-js']
         }
       }
-    }
+    },
+    // Ensure CSS is properly extracted and hashed
+    cssCodeSplit: true
   }
 });
 
