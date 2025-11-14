@@ -4,7 +4,7 @@
  * Accepts job posting as text or file upload.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import StepLayout from '@components/StepLayout';
@@ -25,6 +25,17 @@ const InterviewerStep2: React.FC = () => {
   const [useFile, setUseFile] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [processingStatus, setProcessingStatus] = useState('');
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,45 +53,102 @@ const InterviewerStep2: React.FC = () => {
     
     setLoading(true);
     setError('');
+    setProcessingStatus('Starting processing...');
     
     try {
+      let formData: FormData;
+      
       // Se usar file upload
       if (useFile && files.length > 0) {
-        const formData = new FormData();
+        formData = new FormData();
         formData.append('session_id', sessionId);
         formData.append('language', i18n.language);
         formData.append('file', files[0]);
-        
-        await interviewerAPI.step2(formData);
-        navigate('/interviewer/step3');
-        return;
-      }
-      
-      // Se usar texto
-      if (!useFile && jobText.trim()) {
-        const formData = new FormData();
+      } else if (!useFile && jobText.trim()) {
+        // Se usar texto
+        formData = new FormData();
         formData.append('session_id', sessionId);
         formData.append('language', i18n.language);
         formData.append('raw_text', jobText);
-        
-        await interviewerAPI.step2(formData);
-        navigate('/interviewer/step3');
-        return;
-      }
-      
-      // Se nenhum dos dois
-      setError('Por favor, forneça o job posting como texto ou upload de ficheiro.');
-      setLoading(false);
-      return;
-    } catch (error: any) {
-      console.error('Error in step 2:', error);
-      
-      // Handle timeout specifically
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        setError('The request took too long. This may happen with large files or slow AI processing. Please try again with a smaller file or wait a moment and retry.');
+      } else {
+        setError('Por favor, forneça o job posting como texto ou upload de ficheiro.');
         setLoading(false);
         return;
       }
+      
+      // Start processing (returns immediately)
+      const response = await interviewerAPI.step2(formData);
+      
+      if (response.data.status === 'already_running') {
+        setProcessingStatus('Processing already in progress...');
+      } else {
+        setProcessingStatus('Processing started...');
+      }
+      
+      // Start polling for progress
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const progressResponse = await interviewerAPI.step2Progress(sessionId);
+          const progressData = progressResponse.data;
+          
+          const progressInfo = progressData.progress || {};
+          const statusText = progressInfo.status || 'Processing...';
+          
+          setProcessingStatus(statusText);
+          
+          // Check if complete
+          if (progressData.complete) {
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            setLoading(false);
+            navigate('/interviewer/step3');
+            return;
+          }
+          
+          // Check if error
+          if (progressData.status === 'error') {
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            setLoading(false);
+            setError(progressInfo.status || 'An error occurred during processing.');
+            return;
+          }
+        } catch (pollError: any) {
+          // Don't show error for polling timeouts, just continue
+          if (pollError.code !== 'ECONNABORTED' && !pollError.message?.includes('timeout')) {
+            console.error('Error polling progress:', pollError);
+            
+            // If session expired, stop polling
+            if (pollError.response?.status === 404) {
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+              setLoading(false);
+              setError('Session expired. Please restart from step 1.');
+            }
+          }
+        }
+      }, 2000); // Poll every 2 seconds
+      
+      // Cleanup after 5 minutes max
+      setTimeout(() => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        if (loading) {
+          setLoading(false);
+          setError('Processing took too long. Please try again.');
+        }
+      }, 300000); // 5 minutes max
+      
+    } catch (error: any) {
+      console.error('Error in step 2:', error);
       
       const errorDetail = error.response?.data?.detail;
       const errorMessage = Array.isArray(errorDetail) 
@@ -89,7 +157,6 @@ const InterviewerStep2: React.FC = () => {
           ? errorDetail 
           : 'An error occurred. Please try again.';
       setError(errorMessage);
-    } finally {
       setLoading(false);
     }
   };
@@ -122,7 +189,7 @@ const InterviewerStep2: React.FC = () => {
         
         <AILoadingOverlay 
           isVisible={loading}
-          message="AI is analyzing your job posting"
+          message={processingStatus || "AI is analyzing your job posting"}
           estimatedSeconds={15}
         />
         

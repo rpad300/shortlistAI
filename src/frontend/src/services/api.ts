@@ -44,7 +44,7 @@ api.interceptors.response.use(
   (error) => {
     // Don't log timeout errors for polling endpoints (they're expected)
     const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
-    const isPollingEndpoint = error.config?.url?.includes('/step6/progress/');
+    const isPollingEndpoint = error.config?.url?.includes('/progress/');
     
     if (isTimeout && isPollingEndpoint) {
       // Silently handle timeout for polling - it's expected and will retry
@@ -80,8 +80,13 @@ export const interviewerAPI = {
   }),
   step2: (data: FormData) => api.post('/interviewer/step2', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 150000 // 150s: file upload + AI normalization (backend can take 60-90s, +50% margin)
+    timeout: 30000 // 30s: just to start processing, actual processing is async
   }),
+  step2Progress: (sessionId: string) => {
+    return api.get(`/interviewer/step2/progress/${sessionId}`, {
+      timeout: 10000 // Polling endpoint - allow time for network delays
+    });
+  },
   step3Suggestions: (sessionId: string) => api.get(`/interviewer/step3/suggestions/${sessionId}`, {
     timeout: 30000 // No AI, just returns cached data from session
   }),

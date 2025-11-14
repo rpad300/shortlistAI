@@ -227,6 +227,178 @@ async def step1_identification(data: InterviewerIdentification):
         )
 
 
+async def _run_job_posting_processing_background(
+    session_id: UUID,
+    final_text: str,
+    file_url: Optional[str],
+    session_service,
+    job_posting_service,
+    ai_service
+):
+    """
+    Background task to process job posting: create record and run AI normalization.
+    Updates progress in session as it goes.
+    """
+    try:
+        # Get session data
+        session = session_service.get_session(session_id)
+        if not session:
+            logger.error(f"Session {session_id} not found in background task")
+            return
+        
+        session_data = session.get("data", {})
+        interviewer_id = session_data.get("interviewer_id")
+        company_id = session_data.get("company_id")
+        session_language = session_data.get("language", "en")
+        
+        # Initialize progress
+        session_service.update_session(
+            session_id,
+            {
+                "step2_status": "running",
+                "step2_progress": {
+                    "status": "Creating job posting record...",
+                    "step": "creating"
+                }
+            }
+        )
+        
+        # Create job posting record
+        try:
+            logger.info(
+                f"Creating job posting for session {session_id}: "
+                f"text_length={len(final_text)}, "
+                f"company_id={company_id}, "
+                f"interviewer_id={interviewer_id}, "
+                f"language={session_language}"
+            )
+            
+            job_posting = await job_posting_service.create(
+                raw_text=final_text,
+                company_id=company_id,
+                interviewer_id=UUID(interviewer_id) if isinstance(interviewer_id, str) else interviewer_id,
+                file_url=file_url,
+                language=session_language
+            )
+            
+            if not job_posting:
+                logger.error(f"job_posting_service.create() returned None for session: {session_id}")
+                session_service.update_session(
+                    session_id,
+                    {
+                        "step2_status": "error",
+                        "step2_progress": {
+                            "status": "Failed to create job posting record",
+                            "step": "error"
+                        }
+                    }
+                )
+                return
+        except Exception as e:
+            logger.error(f"Error creating job posting: {e}", exc_info=True)
+            session_service.update_session(
+                session_id,
+                {
+                    "step2_status": "error",
+                    "step2_progress": {
+                        "status": f"Error: {str(e)}",
+                        "step": "error"
+                    }
+                }
+            )
+            return
+        
+        # Update progress: AI normalization
+        session_service.update_session(
+            session_id,
+            {
+                "step2_progress": {
+                    "status": "AI is analyzing job posting and extracting key requirements...",
+                    "step": "ai_processing"
+                }
+            }
+        )
+        
+        # Use AI to extract key points from job posting
+        logger.info(f"Using AI to analyze job posting (provider: {ai_service.ai_manager.default_provider}, language: {session_language})")
+        normalized = await ai_service.normalize_job_posting(final_text, session_language)
+        
+        suggested_key_points = None
+        if normalized:
+            # Build suggested key points from AI analysis
+            key_points_parts = []
+            
+            if normalized.get("required_skills"):
+                skills = ", ".join(normalized["required_skills"][:5])
+                key_points_parts.append(f"• Required skills: {skills}")
+            
+            if normalized.get("experience_level"):
+                key_points_parts.append(f"• Experience level: {normalized['experience_level']}")
+            
+            if normalized.get("languages"):
+                langs = ", ".join(normalized["languages"])
+                key_points_parts.append(f"• Languages: {langs}")
+            
+            if normalized.get("qualifications"):
+                quals = "\n  - ".join(normalized["qualifications"][:3])
+                key_points_parts.append(f"• Key qualifications:\n  - {quals}")
+            
+            if normalized.get("preferred_skills"):
+                prefs = ", ".join(normalized["preferred_skills"][:3])
+                key_points_parts.append(f"• Nice to have: {prefs}")
+            
+            suggested_key_points = "\n\n".join(key_points_parts)
+            
+            # Persist structured data for later steps
+            try:
+                await job_posting_service.update_structured_data(
+                    UUID(job_posting["id"]),
+                    normalized
+                )
+            except Exception as structured_err:
+                logger.warning(f"Failed to store structured job posting data: {structured_err}")
+            
+            logger.info(f"AI-generated suggested key points ({len(suggested_key_points)} chars)")
+        else:
+            logger.warning("AI returned no normalized data")
+            suggested_key_points = "• Could not extract key points with AI. Please write them manually."
+        
+        # Update session with job posting ID and suggested key points
+        session_service.update_session(
+            session_id,
+            {
+                "job_posting_id": job_posting["id"],
+                "job_posting_text": final_text,
+                "suggested_key_points": suggested_key_points,
+                "structured_job_posting": normalized,
+                "step2_status": "complete",
+                "step2_progress": {
+                    "status": "Complete! Ready for step 3.",
+                    "step": "complete"
+                }
+            },
+            step=2
+        )
+        
+        logger.info(f"Job posting processing complete: {job_posting['id']} for session: {session_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in background job posting processing: {e}", exc_info=True)
+        try:
+            session_service.update_session(
+                session_id,
+                {
+                    "step2_status": "error",
+                    "step2_progress": {
+                        "status": f"Error: {str(e)}",
+                        "step": "error"
+                    }
+                }
+            )
+        except:
+            pass
+
+
 @router.post("/step2")
 async def step2_job_posting(
     session_id: str = Form(...),
@@ -235,18 +407,21 @@ async def step2_job_posting(
     file: Optional[UploadFile] = File(None)
 ):
     """
-    Step 2: Job posting input.
+    Step 2: Job posting input (async processing).
     
     Accepts job posting as text or file upload.
-    Validates and stores raw content.
+    Returns immediately and processes in background.
+    Use GET /step2/progress/{session_id} to check progress.
     """
     from services.database import (
         get_session_service,
         get_job_posting_service
     )
     from services.storage import get_storage_service
+    from services.ai_analysis import get_ai_analysis_service
     from utils import FileProcessor
     from uuid import UUID
+    import asyncio
     
     if not raw_text and not file:
         raise HTTPException(
@@ -259,14 +434,34 @@ async def step2_job_posting(
         session_service = get_session_service()
         job_posting_service = get_job_posting_service()
         storage_service = get_storage_service()
+        ai_service = get_ai_analysis_service()
         
         # Validate session
         session = session_service.get_session(UUID(session_id))
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
         
+        # Check if processing is already running
+        if session["data"].get("step2_status") == "running":
+            return JSONResponse({
+                "status": "already_running",
+                "message": "Job posting processing is already in progress"
+            })
+        
         # Use language from session (set in step1), fallback to form parameter
         session_language = session["data"].get("language", language)
+        
+        # Validate required data from session
+        interviewer_id = session["data"].get("interviewer_id")
+        if not interviewer_id:
+            logger.error(
+                f"Session {session_id} missing interviewer_id. "
+                f"Session data keys: {list(session.get('data', {}).keys())}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Session missing interviewer_id. Please complete step 1 first."
+            )
         
         final_text = raw_text or ""
         file_url = None
@@ -313,18 +508,6 @@ async def step2_job_posting(
             else:
                 logger.warning(f"Could not extract text from file: {error}")
         
-        # Validate required data from session
-        interviewer_id = session["data"].get("interviewer_id")
-        if not interviewer_id:
-            logger.error(
-                f"Session {session_id} missing interviewer_id. "
-                f"Session data keys: {list(session.get('data', {}).keys())}"
-            )
-            raise HTTPException(
-                status_code=400,
-                detail="Session missing interviewer_id. Please complete step 1 first."
-            )
-        
         # Validate job posting text
         if not final_text or not final_text.strip():
             logger.error(f"Empty job posting text for session {session_id}")
@@ -333,137 +516,68 @@ async def step2_job_posting(
                 detail="Job posting text cannot be empty"
             )
         
-        # Create job posting record
-        try:
-            logger.info(
-                f"Creating job posting for session {session_id}: "
-                f"text_length={len(final_text)}, "
-                f"company_id={session['data'].get('company_id')}, "
-                f"interviewer_id={interviewer_id}, "
-                f"language={session_language}"
-            )
-            
-            job_posting = await job_posting_service.create(
-                raw_text=final_text,
-                company_id=session["data"].get("company_id"),
-                interviewer_id=UUID(interviewer_id) if isinstance(interviewer_id, str) else interviewer_id,
-                file_url=file_url,
-                language=session_language
-            )
-            
-            if not job_posting:
-                logger.error(
-                    f"job_posting_service.create() returned None for session: {session_id}. "
-                    f"company_id={session['data'].get('company_id')}, "
-                    f"interviewer_id={interviewer_id}"
-                )
-                raise HTTPException(
-                    status_code=500,
-                    detail="Failed to create job posting record. Please try again."
-                )
-        except ValueError as ve:
-            # Validation error from service
-            logger.error(
-                f"Validation error creating job posting for session {session_id}: {ve}",
-                exc_info=True
-            )
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid job posting data: {str(ve)}"
-            )
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(
-                f"Exception in job_posting_service.create() for session {session_id}: {type(e).__name__}: {e}",
-                exc_info=True
-            )
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to create job posting record: {str(e)}"
-            )
-        
-        # ALWAYS use AI to extract key points from job posting
-        # Gemini is default, others are fallbacks
-        suggested_key_points = None
-        from services.ai_analysis import get_ai_analysis_service
-        
-        ai_service = get_ai_analysis_service()
-        
-        # Normalize job posting to extract structured requirements with AI
-        # Note: First normalization without company_name (it will be extracted from the result)
-        logger.info(f"Using AI to analyze job posting (provider: {ai_service.ai_manager.default_provider}, language: {session_language})")
-        normalized = await ai_service.normalize_job_posting(final_text, session_language)
-        
-        if normalized:
-            # Build suggested key points from AI analysis
-            key_points_parts = []
-            
-            if normalized.get("required_skills"):
-                skills = ", ".join(normalized["required_skills"][:5])
-                key_points_parts.append(f"• Required skills: {skills}")
-            
-            if normalized.get("experience_level"):
-                key_points_parts.append(f"• Experience level: {normalized['experience_level']}")
-            
-            if normalized.get("languages"):
-                langs = ", ".join(normalized["languages"])
-                key_points_parts.append(f"• Languages: {langs}")
-            
-            if normalized.get("qualifications"):
-                quals = "\n  - ".join(normalized["qualifications"][:3])
-                key_points_parts.append(f"• Key qualifications:\n  - {quals}")
-            
-            if normalized.get("preferred_skills"):
-                prefs = ", ".join(normalized["preferred_skills"][:3])
-                key_points_parts.append(f"• Nice to have: {prefs}")
-            
-            suggested_key_points = "\n\n".join(key_points_parts)
-            
-            # Persist structured data for later steps
-            try:
-                await job_posting_service.update_structured_data(
-                    UUID(job_posting["id"]),
-                    normalized
-                )
-            except Exception as structured_err:  # pragma: no cover - logging only
-                logger.warning(
-                    "Failed to store structured job posting data: %s",
-                    structured_err
-                )
-            logger.info(f"AI-generated suggested key points ({len(suggested_key_points)} chars)")
-        else:
-            logger.warning("AI returned no normalized data")
-            suggested_key_points = "• Could not extract key points with AI. Please write them manually."
-        
-        # Update session with job posting ID and suggested key points
-        session_service.update_session(
+        # Start background processing
+        asyncio.create_task(_run_job_posting_processing_background(
             UUID(session_id),
-            {
-                "job_posting_id": job_posting["id"],
-                "job_posting_text": final_text,  # COMPLETE text (no truncation!)
-                "suggested_key_points": suggested_key_points,  # AI-generated suggestions
-                "structured_job_posting": normalized
-            },
-            step=2
-        )
-        
-        logger.info(f"Job posting created: {job_posting['id']} for session: {session_id}")
+            final_text,
+            file_url,
+            session_service,
+            job_posting_service,
+            ai_service
+        ))
         
         return JSONResponse({
-            "status": "success",
-            "job_posting_id": job_posting["id"],
-            "text_length": len(final_text),
-            "message": "Job posting stored successfully. Proceed to step 3."
+            "status": "processing",
+            "message": "Job posting is being processed. Check progress endpoint for status."
         })
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in step2_job_posting: {e}")
+        logger.error(f"Error in step2_job_posting: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Internal server error processing job posting"
+        )
+
+
+@router.get("/step2/progress/{session_id}")
+async def step2_progress(session_id: UUID):
+    """
+    Get job posting processing progress for a session.
+    
+    Returns current progress, status, and completion state.
+    """
+    from services.database import get_session_service
+    
+    try:
+        session_service = get_session_service()
+        session = session_service.get_session(session_id)
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Safely access session data with defaults
+        session_data = session.get("data", {})
+        progress = session_data.get("step2_progress", {})
+        status = session_data.get("step2_status", "not_started")
+        is_complete = status == "complete"
+        job_posting_id = session_data.get("job_posting_id")
+        
+        return JSONResponse({
+            "status": status,
+            "complete": is_complete,
+            "progress": progress,
+            "job_posting_id": job_posting_id
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting step2 progress for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error getting progress"
         )
 
 
