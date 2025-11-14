@@ -220,13 +220,13 @@ const AdminAIUsage: React.FC = () => {
                       <div className="provider-stats">
                         <div>Calls: {data.calls.toLocaleString()}</div>
                         <div>Cost: ${data.cost.toFixed(6)}</div>
-                        {data.total_tokens > 0 && (
+                        {(data.total_tokens || 0) > 0 && (
                           <>
                             <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              Tokens: {data.total_tokens.toLocaleString()}
+                              Tokens: {(data.total_tokens || 0).toLocaleString()}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              In: {data.input_tokens.toLocaleString()} | Out: {data.output_tokens.toLocaleString()}
+                              In: {(data.input_tokens || 0).toLocaleString()} | Out: {(data.output_tokens || 0).toLocaleString()}
                             </div>
                           </>
                         )}
@@ -378,12 +378,12 @@ const AdminAIUsage: React.FC = () => {
                         <td>{getModeBadge(log.mode)}</td>
                         <td>{log.language.toUpperCase()}</td>
                         <td>
-                          {log.input_tokens !== undefined && log.output_tokens !== undefined ? (
+                          {log.input_tokens != null && log.output_tokens != null ? (
                             <div style={{ fontSize: '0.875rem' }}>
-                              <div>In: {log.input_tokens.toLocaleString()}</div>
-                              <div>Out: {log.output_tokens.toLocaleString()}</div>
+                              <div>In: {(log.input_tokens || 0).toLocaleString()}</div>
+                              <div>Out: {(log.output_tokens || 0).toLocaleString()}</div>
                               <div style={{ fontWeight: 600, marginTop: '0.25rem' }}>
-                                Total: {(log.total_tokens || (log.input_tokens + log.output_tokens)).toLocaleString()}
+                                Total: {(log.total_tokens || ((log.input_tokens || 0) + (log.output_tokens || 0))).toLocaleString()}
                               </div>
                             </div>
                           ) : (
