@@ -120,6 +120,15 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
         
+        {/* Debug: Show raw stats */}
+        {stats && (
+          <div style={{ padding: '1rem', background: '#f0f0f0', marginBottom: '1rem', fontSize: '0.8rem' }}>
+            <strong>DEBUG:</strong> stats exists: {stats ? 'YES' : 'NO'}, 
+            stats.overview: {stats.overview ? 'YES' : 'NO'},
+            stats.overview?.total_candidates: {stats.overview?.total_candidates}
+          </div>
+        )}
+        
         {stats && stats.overview ? (
           <>
             {/* Overview Statistics */}
