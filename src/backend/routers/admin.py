@@ -354,7 +354,8 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
             },
             "ai_usage": {
                 "total_api_calls": total_analyses,
-                "cost_this_month": 0,  # TODO: Implement cost tracking
+                "cost_this_month": round(sum(p.get("cost", 0.0) for p in providers.values()), 6),
+                "total_cost": round(sum(p.get("cost", 0.0) for p in providers.values()), 6),
                 "average_response_time": 0,  # TODO: Implement timing tracking
                 "success_rate": 100 if total_analyses > 0 else 0
             },
