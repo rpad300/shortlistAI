@@ -292,19 +292,41 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
         
         # Get provider stats with costs from database
         provider_stats_query = client.table(table)\
-            .select("provider, total_cost")\
+            .select("provider, total_cost, input_cost, output_cost")\
             .execute()
         
         provider_stats = {}
+        total_rows = len(provider_stats_query.data or [])
+        rows_with_cost = 0
+        
         for row in (provider_stats_query.data or []):
             provider = row.get("provider", "unknown")
             if provider not in ["unknown", "error", "timeout"]:
                 if provider not in provider_stats:
                     provider_stats[provider] = {"calls": 0, "cost": 0.0}
                 provider_stats[provider]["calls"] += 1
+                
+                # Try total_cost first, then calculate from input/output if needed
                 total_cost = row.get("total_cost")
                 if total_cost is not None:
-                    provider_stats[provider]["cost"] += float(total_cost)
+                    try:
+                        provider_stats[provider]["cost"] += float(total_cost)
+                        rows_with_cost += 1
+                    except (ValueError, TypeError):
+                        pass
+                else:
+                    # Fallback: calculate from input_cost + output_cost if available
+                    input_cost = row.get("input_cost")
+                    output_cost = row.get("output_cost")
+                    if input_cost is not None and output_cost is not None:
+                        try:
+                            calculated_cost = float(input_cost) + float(output_cost)
+                            provider_stats[provider]["cost"] += calculated_cost
+                            rows_with_cost += 1
+                        except (ValueError, TypeError):
+                            pass
+        
+        logger.info(f"Provider stats calculation: {total_rows} total rows, {rows_with_cost} with cost data")
         
         # Ensure all providers are present (even with 0) and round costs
         providers = {
