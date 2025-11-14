@@ -129,3 +129,19 @@ export const candidateAPI = {
   }),
 };
 
+/**
+ * API endpoints for Admin.
+ */
+export const adminAPI = {
+  login: (credentials: { username: string; password: string }) =>
+    api.post('/admin/login', credentials),
+  getMe: () => api.get('/admin/me'),
+  getDashboardStats: () => api.get('/admin/dashboard/detailed-stats'),
+  listCandidates: (limit = 50, offset = 0) =>
+    api.get(`/admin/candidates?limit=${limit}&offset=${offset}`),
+  getCandidateDetails: (candidateId: string) =>
+    api.get(`/admin/candidates/${candidateId}`),
+  downloadCV: (cvId: string) =>
+    api.get(`/admin/cvs/${cvId}/download`),
+};
+
