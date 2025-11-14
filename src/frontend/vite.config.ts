@@ -47,6 +47,9 @@ export default defineConfig({
       },
       workbox: {
         // Workbox configuration for service worker caching strategies
+        // Skip waiting - immediately activate new service worker
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
