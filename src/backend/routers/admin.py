@@ -608,33 +608,105 @@ async def get_ai_usage_logs(
         
         logs = result.data or []
         
-        # Calculate estimated costs (placeholder - can be enhanced with actual pricing)
-        provider_costs = {
-            "gemini": 0.0001,  # Estimated cost per call
-            "openai": 0.0002,
-            "claude": 0.0003,
-            "kimi": 0.0001,
-            "minimax": 0.0001
-        }
+        def calculate_cost_from_tokens(provider: str, model: Optional[str], input_tokens: Optional[int], output_tokens: Optional[int]) -> float:
+            """
+            Calculate cost based on actual token usage.
+            
+            Pricing per 1K tokens (converted to per token):
+            - Gemini: Input $0.075/1M, Output $0.30/1M (gemini-2.0-flash-exp)
+            - OpenAI GPT-4: Input $30/1M, Output $60/1M
+            - OpenAI GPT-3.5: Input $1.50/1M, Output $2/1M
+            - Claude Opus: Input $15/1M, Output $75/1M
+            - Claude Sonnet: Input $3/1M, Output $15/1M
+            - Claude Haiku: Input $0.25/1M, Output $1.25/1M
+            - Kimi: ~$0.005 per request (credit-based, approximate)
+            - Minimax: Input $0.001/1M, Output $0.002/1M
+            """
+            if input_tokens is None or output_tokens is None:
+                # Fallback to estimated cost per call if tokens not available
+                fallback_costs = {
+                    "gemini": 0.0001,
+                    "openai": 0.0002,
+                    "claude": 0.0003,
+                    "kimi": 0.005,
+                    "minimax": 0.0001
+                }
+                return fallback_costs.get(provider, 0.0001)
+            
+            # Convert tokens to cost based on provider and model
+            if provider == "gemini":
+                # Gemini 2.0 Flash pricing
+                input_cost = (input_tokens / 1_000_000) * 0.075
+                output_cost = (output_tokens / 1_000_000) * 0.30
+                return input_cost + output_cost
+            
+            elif provider == "openai":
+                model_name = (model or "").lower()
+                if "gpt-4" in model_name:
+                    # GPT-4 pricing
+                    input_cost = (input_tokens / 1_000_000) * 30.0
+                    output_cost = (output_tokens / 1_000_000) * 60.0
+                else:
+                    # GPT-3.5 pricing
+                    input_cost = (input_tokens / 1_000_000) * 1.5
+                    output_cost = (output_tokens / 1_000_000) * 2.0
+                return input_cost + output_cost
+            
+            elif provider == "claude":
+                model_name = (model or "").lower()
+                if "opus" in model_name:
+                    input_cost = (input_tokens / 1_000_000) * 15.0
+                    output_cost = (output_tokens / 1_000_000) * 75.0
+                elif "sonnet" in model_name:
+                    input_cost = (input_tokens / 1_000_000) * 3.0
+                    output_cost = (output_tokens / 1_000_000) * 15.0
+                else:  # Haiku
+                    input_cost = (input_tokens / 1_000_000) * 0.25
+                    output_cost = (output_tokens / 1_000_000) * 1.25
+                return input_cost + output_cost
+            
+            elif provider == "kimi":
+                # Kimi uses credit-based pricing, approximate $0.005 per request
+                return 0.005
+            
+            elif provider == "minimax":
+                input_cost = (input_tokens / 1_000_000) * 1.0
+                output_cost = (output_tokens / 1_000_000) * 2.0
+                return input_cost + output_cost
+            
+            else:
+                # Unknown provider, use fallback
+                return 0.0001
         
-        # Add estimated cost to each log
+        # Calculate actual costs based on tokens for each log
+        total_cost = 0.0
+        provider_breakdown = {}
+        
         for log in logs:
-            log_provider = log.get("provider", "unknown")
-            estimated_cost = provider_costs.get(log_provider, 0.0001)
-            log["estimated_cost"] = estimated_cost
+            provider = log.get("provider", "unknown")
+            model = log.get("model")  # Note: model might not be stored in analyses table
+            input_tokens = log.get("input_tokens")
+            output_tokens = log.get("output_tokens")
+            
+            # Calculate cost
+            cost = calculate_cost_from_tokens(provider, model, input_tokens, output_tokens)
+            log["estimated_cost"] = cost
+            log["input_tokens"] = input_tokens
+            log["output_tokens"] = output_tokens
+            log["total_tokens"] = (input_tokens or 0) + (output_tokens or 0)
+            
+            total_cost += cost
+            
+            # Update provider breakdown
+            if provider not in provider_breakdown:
+                provider_breakdown[provider] = {"calls": 0, "cost": 0.0, "input_tokens": 0, "output_tokens": 0}
+            provider_breakdown[provider]["calls"] += 1
+            provider_breakdown[provider]["cost"] += cost
+            provider_breakdown[provider]["input_tokens"] += (input_tokens or 0)
+            provider_breakdown[provider]["output_tokens"] += (output_tokens or 0)
         
         # Calculate summary statistics
         total_calls = total
-        total_cost = sum(provider_costs.get(log.get("provider", "unknown"), 0.0001) for log in logs)
-        
-        # Provider breakdown
-        provider_breakdown = {}
-        for log in logs:
-            provider = log.get("provider", "unknown")
-            if provider not in provider_breakdown:
-                provider_breakdown[provider] = {"calls": 0, "cost": 0}
-            provider_breakdown[provider]["calls"] += 1
-            provider_breakdown[provider]["cost"] += provider_costs.get(provider, 0.0001)
         
         return JSONResponse({
             "total": total,
@@ -649,8 +721,17 @@ async def get_ai_usage_logs(
             },
             "summary": {
                 "total_calls": total_calls,
-                "total_cost": round(total_cost, 4),
-                "provider_breakdown": provider_breakdown
+                "total_cost": round(total_cost, 6),
+                "provider_breakdown": {
+                    provider: {
+                        "calls": data["calls"],
+                        "cost": round(data["cost"], 6),
+                        "input_tokens": data["input_tokens"],
+                        "output_tokens": data["output_tokens"],
+                        "total_tokens": data["input_tokens"] + data["output_tokens"]
+                    }
+                    for provider, data in provider_breakdown.items()
+                }
             },
             "logs": logs
         })

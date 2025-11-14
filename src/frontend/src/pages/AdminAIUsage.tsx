@@ -15,12 +15,21 @@ interface AIUsageLog {
   job_posting_id: string;
   global_score?: number;
   estimated_cost: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  total_tokens?: number;
 }
 
 interface UsageSummary {
   total_calls: number;
   total_cost: number;
-  provider_breakdown: Record<string, { calls: number; cost: number }>;
+  provider_breakdown: Record<string, { 
+    calls: number; 
+    cost: number;
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+  }>;
 }
 
 const AdminAIUsage: React.FC = () => {
@@ -196,8 +205,8 @@ const AdminAIUsage: React.FC = () => {
                 <div className="stat-label">Total API Calls</div>
               </div>
               <div className="stat-card">
-                <div className="stat-number">${summary.total_cost.toFixed(4)}</div>
-                <div className="stat-label">Estimated Total Cost</div>
+                <div className="stat-number">${summary.total_cost.toFixed(6)}</div>
+                <div className="stat-label">Total Cost (Token-Based)</div>
               </div>
             </div>
             
@@ -210,7 +219,17 @@ const AdminAIUsage: React.FC = () => {
                       <h3>{provider.toUpperCase()}</h3>
                       <div className="provider-stats">
                         <div>Calls: {data.calls.toLocaleString()}</div>
-                        <div>Cost: ${data.cost.toFixed(4)}</div>
+                        <div>Cost: ${data.cost.toFixed(6)}</div>
+                        {data.total_tokens > 0 && (
+                          <>
+                            <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              Tokens: {data.total_tokens.toLocaleString()}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              In: {data.input_tokens.toLocaleString()} | Out: {data.output_tokens.toLocaleString()}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -345,8 +364,9 @@ const AdminAIUsage: React.FC = () => {
                       <th>Provider</th>
                       <th>Mode</th>
                       <th>Language</th>
+                      <th>Tokens</th>
                       <th>Score</th>
-                      <th>Estimated Cost</th>
+                      <th>Cost</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -358,6 +378,19 @@ const AdminAIUsage: React.FC = () => {
                         <td>{getModeBadge(log.mode)}</td>
                         <td>{log.language.toUpperCase()}</td>
                         <td>
+                          {log.input_tokens !== undefined && log.output_tokens !== undefined ? (
+                            <div style={{ fontSize: '0.875rem' }}>
+                              <div>In: {log.input_tokens.toLocaleString()}</div>
+                              <div>Out: {log.output_tokens.toLocaleString()}</div>
+                              <div style={{ fontWeight: 600, marginTop: '0.25rem' }}>
+                                Total: {(log.total_tokens || (log.input_tokens + log.output_tokens)).toLocaleString()}
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>N/A</span>
+                          )}
+                        </td>
+                        <td>
                           {log.global_score !== undefined && log.global_score !== null ? (
                             <span style={{ fontWeight: 600 }}>
                               {(log.global_score * 100).toFixed(1)}%
@@ -366,7 +399,7 @@ const AdminAIUsage: React.FC = () => {
                             <span style={{ color: 'var(--text-secondary)' }}>N/A</span>
                           )}
                         </td>
-                        <td>${log.estimated_cost.toFixed(4)}</td>
+                        <td>${log.estimated_cost.toFixed(6)}</td>
                         <td>
                           <Link
                             to={`/admin/analyses/${log.id}`}

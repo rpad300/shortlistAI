@@ -116,10 +116,13 @@ export const exportAIUsageToCSV = (logs: any[]) => {
     Provider: log.provider,
     Mode: log.mode,
     Language: log.language,
+    'Input Tokens': log.input_tokens || 0,
+    'Output Tokens': log.output_tokens || 0,
+    'Total Tokens': log.total_tokens || ((log.input_tokens || 0) + (log.output_tokens || 0)),
     Score: log.global_score !== undefined && log.global_score !== null 
       ? (log.global_score * 100).toFixed(1) + '%' 
       : 'N/A',
-    'Estimated Cost': `$${log.estimated_cost?.toFixed(4) || '0.0000'}`,
+    Cost: `$${log.estimated_cost?.toFixed(6) || '0.000000'}`,
     'Candidate ID': log.candidate_id,
     'Job Posting ID': log.job_posting_id,
     'Analysis ID': log.id
