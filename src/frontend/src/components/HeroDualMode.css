@@ -967,6 +967,9 @@
   .hero-dual-stats {
     margin-top: 2rem;
     margin-bottom: 1.5rem;
+    display: flex !important; /* Force display on mobile */
+    width: 100%;
+    max-width: 100%;
   }
 
   .hero-dual-stat-card {
@@ -975,6 +978,9 @@
     border-radius: 16px;
     flex-direction: column;
     text-align: center;
+    display: flex !important; /* Force display on mobile */
+    width: 100%;
+    max-width: 100%;
   }
 
   .hero-dual-stat-icon {
@@ -993,6 +999,7 @@
 
   .hero-dual-stat-label {
     font-size: 1rem;
+    white-space: normal; /* Allow text wrapping on mobile */
   }
 
   .hero-dual-stat-description {
