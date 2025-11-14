@@ -25,8 +25,8 @@ interface DashboardStats {
     average_response_time: number;
     success_rate: number;
   };
-  providers: Record<string, { calls: number; cost: number }>;
-  languages: Record<string, number>;
+  providers?: Record<string, { calls: number; cost: number }>;
+  languages?: Record<string, number>;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -214,6 +214,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* AI Providers */}
+            {stats.providers && (
             <div className="providers-section">
               <h2>AI Provider Usage</h2>
               <div className="providers-grid">
@@ -228,8 +229,10 @@ const AdminDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
+            )}
 
             {/* Language Distribution */}
+            {stats.languages && (
             <div className="languages-section">
               <h2>Language Distribution</h2>
               <div className="languages-grid">
@@ -241,6 +244,7 @@ const AdminDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
+            )}
           </>
         )}
       </div>
