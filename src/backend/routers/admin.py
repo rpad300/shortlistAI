@@ -546,46 +546,65 @@ async def get_ai_usage_logs(
     
     try:
         analysis_service = get_analysis_service()
+        client = analysis_service.client
+        table = analysis_service.table
         
-        # Build query with filters
-        query = analysis_service.client.table(analysis_service.table).select("*")
+        # Build base query for filters (we'll use this for both count and data)
+        def apply_filters(query):
+            """Apply all filters to a query."""
+            if provider:
+                query = query.eq("provider", provider)
+            
+            if mode:
+                query = query.eq("mode", mode)
+            
+            if language:
+                query = query.eq("language", language)
+            
+            if start_date:
+                try:
+                    # Parse date - handle both YYYY-MM-DD and ISO format
+                    from datetime import timedelta
+                    if len(start_date) == 10:  # YYYY-MM-DD format
+                        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                    else:
+                        # ISO format
+                        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                    # Set to start of day
+                    start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+                    query = query.gte("created_at", start_dt.isoformat())
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Invalid start_date format: {start_date}, error: {e}")
+            
+            if end_date:
+                try:
+                    # Parse date - handle both YYYY-MM-DD and ISO format
+                    from datetime import timedelta
+                    if len(end_date) == 10:  # YYYY-MM-DD format
+                        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                    else:
+                        # ISO format
+                        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                    # Add 1 day to include the full end date, set to start of next day
+                    end_dt = end_dt + timedelta(days=1)
+                    end_dt = end_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+                    query = query.lt("created_at", end_dt.isoformat())
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Invalid end_date format: {end_date}, error: {e}")
+            
+            return query
         
-        if provider:
-            query = query.eq("provider", provider)
-        
-        if mode:
-            query = query.eq("mode", mode)
-        
-        if language:
-            query = query.eq("language", language)
-        
-        if start_date:
-            try:
-                # Parse and format date
-                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-                query = query.gte("created_at", start_dt.isoformat())
-            except ValueError:
-                logger.warning(f"Invalid start_date format: {start_date}")
-        
-        if end_date:
-            try:
-                # Parse and format date, add 1 day to include the full end date
-                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-                # Add 1 day to include the full end date
-                from datetime import timedelta
-                end_dt = end_dt + timedelta(days=1)
-                query = query.lt("created_at", end_dt.isoformat())
-            except ValueError:
-                logger.warning(f"Invalid end_date format: {end_date}")
-        
-        # Get total count (before pagination)
-        # We need to count before applying order and range
-        count_result = query.select("id", count="exact").execute()
+        # Get total count with filters
+        count_query = client.table(table).select("id", count="exact")
+        count_query = apply_filters(count_query)
+        count_result = count_query.execute()
         total = count_result.count or 0
         
-        # Get paginated results
-        query = query.order("created_at", desc=True).range(offset, offset + limit - 1)
-        result = query.execute()
+        # Get paginated results with filters
+        data_query = client.table(table).select("*")
+        data_query = apply_filters(data_query)
+        data_query = data_query.order("created_at", desc=True).range(offset, offset + limit - 1)
+        result = data_query.execute()
         
         logs = result.data or []
         
@@ -636,8 +655,14 @@ async def get_ai_usage_logs(
             "logs": logs
         })
     except Exception as e:
-        logger.error(f"Error getting AI usage logs: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving AI usage logs")
+        logger.error(f"Error getting AI usage logs: {e}", exc_info=True)
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Traceback: {error_details}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error retrieving AI usage logs: {str(e)}"
+        )
 
 
 @router.get("/companies")
