@@ -92,16 +92,37 @@ async def get_current_admin(authorization: Optional[str] = Header(None)):
         
         logger.info(f"Verifying token (length: {len(token)}, starts with: {token[:10]}...)")
         
-        # Verify token with Supabase Auth
-        try:
-            user_response = auth_client.auth.get_user(token)
-        except Exception as auth_error:
-            logger.error(f"Supabase get_user error: {str(auth_error)}", exc_info=True)
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid or expired token",
-                headers={"WWW-Authenticate": "Bearer"}
-            )
+        # Verify token with Supabase Auth (with retry for DNS/network errors)
+        max_retries = 3
+        retry_delay = 0.5  # seconds
+        user_response = None
+        
+        for attempt in range(max_retries):
+            try:
+                user_response = auth_client.auth.get_user(token)
+                break  # Success, exit retry loop
+            except Exception as auth_error:
+                error_str = str(auth_error)
+                is_network_error = any(keyword in error_str.lower() for keyword in [
+                    'no address associated with hostname',
+                    'name resolution',
+                    'connection',
+                    'timeout',
+                    'network'
+                ])
+                
+                if is_network_error and attempt < max_retries - 1:
+                    logger.warning(f"Network error on attempt {attempt + 1}/{max_retries}: {error_str}. Retrying...")
+                    import asyncio
+                    await asyncio.sleep(retry_delay * (attempt + 1))  # Exponential backoff
+                    continue
+                else:
+                    logger.error(f"Supabase get_user error: {error_str}", exc_info=True)
+                    raise HTTPException(
+                        status_code=401,
+                        detail="Invalid or expired token",
+                        headers={"WWW-Authenticate": "Bearer"}
+                    )
         
         if not user_response or not user_response.user:
             logger.warning("Token verification failed: No user in response")
