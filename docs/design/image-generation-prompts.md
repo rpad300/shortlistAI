@@ -390,3 +390,4 @@ After generating images:
 **For questions about image generation**: legal@shortlistai.com
 
 
+

@@ -310,3 +310,4 @@ Ctrl + Shift + R
 **Desenvolvido com** ❤️ **e Gemini AI**
 
 
+

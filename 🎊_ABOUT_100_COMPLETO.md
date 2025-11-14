@@ -152,3 +152,4 @@ Ctrl+Shift+R
 **Teste /about em 🇵🇹 → TUDO traduz!** 🎊
 
 
+

@@ -374,3 +374,4 @@ O sistema agora pode enriquecer automaticamente dados sobre empresas e candidato
 **Status**: ✅ COMPLETO E TESTADO  
 
 
+

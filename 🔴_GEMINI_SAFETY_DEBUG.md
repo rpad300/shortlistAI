@@ -169,3 +169,4 @@ Com esta info posso ajustar a estratégia!
 **Status:** Debugging em progresso, aguardando mais info dos logs
 
 
+

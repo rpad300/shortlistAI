@@ -238,3 +238,4 @@ http://localhost:3000/  ← 100% TRADUZIDO!
 **🎉 REINICIE E TESTE A HOME TRADUZIDA!**
 
 
+

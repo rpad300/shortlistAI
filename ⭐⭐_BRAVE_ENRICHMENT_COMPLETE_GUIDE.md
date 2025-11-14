@@ -602,3 +602,4 @@ ORDER BY enriched_at DESC;
 **Ficheiros**: 7 criados/modificados + 3 frontend ready
 
 
+

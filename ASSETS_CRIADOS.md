@@ -277,3 +277,4 @@ Use qualquer editor vetorial:
 **Tool**: Gemini Nano Banana + Manual SVG Design
 
 
+

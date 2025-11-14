@@ -171,3 +171,4 @@ E eu adiciono:
 2. Ou traduzir tudo 100% (mais 2-3h)?
 
 
+

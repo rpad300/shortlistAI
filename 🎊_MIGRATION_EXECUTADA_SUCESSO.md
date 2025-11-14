@@ -230,3 +230,4 @@ Adicionar `BRAVE_SEARCH_API_KEY` ao `.env` e testar! 🚀
 **TUDO PRONTO! 🎊**
 
 
+

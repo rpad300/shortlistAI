@@ -203,3 +203,4 @@ Ctrl+Shift+R no navegador
 **ShortlistAI - Ready to Launch!** 🚀
 
 
+

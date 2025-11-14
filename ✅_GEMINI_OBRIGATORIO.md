@@ -116,3 +116,4 @@ SUPABASE_SECRET_KEY=...
 **Documentação:** Ver `docs/PROGRESS.md` para histórico completo
 
 
+
