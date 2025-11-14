@@ -318,9 +318,43 @@ O **Admin Backoffice está 100% funcional** usando Supabase Auth nativo:
 
 ---
 
-**Última Atualização**: 12 Novembro 2025, 16:35  
+**Última Atualização**: 12 Novembro 2025, 18:00  
 **Por**: Admin Backoffice Implementation Team  
 **Próxima Revisão**: Após testes de integração
+
+---
+
+## 🆕 **NOVO: AI Usage Logs (12 Nov 2025, 18:00)**
+
+### Funcionalidade Completa Implementada ✅
+- **Endpoint Backend**: `/admin/ai-usage` com filtros avançados
+- **Página Frontend**: `AdminAIUsage.tsx` completa e funcional
+- **Filtros**: Provider, Mode, Language, Date Range
+- **Estatísticas**: Total calls, estimated cost, provider breakdown
+- **Export CSV**: Export completo de logs de uso
+- **Paginação**: 100 logs por página
+- **Integração**: Links para detalhes de análises
+
+### Features Implementadas
+- ✅ Filtros por provider (Gemini, OpenAI, Claude, Kimi, Minimax)
+- ✅ Filtros por mode (Interviewer, Candidate)
+- ✅ Filtros por language (EN, PT, FR, ES)
+- ✅ Filtros por date range (start/end date)
+- ✅ Summary statistics com breakdown por provider
+- ✅ Estimated costs calculados por provider
+- ✅ Export to CSV com todos os dados
+- ✅ Paginação completa (100 por página)
+- ✅ Links para análise detalhada
+- ✅ Light/Dark mode support
+- ✅ Responsive design
+
+### Arquivos Criados/Modificados
+- `src/backend/routers/admin.py` - Endpoint `/admin/ai-usage`
+- `src/frontend/src/pages/AdminAIUsage.tsx` - Página completa
+- `src/frontend/src/utils/exportCSV.ts` - Função `exportAIUsageToCSV`
+- `src/frontend/src/App.tsx` - Rota atualizada
+
+**Status**: ✅ 100% COMPLETO E FUNCIONAL
 
 ---
 
