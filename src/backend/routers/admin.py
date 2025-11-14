@@ -126,13 +126,26 @@ async def admin_login(credentials: AdminLogin, request: Request):
     from database import get_supabase_client
     
     try:
-        client = get_supabase_client()
+        # Create a separate client for auth operations to avoid affecting the global client
+        from database import get_supabase_client
+        from supabase import create_client
+        import os
+        
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = (
+            os.getenv("SUPABASE_SECRET_KEY") or 
+            os.getenv("SUPABESE_SECRETE_KEY") or
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        )
+        
+        # Use a separate client for auth to avoid affecting the global client used for queries
+        auth_client = create_client(supabase_url, supabase_key)
         client_ip = request.client.host if request.client else "unknown"
         
         logger.info(f"Admin login attempt - {credentials.email} - IP: {client_ip}")
         
-        # Authenticate with Supabase Auth
-        auth_response = client.auth.sign_in_with_password({
+        # Authenticate with Supabase Auth using separate client
+        auth_response = auth_client.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
         })
