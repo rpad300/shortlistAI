@@ -44,20 +44,13 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
       
       await Promise.all(unregisterPromises);
       
-      // If there's still a controller, try to unregister it
+      // If there's still a controller, try to post skip waiting message
       if (navigator.serviceWorker.controller) {
         try {
           // Post message to skip waiting
           navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-          
-          // Try to unregister by scope
-          const controllerScope = navigator.serviceWorker.controller.scriptURL;
-          const unregisterResult = await navigator.serviceWorker.unregister(controllerScope);
-          if (unregisterResult) {
-            console.log('[Dev] Unregistered controller service worker');
-          }
         } catch (error) {
-          console.warn('[Dev] Could not unregister controller:', error);
+          console.warn('[Dev] Could not post message to controller:', error);
         }
       }
       

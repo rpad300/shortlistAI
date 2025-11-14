@@ -9,6 +9,8 @@ import StepLayout from '@components/StepLayout';
 import Textarea from '@components/Textarea';
 import FileUpload from '@components/FileUpload';
 import Button from '@components/Button';
+import StepHelper from '@components/StepHelper';
+import AILoadingOverlay from '@components/AILoadingOverlay';
 import { candidateAPI } from '@services/api';
 import './InterviewerStep1.css';
 
@@ -22,7 +24,7 @@ const CandidateStep2: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [processingStatus, setProcessingStatus] = useState('');
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Cleanup on unmount
   useEffect(() => {
