@@ -8,7 +8,7 @@ Admin users are managed in Supabase Auth with role in user_metadata.
 from fastapi import APIRouter, HTTPException, Depends, Header, Request, Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, Dict, Any
 import logging
 
 logger = logging.getLogger(__name__)
