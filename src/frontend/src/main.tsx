@@ -18,15 +18,27 @@ import './index.css';
 
 // In development, unregister any existing service workers to avoid conflicts
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+  // Force unregister all service workers immediately
   navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const registration of registrations) {
+    registrations.forEach((registration) => {
       registration.unregister().then((success) => {
         if (success) {
-          console.log('[Dev] Unregistered old service worker:', registration.scope);
+          console.log('[Dev] Unregistered service worker:', registration.scope);
+        } else {
+          console.warn('[Dev] Failed to unregister service worker:', registration.scope);
         }
+      }).catch((error) => {
+        console.error('[Dev] Error unregistering service worker:', error);
       });
-    }
+    });
+  }).catch((error) => {
+    console.error('[Dev] Error getting service worker registrations:', error);
   });
+  
+  // Also try to unregister by scope
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+  }
 }
 
 // Note: Service worker is automatically registered by VitePWA plugin in production only
