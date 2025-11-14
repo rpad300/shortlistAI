@@ -2,7 +2,7 @@
  * Interviewer Flow - Step 4: Weighting and Hard Blockers
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import StepLayout from '@components/StepLayout';
@@ -83,6 +83,17 @@ const InterviewerStep4: React.FC = () => {
   const [userAdjusted, setUserAdjusted] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [processingStatus, setProcessingStatus] = useState('');
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
   
   const totalWeight = useMemo(
     () => Object.values(weights).reduce((sum, w) => sum + w, 0),
@@ -135,9 +146,14 @@ const InterviewerStep4: React.FC = () => {
 
       try {
         setLoadingSuggestions(true);
+        setProcessingStatus('Requesting AI suggestions...');
+        
+        // Start processing (may return immediately if already cached)
         const { data } = await interviewerAPI.step4Suggestions(sessionId);
-        setSuggestions(data);
-        if (data?.has_suggestions) {
+        
+        // If suggestions are already available, use them
+        if (data?.has_suggestions && data.status === 'success') {
+          setSuggestions(data);
           setHasSuggestions(true);
           if (data.weights) {
             setSuggestedWeights(normalizeWeights(data.weights));
@@ -148,24 +164,102 @@ const InterviewerStep4: React.FC = () => {
           } else {
             setSummary(data.summary || '');
           }
+          setLoadingSuggestions(false);
+          return;
+        }
+        
+        // If processing, start polling
+        if (data?.status === 'processing') {
+          setProcessingStatus('AI is generating suggestions...');
+          
+          // Start polling for progress
+          pollIntervalRef.current = setInterval(async () => {
+            try {
+              const progressResponse = await interviewerAPI.step4SuggestionsProgress(sessionId);
+              const progressData = progressResponse.data;
+              
+              const progressInfo = progressData.progress || {};
+              const statusText = progressInfo.status || 'Processing...';
+              
+              setProcessingStatus(statusText);
+              
+              // Check if complete
+              if (progressData.complete && progressData.suggestions) {
+                if (pollIntervalRef.current) {
+                  clearInterval(pollIntervalRef.current);
+                  pollIntervalRef.current = null;
+                }
+                
+                const suggestionsData = progressData.suggestions;
+                setSuggestions(suggestionsData);
+                setHasSuggestions(true);
+                if (suggestionsData.weights) {
+                  setSuggestedWeights(normalizeWeights(suggestionsData.weights));
+                }
+                if (!initialSuggestionsApplied) {
+                  applySuggestions(suggestionsData);
+                  setInitialSuggestionsApplied(true);
+                } else {
+                  setSummary(suggestionsData.summary || '');
+                }
+                setLoadingSuggestions(false);
+                return;
+              }
+              
+              // Check if error
+              if (progressData.status === 'error') {
+                if (pollIntervalRef.current) {
+                  clearInterval(pollIntervalRef.current);
+                  pollIntervalRef.current = null;
+                }
+                setLoadingSuggestions(false);
+                setHasSuggestions(false);
+                setError(progressInfo.status || 'Failed to generate suggestions.');
+                return;
+              }
+            } catch (pollError: any) {
+              // Don't show error for polling timeouts, just continue
+              if (pollError.code !== 'ECONNABORTED' && !pollError.message?.includes('timeout')) {
+                console.error('Error polling suggestions progress:', pollError);
+                
+                // If session expired, stop polling
+                if (pollError.response?.status === 404) {
+                  if (pollIntervalRef.current) {
+                    clearInterval(pollIntervalRef.current);
+                    pollIntervalRef.current = null;
+                  }
+                  setLoadingSuggestions(false);
+                  setError('Session expired. Please restart from step 1.');
+                }
+              }
+            }
+          }, 2000); // Poll every 2 seconds
+          
+          // Cleanup after 5 minutes max
+          setTimeout(() => {
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            if (loadingSuggestions) {
+              setLoadingSuggestions(false);
+              setError('Processing took too long. Please try again.');
+            }
+          }, 300000); // 5 minutes max
         } else {
           setHasSuggestions(false);
-          setSummary('');
+          setLoadingSuggestions(false);
         }
       } catch (err: any) {
         console.error('Could not load AI weighting suggestions', err);
-        // If session not found (404), redirect to step 1
         if (err.response?.status === 404 && err.response?.data?.detail === 'Session not found') {
-          console.warn('Session expired or not found. Redirecting to step 1.');
+          console.warn('Session expired or not found.');
           sessionStorage.removeItem('interviewer_session_id');
           sessionStorage.removeItem('interviewer_id');
           sessionStorage.removeItem('interviewer_report_code');
-          // Don't redirect automatically - let user continue manually
-          // navigate('/interviewer/step1');
         }
         setHasSuggestions(false);
         setSummary('');
-      } finally {
         setLoadingSuggestions(false);
       }
     };
@@ -253,7 +347,7 @@ const InterviewerStep4: React.FC = () => {
         
         <AILoadingOverlay 
           isVisible={loadingSuggestions}
-          message="AI is analyzing your job posting to suggest optimal weights and requirements"
+          message={processingStatus || "AI is analyzing your job posting to suggest optimal weights and requirements"}
           estimatedSeconds={20}
         />
         

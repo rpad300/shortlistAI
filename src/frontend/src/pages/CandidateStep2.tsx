@@ -2,7 +2,7 @@
  * Candidate Flow - Step 2: Job Posting Input
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import StepLayout from '@components/StepLayout';
@@ -21,6 +21,17 @@ const CandidateStep2: React.FC = () => {
   const [useFile, setUseFile] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [processingStatus, setProcessingStatus] = useState('');
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,41 +49,103 @@ const CandidateStep2: React.FC = () => {
     
     setLoading(true);
     setError('');
+    setProcessingStatus('Starting processing...');
     
     try {
+      let formData: FormData;
+      
       // Se usar file upload
       if (useFile && files.length > 0) {
-        const formData = new FormData();
+        formData = new FormData();
         formData.append('session_id', sessionId);
         formData.append('language', i18n.language);
         formData.append('file', files[0]);
-        
-        await candidateAPI.step2(formData);
-        navigate('/candidate/step3');
-        return;
-      }
-      
-      // Se usar texto
-      if (!useFile && jobText.trim()) {
-        const formData = new FormData();
+      } else if (!useFile && jobText.trim()) {
+        // Se usar texto
+        formData = new FormData();
         formData.append('session_id', sessionId);
         formData.append('language', i18n.language);
         formData.append('raw_text', jobText);
-        
-        await candidateAPI.step2(formData);
-        navigate('/candidate/step3');
+      } else {
+        setError('Por favor, forneça o job posting como texto ou upload de ficheiro.');
+        setLoading(false);
         return;
       }
       
-      // Se nenhum dos dois
-      setError('Por favor, forneça o job posting como texto ou upload de ficheiro.');
-      setLoading(false);
-      return;
+      // Start processing (returns immediately)
+      const response = await candidateAPI.step2(formData);
+      
+      if (response.data.status === 'already_running') {
+        setProcessingStatus('Processing already in progress...');
+      } else {
+        setProcessingStatus('Processing started...');
+      }
+      
+      // Start polling for progress
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const progressResponse = await candidateAPI.step2Progress(sessionId);
+          const progressData = progressResponse.data;
+          
+          const progressInfo = progressData.progress || {};
+          const statusText = progressInfo.status || 'Processing...';
+          
+          setProcessingStatus(statusText);
+          
+          // Check if complete
+          if (progressData.complete) {
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            setLoading(false);
+            navigate('/candidate/step3');
+            return;
+          }
+          
+          // Check if error
+          if (progressData.status === 'error') {
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            setLoading(false);
+            setError(progressInfo.status || 'An error occurred during processing.');
+            return;
+          }
+        } catch (pollError: any) {
+          // Don't show error for polling timeouts, just continue
+          if (pollError.code !== 'ECONNABORTED' && !pollError.message?.includes('timeout')) {
+            console.error('Error polling progress:', pollError);
+            
+            // If session expired, stop polling
+            if (pollError.response?.status === 404) {
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+              setLoading(false);
+              setError('Session expired. Please restart from step 1.');
+            }
+          }
+        }
+      }, 2000); // Poll every 2 seconds
+      
+      // Cleanup after 5 minutes max
+      setTimeout(() => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        if (loading) {
+          setLoading(false);
+          setError('Processing took too long. Please try again.');
+        }
+      }, 300000); // 5 minutes max
       
     } catch (error: any) {
       console.error('Error in step 2:', error);
       setError(error.response?.data?.detail || 'An error occurred.');
-    } finally {
       setLoading(false);
     }
   };
@@ -83,6 +156,31 @@ const CandidateStep2: React.FC = () => {
         <div className="step-content">
         <h1>{t('candidate.step2_title')}</h1>
         <p className="step-subtitle">Provide the job posting you're applying for</p>
+        
+        <StepHelper
+          title="📝 What to do in this step?"
+          type="info"
+          defaultOpen={true}
+          content={
+            <div>
+              <p><strong>Goal:</strong> Provide the complete job description so our AI can understand the requirements.</p>
+              <p style={{ marginTop: '12px' }}><strong>You can:</strong></p>
+              <ul style={{ marginLeft: '20px', marginTop: '8px' }}>
+                <li>✍️ Paste the full job description text (recommended for best results)</li>
+                <li>📄 Upload a job posting file (PDF, DOCX)</li>
+              </ul>
+              <p style={{ marginTop: '12px' }}><strong>💡 What happens next:</strong></p>
+              <p>Our AI will analyze your job posting and automatically extract key requirements, skills, and qualifications.</p>
+              <p style={{ marginTop: '12px' }}><strong>⏱️ Processing time:</strong> ~5-15 seconds</p>
+            </div>
+          }
+        />
+        
+        <AILoadingOverlay 
+          isVisible={loading}
+          message={processingStatus || "AI is analyzing your job posting"}
+          estimatedSeconds={15}
+        />
         
         <form onSubmit={handleSubmit} className="step-form">
           <div className="form-section">

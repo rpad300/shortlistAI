@@ -4,7 +4,7 @@
  * Triggers AI analysis and shows loading state.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import StepLayout from '@components/StepLayout';
@@ -15,6 +15,16 @@ const CandidateStep4: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [status, setStatus] = useState('Starting analysis...');
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
   
   useEffect(() => {
     const runAnalysis = async () => {
@@ -25,15 +35,80 @@ const CandidateStep4: React.FC = () => {
       }
       
       try {
-        setStatus('Analyzing your CV against the job posting...');
-        await candidateAPI.step4(sessionId);
+        setStatus('Starting analysis...');
         
-        setStatus('Analysis complete! Preparing your results...');
+        // Start analysis (returns immediately)
+        const response = await candidateAPI.step4(sessionId);
         
-        // Navigate to results after a short delay
+        if (response.data.status === 'already_running') {
+          setStatus('Analysis already in progress...');
+        } else {
+          setStatus('Analysis started! Processing...');
+        }
+        
+        // Start polling for progress
+        pollIntervalRef.current = setInterval(async () => {
+          try {
+            const progressResponse = await candidateAPI.step4Progress(sessionId);
+            const progressData = progressResponse.data;
+            
+            const progressInfo = progressData.progress || {};
+            const statusText = progressInfo.status || 'Processing...';
+            
+            setStatus(statusText);
+            
+            // Check if complete
+            if (progressData.complete) {
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+              
+              setStatus('Analysis complete! Preparing your results...');
+              
+              // Navigate to results after a short delay
+              setTimeout(() => {
+                navigate('/candidate/step5');
+              }, 1500);
+              return;
+            }
+            
+            // Check if error
+            if (progressData.status === 'error') {
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+              setStatus('Error: ' + (progressInfo.status || 'Analysis failed'));
+              return;
+            }
+          } catch (pollError: any) {
+            // Don't show error for polling timeouts, just continue
+            if (pollError.code !== 'ECONNABORTED' && !pollError.message?.includes('timeout')) {
+              console.error('Error polling analysis progress:', pollError);
+              
+              // If session expired, stop polling
+              if (pollError.response?.status === 404) {
+                if (pollIntervalRef.current) {
+                  clearInterval(pollIntervalRef.current);
+                  pollIntervalRef.current = null;
+                }
+                setStatus('Error: Session expired. Please restart from step 1.');
+              }
+            }
+          }
+        }, 2000); // Poll every 2 seconds
+        
+        // Cleanup after 5 minutes max
         setTimeout(() => {
-          navigate('/candidate/step5');
-        }, 1500);
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          if (status.includes('Processing') || status.includes('Analyzing')) {
+            setStatus('Error: Analysis took too long. Please try again.');
+          }
+        }, 300000); // 5 minutes max
         
       } catch (error: any) {
         console.error('Error in analysis:', error);

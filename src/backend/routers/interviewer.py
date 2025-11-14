@@ -694,16 +694,107 @@ async def step3_key_points(data: KeyPointsInput):
         )
 
 
+async def _run_weighting_suggestions_background(
+    session_id: UUID,
+    job_posting_text: str,
+    structured_job_posting: Optional[Dict[str, Any]],
+    key_points: str,
+    language: str,
+    company_name: Optional[str],
+    session_service,
+    ai_service
+):
+    """
+    Background task to generate AI weighting suggestions.
+    Updates progress in session as it goes.
+    """
+    try:
+        # Update progress: starting AI processing
+        session_service.update_session(
+            session_id,
+            {
+                "step4_suggestions_status": "running",
+                "step4_suggestions_progress": {
+                    "status": "AI is analyzing job posting and generating weighting recommendations...",
+                    "step": "ai_processing"
+                }
+            }
+        )
+        
+        logger.info(f"Requesting AI weighting suggestions for session {session_id}")
+        suggestions = await ai_service.recommend_weighting_and_blockers(
+            job_posting_text,
+            structured_job_posting,
+            key_points,
+            language,
+            company_name=company_name
+        )
+        
+        if not suggestions:
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_suggestions_status": "error",
+                    "step4_suggestions_progress": {
+                        "status": "AI failed to generate suggestions",
+                        "step": "error"
+                    }
+                }
+            )
+            return
+        
+        normalized = {
+            "weights": suggestions.get("weights", {}),
+            "hard_blockers": suggestions.get("hard_blockers", []),
+            "nice_to_have": suggestions.get("nice_to_have", []),
+            "summary": suggestions.get("summary", "")
+        }
+        
+        session_service.update_session(
+            session_id,
+            {
+                "weighting_suggestions": normalized,
+                "step4_suggestions_status": "complete",
+                "step4_suggestions_progress": {
+                    "status": "Complete! Suggestions ready.",
+                    "step": "complete"
+                }
+            }
+        )
+        
+        logger.info(f"AI weighting suggestions generated successfully for session {session_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in background weighting suggestions: {e}", exc_info=True)
+        try:
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_suggestions_status": "error",
+                    "step4_suggestions_progress": {
+                        "status": f"Error: {str(e)}",
+                        "step": "error"
+                    }
+                }
+            )
+        except:
+            pass
+
+
 @router.get("/step4/suggestions/{session_id}")
 async def get_weighting_suggestions(session_id: UUID):
     """
     Get AI recommendations for category weights, hard blockers, and nice-to-have items.
+    
+    If suggestions are not cached, triggers async processing and returns status.
+    Use GET /step4/suggestions/progress/{session_id} to check progress.
     """
     from services.database import (
         get_session_service,
         get_job_posting_service
     )
     from services.ai_analysis import get_ai_analysis_service
+    import asyncio
     
     try:
         session_service = get_session_service()
@@ -724,6 +815,14 @@ async def get_weighting_suggestions(session_id: UUID):
                 "hard_blockers": cached.get("hard_blockers", []),
                 "nice_to_have": cached.get("nice_to_have", []),
                 "summary": cached.get("summary", "")
+            })
+        
+        # Check if processing is already running
+        if session["data"].get("step4_suggestions_status") == "running":
+            return JSONResponse({
+                "status": "processing",
+                "has_suggestions": False,
+                "message": "AI suggestions are being generated. Check progress endpoint."
             })
         
         job_posting_id = session["data"].get("job_posting_id")
@@ -756,60 +855,22 @@ async def get_weighting_suggestions(session_id: UUID):
         if structured_job_posting and isinstance(structured_job_posting, dict):
             company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
         
-        suggestions = None
-        try:
-            logger.info(f"Requesting AI weighting suggestions for session {session_id}")
-            suggestions = await asyncio.wait_for(
-                ai_service.recommend_weighting_and_blockers(
-                    job_posting_text,
-                    structured_job_posting,
-                    key_points,
-                    session["data"].get("language", "en"),
-                    company_name=company_name
-                ),
-                timeout=60  # Increased timeout for large context
-            )
-            logger.info(f"AI weighting suggestions received: {bool(suggestions)}")
-        except asyncio.TimeoutError:
-            logger.error("AI weighting recommendation timed out for session %s", session_id)
-            raise HTTPException(
-                status_code=504,
-                detail="AI request timed out. Please try again or check AI provider status."
-            )
-        except Exception as ai_exc:
-            logger.error(
-                "AI weighting recommendation failed for session %s: %s",
-                session_id,
-                ai_exc,
-                exc_info=True  # Add full traceback
-            )
-            raise HTTPException(
-                status_code=500,
-                detail=f"AI weighting recommendation failed: {str(ai_exc)}"
-            )
-        
-        if not suggestions:
-            raise HTTPException(
-                status_code=500,
-                detail="AI failed to generate weighting suggestions. Cannot proceed without AI."
-            )
-        
-        normalized = {
-            "weights": suggestions.get("weights", {}),
-            "hard_blockers": suggestions.get("hard_blockers", []),
-            "nice_to_have": suggestions.get("nice_to_have", []),
-            "summary": suggestions.get("summary", "")
-        }
-        
-        session_service.update_session(
+        # Start background processing
+        asyncio.create_task(_run_weighting_suggestions_background(
             session_id,
-            {"weighting_suggestions": normalized}
-        )
+            job_posting_text,
+            structured_job_posting,
+            key_points,
+            session["data"].get("language", "en"),
+            company_name,
+            session_service,
+            ai_service
+        ))
         
         return JSONResponse({
-            "status": "success",
-            "has_suggestions": True,
-            **normalized
+            "status": "processing",
+            "has_suggestions": False,
+            "message": "AI suggestions are being generated. Check progress endpoint."
         })
     
     except HTTPException:
@@ -819,6 +880,47 @@ async def get_weighting_suggestions(session_id: UUID):
         raise HTTPException(
             status_code=500,
             detail="Internal server error generating weighting suggestions"
+        )
+
+
+@router.get("/step4/suggestions/progress/{session_id}")
+async def step4_suggestions_progress(session_id: UUID):
+    """
+    Get weighting suggestions generation progress for a session.
+    
+    Returns current progress, status, and completion state.
+    """
+    from services.database import get_session_service
+    
+    try:
+        session_service = get_session_service()
+        session = session_service.get_session(session_id)
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Safely access session data with defaults
+        session_data = session.get("data", {})
+        progress = session_data.get("step4_suggestions_progress", {})
+        status = session_data.get("step4_suggestions_status", "not_started")
+        is_complete = status == "complete"
+        has_suggestions = bool(session_data.get("weighting_suggestions"))
+        
+        return JSONResponse({
+            "status": status,
+            "complete": is_complete,
+            "progress": progress,
+            "has_suggestions": has_suggestions,
+            "suggestions": session_data.get("weighting_suggestions") if has_suggestions else None
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting step4 suggestions progress for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error getting progress"
         )
 
 

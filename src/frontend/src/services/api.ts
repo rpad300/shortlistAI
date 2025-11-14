@@ -94,8 +94,13 @@ export const interviewerAPI = {
     timeout: 30000 // No AI, just stores data
   }),
   step4Suggestions: (sessionId: string) => api.get(`/interviewer/step4/suggestions/${sessionId}`, {
-    timeout: 90000 // 90s: backend AI timeout=60s, +50% margin for network/processing
+    timeout: 30000 // 30s: just to start processing, actual processing is async
   }),
+  step4SuggestionsProgress: (sessionId: string) => {
+    return api.get(`/interviewer/step4/suggestions/progress/${sessionId}`, {
+      timeout: 10000 // Polling endpoint - allow time for network delays
+    });
+  },
   step4: (data: any) => api.post('/interviewer/step4', data, {
     timeout: 30000 // No AI, just stores data
   }),
@@ -148,15 +153,25 @@ export const candidateAPI = {
   }),
   step2: (data: FormData) => api.post('/candidate/step2', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 150000 // 150s: file upload + AI normalization (backend can take 60-90s, +50% margin)
+    timeout: 30000 // 30s: just to start processing, actual processing is async
   }),
+  step2Progress: (sessionId: string) => {
+    return api.get(`/candidate/step2/progress/${sessionId}`, {
+      timeout: 10000 // Polling endpoint - allow time for network delays
+    });
+  },
   step3: (data: FormData) => api.post('/candidate/step3', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 60000 // 60s: file upload only, no AI processing
   }),
   step4: (sessionId: string) => api.post(`/candidate/step4?session_id=${sessionId}`, null, {
-    timeout: 120000 // 120s: backend AI timeout=90s, +33% margin for network/processing
+    timeout: 30000 // 30s: just to start processing, actual processing is async
   }),
+  step4Progress: (sessionId: string) => {
+    return api.get(`/candidate/step4/progress/${sessionId}`, {
+      timeout: 10000 // Polling endpoint - allow time for network delays
+    });
+  },
   step5: (sessionId: string) => api.get(`/candidate/step5/${sessionId}`, {
     timeout: 30000 // Just retrieves analysis results
   }),

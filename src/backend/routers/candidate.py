@@ -151,6 +151,149 @@ async def step1_identification(data: CandidateIdentification):
         )
 
 
+async def _run_candidate_job_posting_processing_background(
+    session_id: UUID,
+    final_text: str,
+    file_url: Optional[str],
+    language: str,
+    session_service,
+    job_posting_service,
+    ai_service
+):
+    """
+    Background task to process candidate job posting: create record and run AI normalization.
+    Updates progress in session as it goes.
+    """
+    try:
+        # Get session data
+        session = session_service.get_session(session_id)
+        if not session:
+            logger.error(f"Session {session_id} not found in background task")
+            return
+        
+        session_data = session.get("data", {})
+        candidate_id = session_data.get("candidate_id")
+        
+        # Initialize progress
+        session_service.update_session(
+            session_id,
+            {
+                "step2_status": "running",
+                "step2_progress": {
+                    "status": "Creating job posting record...",
+                    "step": "creating"
+                }
+            }
+        )
+        
+        # Create job posting record
+        try:
+            logger.info(
+                f"Creating job posting for candidate session {session_id}: "
+                f"text_length={len(final_text)}, "
+                f"candidate_id={candidate_id}, "
+                f"language={language}"
+            )
+            
+            job_posting = await job_posting_service.create(
+                raw_text=final_text,
+                candidate_id=UUID(candidate_id) if isinstance(candidate_id, str) else candidate_id,
+                file_url=file_url,
+                language=language
+            )
+            
+            if not job_posting:
+                logger.error(f"job_posting_service.create() returned None for candidate session: {session_id}")
+                session_service.update_session(
+                    session_id,
+                    {
+                        "step2_status": "error",
+                        "step2_progress": {
+                            "status": "Failed to create job posting record",
+                            "step": "error"
+                        }
+                    }
+                )
+                return
+        except Exception as e:
+            logger.error(f"Error creating job posting: {e}", exc_info=True)
+            session_service.update_session(
+                session_id,
+                {
+                    "step2_status": "error",
+                    "step2_progress": {
+                        "status": f"Error: {str(e)}",
+                        "step": "error"
+                    }
+                }
+            )
+            return
+        
+        # Update progress: AI normalization
+        session_service.update_session(
+            session_id,
+            {
+                "step2_progress": {
+                    "status": "AI is analyzing job posting and extracting structured data...",
+                    "step": "ai_processing"
+                }
+            }
+        )
+        
+        # Extract structured data from job posting with AI
+        structured_job_posting = None
+        try:
+            logger.info("Using AI to extract structured data from job posting")
+            structured_job_posting = await ai_service.normalize_job_posting(final_text, language)
+            
+            if structured_job_posting:
+                # Update structured data if extracted
+                try:
+                    await job_posting_service.update_structured_data(
+                        UUID(job_posting["id"]),
+                        structured_job_posting
+                    )
+                except Exception as update_err:
+                    logger.warning(f"Failed to update structured data: {update_err}")
+        except Exception as norm_err:
+            logger.warning(f"Job posting normalization failed: {norm_err}")
+            # Continue without structured data - not critical
+        
+        # Update session with job posting ID and structured data
+        session_service.update_session(
+            session_id,
+            {
+                "job_posting_id": job_posting["id"],
+                "job_posting_text": final_text[:500],
+                "structured_job_posting": structured_job_posting,
+                "step2_status": "complete",
+                "step2_progress": {
+                    "status": "Complete! Ready for step 3.",
+                    "step": "complete"
+                }
+            },
+            step=2
+        )
+        
+        logger.info(f"Job posting processing complete: {job_posting['id']} for candidate session: {session_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in background candidate job posting processing: {e}", exc_info=True)
+        try:
+            session_service.update_session(
+                session_id,
+                {
+                    "step2_status": "error",
+                    "step2_progress": {
+                        "status": f"Error: {str(e)}",
+                        "step": "error"
+                    }
+                }
+            )
+        except:
+            pass
+
+
 @router.post("/step2")
 async def step2_job_posting(
     session_id: str = Form(...),
@@ -159,18 +302,21 @@ async def step2_job_posting(
     file: Optional[UploadFile] = File(None)
 ):
     """
-    Step 2: Job posting input.
+    Step 2: Job posting input (async processing).
     
     Accepts the job posting the candidate is applying for.
-    Can be provided as text or file upload.
+    Returns immediately and processes in background.
+    Use GET /step2/progress/{session_id} to check progress.
     """
     from services.database import (
         get_session_service,
         get_job_posting_service
     )
     from services.storage import get_storage_service
+    from services.ai_analysis import get_ai_analysis_service
     from utils import FileProcessor
     from uuid import UUID
+    import asyncio
     
     if not raw_text and not file:
         raise HTTPException(
@@ -183,11 +329,31 @@ async def step2_job_posting(
         session_service = get_session_service()
         job_posting_service = get_job_posting_service()
         storage_service = get_storage_service()
+        ai_service = get_ai_analysis_service()
         
         # Validate session
         session = session_service.get_session(UUID(session_id))
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Check if processing is already running
+        if session["data"].get("step2_status") == "running":
+            return JSONResponse({
+                "status": "already_running",
+                "message": "Job posting processing is already in progress"
+            })
+        
+        # Validate required data from session
+        candidate_id = session["data"].get("candidate_id")
+        if not candidate_id:
+            logger.error(
+                f"Session {session_id} missing candidate_id. "
+                f"Session data keys: {list(session.get('data', {}).keys())}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Session missing candidate_id. Please complete step 1 first."
+            )
         
         final_text = raw_text or ""
         file_url = None
@@ -232,38 +398,6 @@ async def step2_job_posting(
                 final_text = extracted_text
                 logger.info(f"Extracted {len(extracted_text)} chars from {file.filename}")
         
-        # Extract structured data from job posting with AI (same as interviewer)
-        structured_job_posting = None
-        try:
-            from services.ai_analysis import get_ai_analysis_service
-            ai_service = get_ai_analysis_service()
-            
-            logger.info("Using AI to extract structured data from job posting")
-            # First normalization without company_name (chicken-egg problem)
-            structured_job_posting = await ai_service.normalize_job_posting(final_text, language)
-            
-            # Extract company name from normalized result for future use
-            company_name = None
-            if structured_job_posting and isinstance(structured_job_posting, dict):
-                company_name = structured_job_posting.get("company") or structured_job_posting.get("organization")
-                logger.info(f"Extracted company: {company_name or 'N/A'}")
-        except Exception as norm_err:
-            logger.warning(f"Job posting normalization failed: {norm_err}")
-            # Continue without structured data - not critical
-        
-        # Create job posting record
-        # Validate required data from session
-        candidate_id = session["data"].get("candidate_id")
-        if not candidate_id:
-            logger.error(
-                f"Session {session_id} missing candidate_id. "
-                f"Session data keys: {list(session.get('data', {}).keys())}"
-            )
-            raise HTTPException(
-                status_code=400,
-                detail="Session missing candidate_id. Please complete step 1 first."
-            )
-        
         # Validate job posting text
         if not final_text or not final_text.strip():
             logger.error(f"Empty job posting text for session {session_id}")
@@ -272,90 +406,69 @@ async def step2_job_posting(
                 detail="Job posting text cannot be empty"
             )
         
-        # Create job posting record
-        try:
-            logger.info(
-                f"Creating job posting for candidate session {session_id}: "
-                f"text_length={len(final_text)}, "
-                f"candidate_id={candidate_id}, "
-                f"language={language}"
-            )
-            
-            job_posting = await job_posting_service.create(
-                raw_text=final_text,
-                candidate_id=UUID(candidate_id) if isinstance(candidate_id, str) else candidate_id,
-                file_url=file_url,
-                language=language
-            )
-            
-            if not job_posting:
-                logger.error(
-                    f"job_posting_service.create() returned None for candidate session: {session_id}. "
-                    f"candidate_id={candidate_id}"
-                )
-                raise HTTPException(
-                    status_code=500,
-                    detail="Failed to create job posting record. Please try again."
-                )
-        except ValueError as ve:
-            # Validation error from service
-            logger.error(
-                f"Validation error creating job posting for candidate session {session_id}: {ve}",
-                exc_info=True
-            )
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid job posting data: {str(ve)}"
-            )
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(
-                f"Exception in job_posting_service.create() for candidate session {session_id}: {type(e).__name__}: {e}",
-                exc_info=True
-            )
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to create job posting record: {str(e)}"
-            )
-        
-        # Update structured data if extracted
-        if structured_job_posting:
-            try:
-                await job_posting_service.update_structured_data(
-                    UUID(job_posting["id"]),
-                    structured_job_posting
-                )
-            except Exception as update_err:
-                logger.warning(f"Failed to update structured data: {update_err}")
-        
-        # Update session with job posting ID and structured data
-        session_service.update_session(
+        # Start background processing
+        asyncio.create_task(_run_candidate_job_posting_processing_background(
             UUID(session_id),
-            {
-                "job_posting_id": job_posting["id"],
-                "job_posting_text": final_text[:500],
-                "structured_job_posting": structured_job_posting
-            },
-            step=2
-        )
-        
-        logger.info(f"Job posting created: {job_posting['id']} for candidate session: {session_id}")
+            final_text,
+            file_url,
+            language,
+            session_service,
+            job_posting_service,
+            ai_service
+        ))
         
         return JSONResponse({
-            "status": "success",
-            "job_posting_id": job_posting["id"],
-            "text_length": len(final_text),
-            "message": "Job posting stored successfully. Proceed to step 3 to upload your CV."
+            "status": "processing",
+            "message": "Job posting is being processed. Check progress endpoint for status."
         })
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in step2_job_posting: {e}")
+        logger.error(f"Error in step2_job_posting: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Internal server error processing job posting"
+        )
+
+
+@router.get("/step2/progress/{session_id}")
+async def candidate_step2_progress(session_id: UUID):
+    """
+    Get job posting processing progress for a candidate session.
+    
+    Returns current progress, status, and completion state.
+    """
+    from services.database import get_session_service
+    
+    try:
+        session_service = get_session_service()
+        session = session_service.get_session(session_id)
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Safely access session data with defaults
+        session_data = session.get("data", {})
+        progress = session_data.get("step2_progress", {})
+        status = session_data.get("step2_status", "not_started")
+        is_complete = status == "complete"
+        job_posting_id = session_data.get("job_posting_id")
+        
+        return JSONResponse({
+            "status": status,
+            "complete": is_complete,
+            "progress": progress,
+            "job_posting_id": job_posting_id
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting candidate step2 progress for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error getting progress"
         )
 
 
@@ -470,38 +583,28 @@ async def step3_upload_cv(
         )
 
 
-@router.post("/step4")
-async def step4_analysis(session_id: str):
+async def _run_candidate_analysis_background(
+    session_id: UUID,
+    session_service,
+    job_posting_service,
+    cv_service,
+    analysis_service,
+    ai_service,
+    candidate_service
+):
     """
-    Step 4: Trigger AI analysis.
-    
-    Runs AI analysis of candidate's fit for the job posting.
-    Uses the SAME AI pattern as interviewer Step 6.
+    Background task to run AI analysis for candidate.
+    Updates progress in session as it goes.
     """
-    import asyncio
-    from services.database import (
-        get_session_service,
-        get_job_posting_service,
-        get_cv_service,
-        get_analysis_service,
-        get_candidate_service,
-    )
-    from services.ai_analysis import get_ai_analysis_service
     from utils import FileProcessor
-    from uuid import UUID
+    import re
     
     try:
-        session_service = get_session_service()
-        job_posting_service = get_job_posting_service()
-        cv_service = get_cv_service()
-        analysis_service = get_analysis_service()
-        candidate_service = get_candidate_service()
-        ai_service = get_ai_analysis_service()
-        
-        # Validate session
-        session = session_service.get_session(UUID(session_id))
+        # Get session data
+        session = session_service.get_session(session_id)
         if not session:
-            raise HTTPException(status_code=404, detail="Session not found or expired")
+            logger.error(f"Session {session_id} not found in background task")
+            return
         
         # Get job posting
         job_posting_id = session["data"].get("job_posting_id")
@@ -509,12 +612,31 @@ async def step4_analysis(session_id: str):
         candidate_id = session["data"].get("candidate_id")
         
         if not all([job_posting_id, cv_id, candidate_id]):
-            raise HTTPException(
-                status_code=400,
-                detail="Missing required data. Complete steps 2 and 3 first."
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_status": "error",
+                    "step4_progress": {
+                        "status": "Missing required data. Complete steps 2 and 3 first.",
+                        "step": "error"
+                    }
+                }
             )
+            return
         
-        # Fetch job posting and convert to markdown (same as interviewer)
+        # Update progress: preparing data
+        session_service.update_session(
+            session_id,
+            {
+                "step4_status": "running",
+                "step4_progress": {
+                    "status": "Preparing data for analysis...",
+                    "step": "preparing"
+                }
+            }
+        )
+        
+        # Fetch job posting and convert to markdown
         job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
         job_posting_markdown = ""
         if job_posting and job_posting.get("raw_text"):
@@ -527,21 +649,48 @@ async def step4_analysis(session_id: str):
             company_name = structured_job.get("company") or structured_job.get("organization")
         
         if not job_posting_markdown:
-            raise HTTPException(status_code=400, detail="Job posting content unavailable")
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_status": "error",
+                    "step4_progress": {
+                        "status": "Job posting content unavailable",
+                        "step": "error"
+                    }
+                }
+            )
+            return
         
-        # Fetch CV and convert to markdown (same as interviewer)
+        # Fetch CV and convert to markdown
         cv = await cv_service.get_by_id(UUID(cv_id))
         if not cv:
-            raise HTTPException(status_code=404, detail="CV not found")
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_status": "error",
+                    "step4_progress": {
+                        "status": "CV not found",
+                        "step": "error"
+                    }
+                }
+            )
+            return
         
         extracted_text = cv.get("extracted_text") or ""
         cv_markdown = FileProcessor.text_to_markdown(extracted_text) if extracted_text else ""
         
         if not cv_markdown:
-            raise HTTPException(
-                status_code=400,
-                detail="CV text unavailable for analysis"
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_status": "error",
+                    "step4_progress": {
+                        "status": "CV text unavailable for analysis",
+                        "step": "error"
+                    }
+                }
             )
+            return
         
         try:
             candidate_uuid = UUID(candidate_id)
@@ -559,7 +708,6 @@ async def step4_analysis(session_id: str):
             candidate_name_value = session["data"].get("candidate_name")
         
         # Sanitize content to avoid civic-integrity false positives
-        import re
         civic_replacements = {
             r"\btarget market\b": "customer segment",
             r"\blead generation\b": "prospect identification",
@@ -578,7 +726,7 @@ async def step4_analysis(session_id: str):
         
         language = session["data"].get("language", "en")
         
-        # Helper function (same as interviewer)
+        # Helper function
         def _normalize_list(value: Any) -> List[Any]:
             if isinstance(value, list):
                 return value
@@ -591,48 +739,42 @@ async def step4_analysis(session_id: str):
                 return []
             return [value]
         
-        # Execute AI analysis with timeout (SAME as interviewer)
-        # Enrichment context is handled within AI service
-        ai_result = None
-        try:
-            ai_result = await asyncio.wait_for(
-                ai_service.analyze_candidate_for_candidate(
-                    job_posting_markdown,
-                    cv_markdown,
-                    language,
-                    candidate_id=candidate_uuid,
-                    candidate_name=candidate_name_value,
-                    company_name=company_name,
-                ),
-                timeout=90  # 90 seconds for large context (same as interviewer)
-            )
-        except asyncio.TimeoutError:
-            logger.error("AI analysis timed out for candidate session %s", session_id)
-            raise HTTPException(
-                status_code=504,
-                detail=f"AI analysis timed out. Please try again or check AI provider status."
-            )
-        except Exception as ai_exc:
-            logger.error("AI analysis failed for candidate session %s: %s", session_id, ai_exc)
-            raise HTTPException(
-                status_code=500,
-                detail=f"AI analysis failed: {str(ai_exc)}"
-            )
+        # Update progress: AI analysis
+        session_service.update_session(
+            session_id,
+            {
+                "step4_progress": {
+                    "status": "AI is analyzing your CV against the job posting...",
+                    "step": "ai_processing"
+                }
+            }
+        )
+        
+        # Execute AI analysis
+        ai_result = await ai_service.analyze_candidate_for_candidate(
+            job_posting_markdown,
+            cv_markdown,
+            language,
+            candidate_id=candidate_uuid,
+            candidate_name=candidate_name_value,
+            company_name=company_name,
+        )
         
         if not ai_result or not ai_result.get("data"):
-            raise HTTPException(
-                status_code=500,
-                detail=f"AI failed to analyze candidate. Cannot proceed without AI analysis."
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_status": "error",
+                    "step4_progress": {
+                        "status": "AI failed to analyze candidate",
+                        "step": "error"
+                    }
+                }
             )
+            return
         
-        # Extract data (SAME pattern as interviewer)
+        # Extract data
         data = ai_result.get("data", {})
-        
-        # 🔍 DEBUG: Log what AI actually returned
-        logger.info("=" * 80)
-        logger.info("🔍 AI RESPONSE DATA KEYS:")
-        logger.info(f"Keys in response: {list(data.keys())}")
-        logger.info("=" * 80)
         
         categories = data.get("categories", {})
         strengths = _normalize_list(data.get("strengths"))
@@ -645,7 +787,6 @@ async def step4_analysis(session_id: str):
         questions_with_answers = []
         for idx, q in enumerate(questions_raw):
             if isinstance(q, dict):
-                # Support multiple formats: {q, a}, {question, answer}, {question, suggested_answer}
                 question_text = q.get("q") or q.get("question", "")
                 answer_text = q.get("a") or q.get("answer") or q.get("suggested_answer", "")
                 questions_with_answers.append({
@@ -654,7 +795,6 @@ async def step4_analysis(session_id: str):
                     "suggested_answer": answer_text
                 })
             elif isinstance(q, str):
-                # Get corresponding answer from answers array
                 answer_text = answers_raw[idx] if idx < len(answers_raw) else ""
                 questions_with_answers.append({
                     "category": "general",
@@ -674,15 +814,26 @@ async def step4_analysis(session_id: str):
         from utils.cost_calculator import calculate_cost_from_tokens
         cost_breakdown = await calculate_cost_from_tokens(
             provider=provider_used,
-            model=model_used,  # Model is critical for accurate cost calculation
+            model=model_used,
             input_tokens=input_tokens,
             output_tokens=output_tokens
         )
         
-        # Calculate global score (same as interviewer)
+        # Calculate global score
         global_score = sum(categories.values()) / len(categories) if categories else 0
         
-        # Create analysis record with ALL data for persistence
+        # Update progress: saving results
+        session_service.update_session(
+            session_id,
+            {
+                "step4_progress": {
+                    "status": "Saving analysis results...",
+                    "step": "saving"
+                }
+            }
+        )
+        
+        # Create analysis record
         analysis = await analysis_service.create(
             mode="candidate",
             job_posting_id=UUID(job_posting_id),
@@ -695,12 +846,12 @@ async def step4_analysis(session_id: str):
             strengths=strengths,
             risks=gaps,
             questions={
-                "items": questions_with_answers,  # Full question objects with answers
+                "items": questions_with_answers,
                 "gap_strategies": gap_strategies,
                 "preparation_tips": preparation_tips,
                 "key_tips": preparation_tips,
                 "key_advice": preparation_tips,
-                "notes": preparation_tips  # Store all variants for compatibility
+                "notes": preparation_tips
             },
             intro_pitch=intro_pitch,
             language=language,
@@ -712,40 +863,167 @@ async def step4_analysis(session_id: str):
         )
         
         if not analysis:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to create analysis"
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_status": "error",
+                    "step4_progress": {
+                        "status": "Failed to create analysis",
+                        "step": "error"
+                    }
+                }
             )
+            return
         
         # Update session
         session_service.update_session(
-            UUID(session_id),
+            session_id,
             {
                 "analysis_id": analysis["id"],
                 "analysis_complete": True,
                 "provider": provider_used,
-                "model": model_used
+                "model": model_used,
+                "step4_status": "complete",
+                "step4_progress": {
+                    "status": "Complete! Ready for step 5.",
+                    "step": "complete"
+                }
             },
             step=4
         )
         
         logger.info(f"Candidate analysis complete: {analysis['id']} (provider: {provider_used})")
         
+    except Exception as e:
+        logger.error(f"Error in background candidate analysis: {e}", exc_info=True)
+        try:
+            session_service.update_session(
+                session_id,
+                {
+                    "step4_status": "error",
+                    "step4_progress": {
+                        "status": f"Error: {str(e)}",
+                        "step": "error"
+                    }
+                }
+            )
+        except:
+            pass
+
+
+@router.post("/step4")
+async def step4_analysis(session_id: str):
+    """
+    Step 4: Trigger AI analysis (async).
+    
+    Starts AI analysis in the background.
+    Returns immediately. Use GET /step4/progress/{session_id} to check progress.
+    """
+    import asyncio
+    from services.database import (
+        get_session_service,
+        get_job_posting_service,
+        get_cv_service,
+        get_analysis_service,
+        get_candidate_service,
+    )
+    from services.ai_analysis import get_ai_analysis_service
+    from uuid import UUID
+    
+    try:
+        session_service = get_session_service()
+        job_posting_service = get_job_posting_service()
+        cv_service = get_cv_service()
+        analysis_service = get_analysis_service()
+        candidate_service = get_candidate_service()
+        ai_service = get_ai_analysis_service()
+        
+        # Validate session
+        session = session_service.get_session(UUID(session_id))
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Check if analysis is already running
+        if session["data"].get("step4_status") == "running":
+            return JSONResponse({
+                "status": "already_running",
+                "message": "Analysis is already in progress"
+            })
+        
+        # Get job posting
+        job_posting_id = session["data"].get("job_posting_id")
+        cv_id = session["data"].get("cv_id")
+        candidate_id = session["data"].get("candidate_id")
+        
+        if not all([job_posting_id, cv_id, candidate_id]):
+            raise HTTPException(
+                status_code=400,
+                detail="Missing required data. Complete steps 2 and 3 first."
+            )
+        
+        # Start background task
+        asyncio.create_task(_run_candidate_analysis_background(
+            UUID(session_id),
+            session_service,
+            job_posting_service,
+            cv_service,
+            analysis_service,
+            ai_service,
+            candidate_service
+        ))
+        
         return JSONResponse({
-            "status": "success",
-            "analysis_id": analysis["id"],
-            "provider": provider_used,
-            "model": model_used,
-            "message": "Analysis complete. View results in step 5."
+            "status": "processing",
+            "message": "Analysis is being processed. Check progress endpoint for status."
         })
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in step4_analysis: {e}")
+        logger.error(f"Error in step4_analysis: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Internal server error during analysis"
+        )
+
+
+@router.get("/step4/progress/{session_id}")
+async def candidate_step4_progress(session_id: UUID):
+    """
+    Get candidate analysis progress for a session.
+    
+    Returns current progress, status, and completion state.
+    """
+    from services.database import get_session_service
+    
+    try:
+        session_service = get_session_service()
+        session = session_service.get_session(session_id)
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or expired")
+        
+        # Safely access session data with defaults
+        session_data = session.get("data", {})
+        progress = session_data.get("step4_progress", {})
+        status = session_data.get("step4_status", "not_started")
+        is_complete = status == "complete"
+        analysis_id = session_data.get("analysis_id")
+        
+        return JSONResponse({
+            "status": status,
+            "complete": is_complete,
+            "progress": progress,
+            "analysis_id": analysis_id
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting candidate step4 progress for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error getting progress"
         )
 
 
