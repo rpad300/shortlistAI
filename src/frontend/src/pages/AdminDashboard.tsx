@@ -43,11 +43,20 @@ const AdminDashboard: React.FC = () => {
   const loadDashboardStats = async () => {
     try {
       setLoading(true);
+      setError('');
+      console.log('[AdminDashboard] Fetching dashboard stats...');
       const response = await api.get('/admin/dashboard/detailed-stats');
-      setStats(response.data);
+      console.log('[AdminDashboard] Response received:', response.data);
+      if (response.data) {
+        setStats(response.data);
+      } else {
+        console.warn('[AdminDashboard] Response data is empty');
+        setError('No data received from server');
+      }
     } catch (error: any) {
-      console.error('Error loading dashboard stats:', error);
-      setError(error.response?.data?.detail || 'Error loading dashboard statistics');
+      console.error('[AdminDashboard] Error loading dashboard stats:', error);
+      console.error('[AdminDashboard] Error response:', error.response);
+      setError(error.response?.data?.detail || error.message || 'Error loading dashboard statistics');
     } finally {
       setLoading(false);
     }
@@ -84,7 +93,20 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="admin-content">
-        {error && <div className="error-banner">{error}</div>}
+        {error && (
+          <div className="error-banner">
+            <strong>Error:</strong> {error}
+            <button onClick={loadDashboardStats} style={{ marginLeft: '10px', padding: '5px 10px' }}>
+              Retry
+            </button>
+          </div>
+        )}
+        
+        {!stats && !loading && !error && (
+          <div className="error-banner">
+            No data available. <button onClick={loadDashboardStats} style={{ marginLeft: '10px', padding: '5px 10px' }}>Retry</button>
+          </div>
+        )}
         
         {stats && (
           <>

@@ -231,6 +231,8 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
     )
     
     try:
+        logger.info("Fetching detailed dashboard statistics...")
+        
         # Get all services
         candidate_service = get_candidate_service()
         company_service = get_company_service()
@@ -240,6 +242,7 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
         cv_service = get_cv_service()
         
         # Count totals
+        logger.info("Counting totals...")
         total_candidates = await candidate_service.count_all()
         total_companies = await company_service.count_all()
         total_interviewers = await interviewer_service.count_all()
@@ -247,13 +250,19 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
         total_analyses = await analysis_service.count_all()
         total_cvs = await cv_service.count_all()
         
+        logger.info(f"Totals: candidates={total_candidates}, companies={total_companies}, interviewers={total_interviewers}, job_postings={total_job_postings}, analyses={total_analyses}, cvs={total_cvs}")
+        
         # Count recent activity (last 30 days)
+        logger.info("Counting recent activity...")
         new_candidates = await candidate_service.count_recent(30)
         new_companies = await company_service.count_recent(30)
         new_job_postings = await job_posting_service.count_recent(30)
         new_analyses = await analysis_service.count_recent(30)
         
+        logger.info(f"Recent: candidates={new_candidates}, companies={new_companies}, job_postings={new_job_postings}, analyses={new_analyses}")
+        
         # Get provider distribution
+        logger.info("Getting provider distribution...")
         provider_counts = await analysis_service.count_by_provider()
         providers = {
             "gemini": {"calls": provider_counts.get("gemini", 0), "cost": 0},
@@ -263,8 +272,12 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
             "minimax": {"calls": provider_counts.get("minimax", 0), "cost": 0}
         }
         
+        logger.info(f"Provider counts: {provider_counts}")
+        
         # Get language distribution
+        logger.info("Getting language distribution...")
         language_counts = await analysis_service.count_by_language()
+        logger.info(f"Language counts: {language_counts}")
         
         return JSONResponse({
             "overview": {
@@ -291,8 +304,8 @@ async def get_detailed_stats(admin=Depends(get_current_admin)):
             "languages": language_counts
         })
     except Exception as e:
-        logger.error(f"Error getting detailed stats: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving statistics")
+        logger.error(f"Error getting detailed stats: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error retrieving statistics: {str(e)}")
 
 
 @router.get("/candidates")
