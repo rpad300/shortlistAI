@@ -391,9 +391,13 @@ async def download_cv(
             raise HTTPException(status_code=404, detail="CV file URL not found")
         
         # Extract file path from URL
-        # Supabase storage URLs are like: https://project.supabase.co/storage/v1/object/public/cvs/path/to/file.pdf
-        # or: https://project.supabase.co/storage/v1/object/sign/cvs/path/to/file.pdf?token=...
+        # Supabase storage URLs are like: 
+        # - https://project.supabase.co/storage/v1/object/public/cvs/path/to/file.pdf
+        # - https://project.supabase.co/storage/v1/object/sign/cvs/path/to/file.pdf?token=...
+        # - https://project.supabase.co/storage/v1/object/public/job-postings/path/to/file.pdf
         parsed_url = urlparse(file_url)
+        
+        logger.info(f"Extracting file path from URL: {file_url}")
         
         # Try to extract path from URL
         # Pattern: /storage/v1/object/public/cvs/... or /storage/v1/object/sign/cvs/...
@@ -404,15 +408,21 @@ async def download_cv(
             # Remove query string if present
             if '?' in file_path:
                 file_path = file_path.split('?')[0]
+            logger.info(f"Extracted bucket={bucket_name}, file_path={file_path}")
         else:
             # Fallback: try to extract from path directly
-            # Assume format: /cvs/path/to/file.pdf
+            # Assume format: /cvs/path/to/file.pdf or /job-postings/path/to/file.pdf
             if '/cvs/' in parsed_url.path:
                 file_path = parsed_url.path.split('/cvs/')[1]
                 bucket_name = "cvs"
+                logger.info(f"Extracted from fallback: bucket={bucket_name}, file_path={file_path}")
+            elif '/job-postings/' in parsed_url.path:
+                file_path = parsed_url.path.split('/job-postings/')[1]
+                bucket_name = "job-postings"
+                logger.info(f"Extracted from fallback: bucket={bucket_name}, file_path={file_path}")
             else:
                 logger.error(f"Could not extract file path from URL: {file_url}")
-                raise HTTPException(status_code=400, detail="Invalid CV file URL format")
+                raise HTTPException(status_code=400, detail=f"Invalid CV file URL format: {file_url}")
         
         # Generate signed URL
         signed_url = storage_service.get_signed_url(bucket_name, file_path, expires_in=3600)
