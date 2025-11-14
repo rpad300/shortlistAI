@@ -121,7 +121,7 @@ export const exportAIUsageToCSV = (logs: any[]) => {
     'Output Tokens': log.output_tokens || 0,
     'Total Tokens': log.total_tokens || ((log.input_tokens || 0) + (log.output_tokens || 0)),
     Score: log.global_score !== undefined && log.global_score !== null 
-      ? (log.global_score * 100).toFixed(1) + '%' 
+      ? log.global_score.toFixed(2) + '/5' 
       : 'N/A',
     'Cost (Input)': `$${(log.input_cost || 0).toFixed(6)}`,
     'Cost (Output)': `$${(log.output_cost || 0).toFixed(6)}`,

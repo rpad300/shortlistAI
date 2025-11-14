@@ -434,7 +434,7 @@ const AdminAIUsage: React.FC = () => {
                         <td>
                           {log.global_score !== undefined && log.global_score !== null ? (
                             <span style={{ fontWeight: 600 }}>
-                              {(log.global_score * 100).toFixed(1)}%
+                              {log.global_score.toFixed(2)}/5
                             </span>
                           ) : (
                             <span style={{ color: 'var(--text-secondary)' }}>N/A</span>
