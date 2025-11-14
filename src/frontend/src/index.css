@@ -111,6 +111,11 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent browser zoom inconsistencies */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -184,15 +189,22 @@ textarea:focus-visible {
 }
 
 /* Responsive Breakpoints */
+/* Note: We keep base font-size consistent to prevent zoom issues */
+/* Only adjust for very small screens */
 @media (max-width: 640px) {
   html {
     font-size: 14px;
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 }
 
-@media (min-width: 1920px) {
+/* Disable larger font-size on big screens to maintain consistency */
+/* @media (min-width: 1920px) {
   html {
     font-size: 18px;
   }
-}
+} */
 
