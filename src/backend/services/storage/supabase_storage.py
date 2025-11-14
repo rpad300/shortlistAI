@@ -122,6 +122,46 @@ class SupabaseStorageService:
         }
         return content_types.get(file_extension.lower(), "application/octet-stream")
     
+    def get_signed_url(self, bucket: str, filepath: str, expires_in: int = 3600) -> Optional[str]:
+        """
+        Get signed URL for private file download.
+        
+        Args:
+            bucket: Bucket name
+            filepath: Path to file in bucket
+            expires_in: URL expiration time in seconds (default: 1 hour)
+            
+        Returns:
+            Signed URL or None if failed
+        """
+        try:
+            # Supabase Python client returns signed URL directly as string
+            result = self.client.storage.from_(bucket).create_signed_url(
+                path=filepath,
+                expires_in=expires_in
+            )
+            
+            # Handle different response formats
+            if isinstance(result, dict):
+                # Check for common response formats
+                if 'signedURL' in result:
+                    return result['signedURL']
+                elif 'signed_url' in result:
+                    return result['signed_url']
+                elif 'url' in result:
+                    return result['url']
+                else:
+                    logger.error(f"Unexpected signed URL response format: {result}")
+                    return None
+            elif isinstance(result, str):
+                return result
+            else:
+                logger.error(f"Unexpected signed URL response type: {type(result)}, value: {result}")
+                return None
+        except Exception as e:
+            logger.error(f"Failed to create signed URL for {bucket}/{filepath}: {e}", exc_info=True)
+            return None
+    
     async def delete_file(self, bucket: str, filepath: str) -> bool:
         """
         Delete file from storage.

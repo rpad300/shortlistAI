@@ -366,6 +366,71 @@ async def get_candidate_details(
         raise HTTPException(status_code=500, detail="Error retrieving candidate")
 
 
+@router.get("/cvs/{cv_id}/download")
+async def download_cv(
+    cv_id: str,
+    admin=Depends(get_current_admin)
+):
+    """Get signed download URL for CV file."""
+    from services.database import get_cv_service
+    from services.storage import get_storage_service
+    from urllib.parse import urlparse
+    import re
+    
+    try:
+        cv_service = get_cv_service()
+        storage_service = get_storage_service()
+        
+        # Get CV record
+        cv = await cv_service.get_by_id(cv_id)
+        if not cv:
+            raise HTTPException(status_code=404, detail="CV not found")
+        
+        file_url = cv.get("file_url")
+        if not file_url:
+            raise HTTPException(status_code=404, detail="CV file URL not found")
+        
+        # Extract file path from URL
+        # Supabase storage URLs are like: https://project.supabase.co/storage/v1/object/public/cvs/path/to/file.pdf
+        # or: https://project.supabase.co/storage/v1/object/sign/cvs/path/to/file.pdf?token=...
+        parsed_url = urlparse(file_url)
+        
+        # Try to extract path from URL
+        # Pattern: /storage/v1/object/public/cvs/... or /storage/v1/object/sign/cvs/...
+        path_match = re.search(r'/storage/v1/object/(?:public|sign)/([^/]+)/(.+)', parsed_url.path)
+        if path_match:
+            bucket_name = path_match.group(1)
+            file_path = path_match.group(2)
+            # Remove query string if present
+            if '?' in file_path:
+                file_path = file_path.split('?')[0]
+        else:
+            # Fallback: try to extract from path directly
+            # Assume format: /cvs/path/to/file.pdf
+            if '/cvs/' in parsed_url.path:
+                file_path = parsed_url.path.split('/cvs/')[1]
+                bucket_name = "cvs"
+            else:
+                logger.error(f"Could not extract file path from URL: {file_url}")
+                raise HTTPException(status_code=400, detail="Invalid CV file URL format")
+        
+        # Generate signed URL
+        signed_url = storage_service.get_signed_url(bucket_name, file_path, expires_in=3600)
+        
+        if not signed_url:
+            raise HTTPException(status_code=500, detail="Failed to generate download URL")
+        
+        return JSONResponse({
+            "download_url": signed_url,
+            "expires_in": 3600
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating CV download URL: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error generating download URL: {str(e)}")
+
+
 @router.get("/analyses")
 async def list_analyses(
     mode: Optional[str] = None,

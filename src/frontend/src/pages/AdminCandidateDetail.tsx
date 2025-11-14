@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAdminAuth } from '@hooks/AdminAuthContext';
-import api from '@services/api';
+import api, { adminAPI } from '@services/api';
 import './AdminCandidates.css';
 
 interface Candidate {
@@ -195,9 +195,25 @@ const AdminCandidateDetail: React.FC = () => {
                       <td>{cv.uploaded_by_flow}</td>
                       <td>{formatDate(cv.created_at)}</td>
                       <td>
-                        <a href={cv.file_url} target="_blank" rel="noopener noreferrer" className="btn-view">
+                        <button
+                          onClick={async () => {
+                            try {
+                              const response = await adminAPI.downloadCV(cv.id);
+                              if (response.data?.download_url) {
+                                window.open(response.data.download_url, '_blank');
+                              } else {
+                                console.error('No download URL received');
+                                alert('Failed to get download URL');
+                              }
+                            } catch (error: any) {
+                              console.error('Error downloading CV:', error);
+                              alert(error.response?.data?.detail || 'Failed to download CV');
+                            }
+                          }}
+                          className="btn-view"
+                        >
                           Download CV
-                        </a>
+                        </button>
                       </td>
                     </tr>
                   ))}
