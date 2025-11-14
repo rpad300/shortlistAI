@@ -122,14 +122,15 @@ const AdminDashboard: React.FC = () => {
         
         {/* Debug: Show raw stats */}
         {stats && (
-          <div style={{ padding: '1rem', background: '#f0f0f0', marginBottom: '1rem', fontSize: '0.8rem' }}>
+          <div style={{ padding: '1rem', background: '#f0f0f0', marginBottom: '1rem', fontSize: '0.8rem', color: '#000' }}>
             <strong>DEBUG:</strong> stats exists: {stats ? 'YES' : 'NO'}, 
             stats.overview: {stats.overview ? 'YES' : 'NO'},
-            stats.overview?.total_candidates: {stats.overview?.total_candidates}
+            stats.overview?.total_candidates: {stats.overview?.total_candidates},
+            Condition check: {stats && stats.overview ? 'TRUE' : 'FALSE'}
           </div>
         )}
         
-        {stats && stats.overview ? (
+        {stats && stats.overview && (
           <>
             {/* Overview Statistics */}
             <div className="stats-grid">
@@ -261,7 +262,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             )}
           </>
-        ) : null}
+        )}
       </div>
     </div>
   );
