@@ -74,6 +74,14 @@ const InterviewerStep2: React.FC = () => {
       return;
     } catch (error: any) {
       console.error('Error in step 2:', error);
+      
+      // Handle timeout specifically
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        setError('The request took too long. This may happen with large files or slow AI processing. Please try again with a smaller file or wait a moment and retry.');
+        setLoading(false);
+        return;
+      }
+      
       const errorDetail = error.response?.data?.detail;
       const errorMessage = Array.isArray(errorDetail) 
         ? errorDetail.map((e: any) => e.msg || e).join(', ')

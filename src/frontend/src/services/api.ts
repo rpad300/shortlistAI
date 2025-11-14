@@ -72,7 +72,7 @@ export const interviewerAPI = {
   step1: (data: any) => api.post('/interviewer/step1', data),
   step2: (data: FormData) => api.post('/interviewer/step2', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 60000 // 60s for large file uploads and processing
+    timeout: 120000 // 120s (2min) for large file uploads, AI processing, and normalization
   }),
   step3Suggestions: (sessionId: string) => api.get(`/interviewer/step3/suggestions/${sessionId}`, {
     timeout: 60000,
