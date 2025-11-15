@@ -1666,25 +1666,89 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     })
                     continue
 
-                # Run AI analysis
-                ai_result = await asyncio.wait_for(
-                    ai_service.analyze_candidate_for_interviewer(
-                        job_posting_markdown,
-                        cv_markdown,
-                        key_points,
-                        weights,
-                        hard_blockers,
-                        nice_to_have,
-                        language,
-                        company_name=company_name,
-                        candidate_id=candidate_uuid,
-                        candidate_name=candidate_name,
-                    ),
-                    timeout=300  # 5 minutes per CV
-                )
+                # Run AI analysis with retry logic (up to 3 attempts total: 1 initial + 2 retries)
+                max_attempts = 3
+                ai_result = None
+                last_error = None
+                
+                for attempt in range(1, max_attempts + 1):
+                    try:
+                        logger.info(f"🔄 Attempt {attempt}/{max_attempts} for CV {idx} (ID: {cv_id})")
+                        
+                        # Update progress to show retry attempt
+                        if attempt > 1:
+                            session_service.update_session(
+                                session_id,
+                                {
+                                    "analysis_progress": {
+                                        "current": idx,
+                                        "total": total_cvs,
+                                        "status": f"Retrying analysis for CV {idx} (attempt {attempt}/{max_attempts})...",
+                                        "current_cv_id": cv_id
+                                    }
+                                }
+                            )
+                        
+                        ai_result = await asyncio.wait_for(
+                            ai_service.analyze_candidate_for_interviewer(
+                                job_posting_markdown,
+                                cv_markdown,
+                                key_points,
+                                weights,
+                                hard_blockers,
+                                nice_to_have,
+                                language,
+                                company_name=company_name,
+                                candidate_id=candidate_uuid,
+                                candidate_name=candidate_name,
+                            ),
+                            timeout=300  # 5 minutes per CV
+                        )
+                        
+                        # Check if result is valid
+                        if ai_result and ai_result.get("data"):
+                            logger.info(f"✅ Analysis successful on attempt {attempt} for CV {idx}")
+                            break  # Success, exit retry loop
+                        else:
+                            last_error = f"AI returned empty or invalid result"
+                            logger.warning(f"⚠️ Attempt {attempt}/{max_attempts} failed for CV {idx}: {last_error}")
+                            if attempt < max_attempts:
+                                # Wait before retry (exponential backoff: 2s, 4s)
+                                wait_time = 2 ** (attempt - 1)
+                                logger.info(f"⏳ Waiting {wait_time}s before retry...")
+                                await asyncio.sleep(wait_time)
+                            else:
+                                logger.error(f"❌ All {max_attempts} attempts failed for CV {idx}")
+                    
+                    except asyncio.TimeoutError:
+                        last_error = f"Analysis timed out after 300s"
+                        logger.warning(f"⚠️ Attempt {attempt}/{max_attempts} timed out for CV {idx}")
+                        if attempt < max_attempts:
+                            wait_time = 2 ** (attempt - 1)
+                            logger.info(f"⏳ Waiting {wait_time}s before retry...")
+                            await asyncio.sleep(wait_time)
+                        else:
+                            logger.error(f"❌ All {max_attempts} attempts timed out for CV {idx}")
+                            # Handle timeout as final failure (will be caught by outer try-except)
+                            raise
+                    
+                    except Exception as attempt_err:
+                        last_error = f"Exception during analysis: {str(attempt_err)}"
+                        logger.warning(f"⚠️ Attempt {attempt}/{max_attempts} failed for CV {idx}: {last_error}")
+                        if attempt < max_attempts:
+                            wait_time = 2 ** (attempt - 1)
+                            logger.info(f"⏳ Waiting {wait_time}s before retry...")
+                            await asyncio.sleep(wait_time)
+                        else:
+                            logger.error(f"❌ All {max_attempts} attempts failed for CV {idx}: {last_error}")
+                            # Re-raise to be handled by outer exception handler
+                            raise
 
+                # If we get here and still no valid result, mark as failed
                 if not ai_result or not ai_result.get("data"):
-                    error_msg = f"CV {idx}: AI failed to analyze"
+                    error_msg = f"CV {idx}: AI failed to analyze after {max_attempts} attempts"
+                    if last_error:
+                        error_msg += f" (last error: {last_error})"
                     errors.append(error_msg)
                     # Still add to results so it appears in step7
                     summary = candidate_info.get("summary") or {}
@@ -1712,7 +1776,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                             intro_pitch="",
                             hard_blocker_flags=[],
                             language=language,
-                            detailed_analysis={"error": error_msg, "status": "failed"},
+                            detailed_analysis={"error": error_msg, "status": "failed", "attempts": max_attempts},
                             input_tokens=None,
                             output_tokens=None,
                             input_cost=0.0,
@@ -1736,7 +1800,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                         "risks": [error_msg],
                         "questions": [],
                         "hard_blocker_flags": [],
-                        "recommendation": "AI analysis failed",
+                        "recommendation": f"AI analysis failed after {max_attempts} attempts",
                         "intro_pitch": "",
                         "gap_strategies": [],
                         "preparation_tips": [],
@@ -1926,8 +1990,9 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     analyses.append(analysis)
                     
             except asyncio.TimeoutError:
-                error_msg = f"CV {idx}: Analysis timed out"
-                logger.error(f"AI analysis timed out for CV {cv_id}")
+                # This should only happen if all retry attempts timed out
+                error_msg = f"CV {idx}: Analysis timed out after {max_attempts} attempts"
+                logger.error(f"AI analysis timed out for CV {cv_id} after all retries")
                 errors.append(error_msg)
                 # Still add to results with error info so it appears in step7
                 summary = candidate_info.get("summary") or {}
@@ -1956,7 +2021,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                         intro_pitch="",
                         hard_blocker_flags=[],
                         language=language,
-                        detailed_analysis={"error": error_msg, "status": "timeout"},
+                        detailed_analysis={"error": error_msg, "status": "timeout", "attempts": max_attempts},
                         input_tokens=None,
                         output_tokens=None,
                         input_cost=0.0,
@@ -1980,7 +2045,7 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     "risks": [error_msg],
                     "questions": [],
                     "hard_blocker_flags": [],
-                    "recommendation": "Analysis failed - timeout",
+                    "recommendation": f"Analysis failed - timeout after {max_attempts} attempts",
                     "intro_pitch": "",
                     "gap_strategies": [],
                     "preparation_tips": [],
