@@ -193,3 +193,5 @@ Consistência | Subjetiva, varia | 100% objetiva
 
 
 
+
+

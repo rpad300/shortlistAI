@@ -170,3 +170,5 @@ Com esta info posso ajustar a estratégia!
 
 
 
+
+
