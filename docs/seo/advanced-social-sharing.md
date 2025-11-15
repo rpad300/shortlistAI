@@ -37,7 +37,7 @@ Images are named using the pattern: `og-{pageType}-{lang}.png`
 To generate images for all pages and languages:
 
 ```bash
-python generate_og_images_by_page.py
+python scripts/generate_og_images_by_page.py
 ```
 
 This creates:
@@ -98,7 +98,7 @@ Different platforms have slightly different optimal dimensions:
 To generate optimized images for each platform:
 
 ```bash
-python generate_og_images_by_platform.py
+python scripts/generate_og_images_by_platform.py
 ```
 
 This creates:
@@ -218,7 +218,7 @@ Combining all features:
 ### 1. Multilingual Images
 
 ```bash
-python generate_og_images_multilingual.py
+python scripts/generate_og_images_multilingual.py
 ```
 
 Generates: `og-en.png`, `og-pt.png`, `og-fr.png`, `og-es.png`
@@ -226,7 +226,7 @@ Generates: `og-en.png`, `og-pt.png`, `og-fr.png`, `og-es.png`
 ### 2. Page-Specific Images
 
 ```bash
-python generate_og_images_by_page.py
+python scripts/generate_og_images_by_page.py
 ```
 
 Generates: `og-{page}-{lang}.png` for all pages and languages
@@ -234,7 +234,7 @@ Generates: `og-{page}-{lang}.png` for all pages and languages
 ### 3. Platform-Specific Images
 
 ```bash
-python generate_og_images_by_platform.py
+python scripts/generate_og_images_by_platform.py
 ```
 
 Generates: `og-facebook.png`, `og-linkedin.png`, `og-twitter.png`

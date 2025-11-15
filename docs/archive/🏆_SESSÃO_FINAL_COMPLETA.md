@@ -228,3 +228,7 @@ Ctrl+Shift+R
 
 Documentação completa em: **docs/PROGRESS.md**
 
+
+
+
+

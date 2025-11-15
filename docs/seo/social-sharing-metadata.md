@@ -370,7 +370,7 @@ Support for video sharing on TikTok and Instagram:
 To regenerate OG images with translated text for each language:
 
 ```bash
-python generate_og_images_multilingual.py
+python scripts/generate_og_images_multilingual.py
 ```
 
 This script will:

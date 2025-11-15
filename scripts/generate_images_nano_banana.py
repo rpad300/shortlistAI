@@ -2,7 +2,7 @@
 Generate brand images using Gemini Nano Banana (gemini-2.5-flash-image).
 Based on: https://ai.google.dev/gemini-api/docs/image-generation?hl=pt-br
 
-Run from project root: python generate_images_nano_banana.py
+Run from project root: python scripts/generate_images_nano_banana.py
 """
 
 import os
@@ -145,7 +145,7 @@ def generate_all_brand_images():
             logger.warning(f"⚠️  Prompt file not found: {prompt_file}")
     
     if not images_to_generate:
-        logger.error("❌ No prompt files found. Run 'python generate_brand_images.py' first.")
+        logger.error("❌ No prompt files found. Run 'python scripts/generate_brand_images.py' first.")
         return
     
     logger.info(f"📦 Loaded {len(images_to_generate)} prompts")

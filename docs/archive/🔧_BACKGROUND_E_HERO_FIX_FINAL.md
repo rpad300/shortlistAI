@@ -126,3 +126,7 @@ AnimatedBackground: Initializing with 70 particles
 
 **Neural network animado + Hero centralizado = WOW!** 🔥
 
+
+
+
+

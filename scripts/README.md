@@ -1,10 +1,12 @@
-# SEO Scripts
+# Project Scripts
 
-This directory contains scripts for maintaining and monitoring SEO for ShortlistAI.
+This directory contains utility scripts for ShortlistAI, including SEO validation, image generation, and asset optimization.
 
 ## Available Scripts
 
-### 1. `validate_seo.py`
+### SEO Scripts
+
+#### 1. `validate_seo.py`
 
 Validates structured data (JSON-LD) and SEO metadata for ShortlistAI.
 
@@ -36,7 +38,7 @@ python3 scripts/validate_seo.py
 
 ---
 
-### 2. `update_sitemap_dates.py`
+#### 2. `update_sitemap_dates.py`
 
 Updates lastmod dates in sitemap.xml to current date or specified date.
 
@@ -63,12 +65,121 @@ python scripts/update_sitemap_dates.py --date 2025-01-15
 
 ---
 
+### Image Generation Scripts
+
+#### 3. `generate_brand_images.py`
+
+Generates brand images using Google Gemini API. Creates prompts and manages image generation workflow.
+
+**Usage:**
+```bash
+python scripts/generate_brand_images.py
+```
+
+**Requirements:**
+- GEMINI_API_KEY in .env
+- google-genai package
+
+---
+
+#### 4. `generate_images_nanobanan.py` / `generate_images_nano_banana.py`
+
+Generate brand images using Gemini Nano Banana (gemini-2.5-flash-image) model.
+
+**Usage:**
+```bash
+python scripts/generate_images_nanobanan.py
+```
+
+**Requirements:**
+- GEMINI_API_KEY in .env
+- google-genai, Pillow packages
+
+---
+
+#### 5. `generate_images_with_imagen.py`
+
+Generate brand images directly using Google Imagen models.
+
+**Usage:**
+```bash
+python scripts/generate_images_with_imagen.py
+```
+
+---
+
+#### 6. `generate_pwa_icons.py`
+
+Generate additional PWA icon sizes from the base app-icon-512.png.
+
+**Usage:**
+```bash
+python scripts/generate_pwa_icons.py
+```
+
+**Requirements:**
+- Pillow package
+- Source image: `public/assets/logos/app-icon-512.png`
+
+---
+
+#### 7. `optimize_images_to_webp.py`
+
+Convert brand PNG images to WebP format for better performance (~25-35% better compression).
+
+**Usage:**
+```bash
+python scripts/optimize_images_to_webp.py
+```
+
+**Requirements:**
+- Pillow package
+
+---
+
+#### 8. `generate_og_images_by_page.py`
+
+Generate Open Graph images for different pages (home, about, pricing, features) with translated text.
+
+**Usage:**
+```bash
+python scripts/generate_og_images_by_page.py
+```
+
+---
+
+#### 9. `generate_og_images_by_platform.py`
+
+Generate platform-specific Open Graph images (Facebook, LinkedIn, Twitter).
+
+**Usage:**
+```bash
+python scripts/generate_og_images_by_platform.py
+```
+
+---
+
+#### 10. `generate_og_images_multilingual.py`
+
+Generate multilingual Open Graph images for social sharing (EN, PT, FR, ES).
+
+**Usage:**
+```bash
+python scripts/generate_og_images_multilingual.py
+```
+
+---
+
 ## Installation
 
 ### Requirements
 
 - Python 3.7 or higher
-- No external dependencies (uses only standard library)
+- For SEO scripts: No external dependencies (uses only standard library)
+- For image generation scripts: 
+  - `google-genai` package (for Gemini-based scripts)
+  - `Pillow` package (for image processing)
+  - `python-dotenv` package (for environment variables)
 
 ### Setup
 

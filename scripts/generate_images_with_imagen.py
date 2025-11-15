@@ -1,6 +1,6 @@
 """
 Generate brand images directly using Google Imagen models.
-Run from project root: python generate_images_with_imagen.py
+Run from project root: python scripts/generate_images_with_imagen.py
 """
 
 import os

@@ -2,7 +2,7 @@
 Generate brand images using Gemini Nano Banana (gemini-2.5-flash-image).
 Based on: https://ai.google.dev/gemini-api/docs/image-generation
 
-Run from project root: python generate_images_nanobanan.py
+Run from project root: python scripts/generate_images_nanobanan.py
 """
 
 import os

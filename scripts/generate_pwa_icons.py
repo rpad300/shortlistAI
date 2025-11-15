@@ -20,7 +20,7 @@ def generate_pwa_icons():
     
     if not source_image.exists():
         logger.error(f"❌ Source image not found: {source_image}")
-        logger.info("💡 Run 'python generate_images_nanobanan.py' first")
+        logger.info("💡 Run 'python scripts/generate_images_nanobanan.py' first")
         return False
     
     # Output directory

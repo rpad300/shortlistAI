@@ -1,6 +1,6 @@
 """
 Standalone script to generate brand images using Google Gemini API.
-Run from project root: python generate_brand_images.py
+Run from project root: python scripts/generate_brand_images.py
 """
 
 import os

@@ -152,3 +152,7 @@ Ctrl+Shift+R
 
 **🎉 LAYOUT CONSISTENTE PRONTO!**
 
+
+
+
+

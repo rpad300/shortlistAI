@@ -6,7 +6,7 @@ Creates optimized OG images for different platforms:
 - LinkedIn: 1200x627px (slightly different aspect ratio)
 - Twitter: 1200x600px (wider aspect ratio)
 
-Run from project root: python generate_og_images_by_platform.py
+Run from project root: python scripts/generate_og_images_by_platform.py
 """
 
 import os

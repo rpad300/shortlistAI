@@ -92,11 +92,11 @@ public/assets/
 
 ## 🛠️ SCRIPTS
 
-### Na raiz do projeto:
-1. **generate_brand_images.py** - Prompt enhancement
-2. **generate_images_nanobanan.py** - Image generation (Gemini)
-3. **generate_pwa_icons.py** - PWA icon resizing
-4. **optimize_images_to_webp.py** - WebP conversion
+### Em scripts/:
+1. **scripts/generate_brand_images.py** - Prompt enhancement
+2. **scripts/generate_images_nanobanan.py** - Image generation (Gemini)
+3. **scripts/generate_pwa_icons.py** - PWA icon resizing
+4. **scripts/optimize_images_to_webp.py** - WebP conversion
 
 ### No backend:
 5. **src/backend/services/generate_images_gemini.py** - Alternative generator
@@ -137,13 +137,13 @@ start public\assets\heroes\hero-home-light.png
 explorer public\assets
 
 # Regenerar
-python generate_images_nanobanan.py
+python scripts/generate_images_nanobanan.py
 
 # PWA icons
-python generate_pwa_icons.py
+python scripts/generate_pwa_icons.py
 
 # WebP
-python optimize_images_to_webp.py
+python scripts/optimize_images_to_webp.py
 ```
 
 ---

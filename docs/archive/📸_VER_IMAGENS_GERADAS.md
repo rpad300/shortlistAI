@@ -457,3 +457,7 @@ python generate_images_nanobanan.py
 
 **Todas as imagens prontas! Explore a pasta `public/assets/` 📁**
 
+
+
+
+

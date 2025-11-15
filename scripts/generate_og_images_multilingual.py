@@ -1,8 +1,13 @@
 """
-Generate Open Graph images for different pages (home, about, pricing, features).
+Generate multilingual Open Graph (OG) images for social sharing.
 
-Creates page-specific OG images with translated text for each supported language.
-Run from project root: python generate_og_images_by_page.py
+Creates OG images with translated text for each supported language:
+- EN (English)
+- PT (Portuguese)
+- FR (French)
+- ES (Spanish)
+
+Run from project root: python scripts/generate_og_images_multilingual.py
 """
 
 import os
@@ -22,73 +27,27 @@ BLACK = "#111827"
 GRAY_LIGHT = "#6B7280"
 
 
-# Page-specific translations
-PAGE_TRANSLATIONS = {
-    "about": {
-        "en": {
-            "title": "ShortlistAI",
-            "tagline": "How It Works",
-            "features": "About Our Platform"
-        },
-        "pt": {
-            "title": "ShortlistAI",
-            "tagline": "Como Funciona",
-            "features": "Sobre Nossa Plataforma"
-        },
-        "fr": {
-            "title": "ShortlistAI",
-            "tagline": "Comment Ça Marche",
-            "features": "À Propos de Notre Plateforme"
-        },
-        "es": {
-            "title": "ShortlistAI",
-            "tagline": "Cómo Funciona",
-            "features": "Acerca de Nuestra Plataforma"
-        }
+# Translations for OG images
+TRANSLATIONS = {
+    "en": {
+        "title": "ShortlistAI",
+        "tagline": "AI-Powered CV Analysis & Interview Preparation",
+        "features": "Free • Multi-language • AI-Powered"
     },
-    "pricing": {
-        "en": {
-            "title": "ShortlistAI",
-            "tagline": "100% Free Forever",
-            "features": "No Credit Card • No Signup • Free"
-        },
-        "pt": {
-            "title": "ShortlistAI",
-            "tagline": "100% Grátis Para Sempre",
-            "features": "Sem Cartão • Sem Cadastro • Grátis"
-        },
-        "fr": {
-            "title": "ShortlistAI",
-            "tagline": "100% Gratuit Pour Toujours",
-            "features": "Sans Carte • Sans Inscription • Gratuit"
-        },
-        "es": {
-            "title": "ShortlistAI",
-            "tagline": "100% Gratis Para Siempre",
-            "features": "Sin Tarjeta • Sin Registro • Gratis"
-        }
+    "pt": {
+        "title": "ShortlistAI",
+        "tagline": "Análise de CV com IA & Preparação para Entrevistas",
+        "features": "Grátis • Multilíngue • Com IA"
     },
-    "features": {
-        "en": {
-            "title": "ShortlistAI",
-            "tagline": "Powerful Features",
-            "features": "AI Analysis • Batch Upload • PDF Reports"
-        },
-        "pt": {
-            "title": "ShortlistAI",
-            "tagline": "Recursos Poderosos",
-            "features": "Análise IA • Upload em Lote • Relatórios PDF"
-        },
-        "fr": {
-            "title": "ShortlistAI",
-            "tagline": "Fonctionnalités Puissantes",
-            "features": "Analyse IA • Téléchargement Groupé • Rapports PDF"
-        },
-        "es": {
-            "title": "ShortlistAI",
-            "tagline": "Funciones Poderosas",
-            "features": "Análisis IA • Carga por Lotes • Informes PDF"
-        }
+    "fr": {
+        "title": "ShortlistAI",
+        "tagline": "Analyse de CV par IA & Préparation aux Entretiens",
+        "features": "Gratuit • Multilingue • Alimenté par IA"
+    },
+    "es": {
+        "title": "ShortlistAI",
+        "tagline": "Análisis de CV con IA & Preparación para Entrevistas",
+        "features": "Gratis • Multilingüe • Con IA"
     }
 }
 
@@ -98,6 +57,7 @@ def load_base_og_image(base_path: str) -> Image.Image:
     if os.path.exists(base_path):
         return Image.open(base_path).convert("RGBA")
     else:
+        # Create a fallback gradient image if base doesn't exist
         logger.warning(f"Base image not found: {base_path}. Creating fallback...")
         img = Image.new("RGB", (1200, 630), color=AI_BLUE)
         return img.convert("RGBA")
@@ -106,31 +66,37 @@ def load_base_og_image(base_path: str) -> Image.Image:
 def find_font(font_size: int, bold: bool = False):
     """Try to find a suitable font, with fallbacks."""
     font_paths = [
+        # Windows
         "C:/Windows/Fonts/arial.ttf",
-        "C:/Windows/Fonts/arialbd.ttf",
+        "C:/Windows/Fonts/arialbd.ttf",  # Bold
         "C:/Windows/Fonts/calibri.ttf",
-        "C:/Windows/Fonts/calibrib.ttf",
+        "C:/Windows/Fonts/calibrib.ttf",  # Bold
+        # macOS
         "/System/Library/Fonts/Supplemental/Arial.ttf",
         "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        # Linux
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     ]
     
     if bold:
-        for path in font_paths[1::2]:
+        # Try bold fonts first
+        for path in font_paths[1::2]:  # Odd indices (bold)
             if os.path.exists(path):
                 try:
                     return ImageFont.truetype(path, font_size)
                 except:
                     continue
     
-    for path in font_paths[0::2]:
+    # Try regular fonts
+    for path in font_paths[0::2]:  # Even indices (regular)
         if os.path.exists(path):
             try:
                 return ImageFont.truetype(path, font_size)
             except:
                 continue
     
+    # Fallback to default font
     logger.warning("No suitable font found, using default")
     try:
         return ImageFont.truetype("arial.ttf", font_size)
@@ -142,20 +108,25 @@ def add_text_to_image(
     img: Image.Image,
     title: str,
     tagline: str,
-    features: str
+    features: str,
+    lang: str
 ) -> Image.Image:
-    """Add page-specific text to the OG image."""
+    """Add translated text to the OG image."""
+    
+    # Create a drawing context
     draw = ImageDraw.Draw(img)
+    
+    # Define text positions (centered layout)
     width, height = img.size
     
     # Title position (top center)
-    title_y = 100
-    title_font_size = 72
+    title_y = 120
+    title_font_size = 72 if len(title) < 15 else 64
     title_font = find_font(title_font_size, bold=True)
     
     # Tagline position (below title)
     tagline_y = title_y + 90
-    tagline_font_size = 36
+    tagline_font_size = 32
     tagline_font = find_font(tagline_font_size, bold=False)
     
     # Features position (bottom)
@@ -176,9 +147,9 @@ def add_text_to_image(
     features_width = features_bbox[2] - features_bbox[0]
     features_x = (width - features_width) // 2
     
-    # Add text shadow
+    # Add text shadow (for better readability)
     shadow_offset = 3
-    shadow_color = (0, 0, 0, 128)
+    shadow_color = (0, 0, 0, 128)  # Semi-transparent black
     
     # Draw title with shadow
     draw.text((title_x + shadow_offset, title_y + shadow_offset), title, 
@@ -198,30 +169,26 @@ def add_text_to_image(
     return img
 
 
-def generate_page_og_image(page: str, lang: str, base_image_path: str, output_path: str) -> bool:
-    """Generate OG image for a specific page and language."""
+def generate_og_image_for_language(lang: str, base_image_path: str, output_path: str) -> bool:
+    """Generate OG image for a specific language."""
     try:
-        logger.info(f"📄 Generating OG image: {page}-{lang}")
+        logger.info(f"🌐 Generating OG image for: {lang.upper()}")
         
         # Load base image
         img = load_base_og_image(base_image_path)
         
         # Get translations
-        if page not in PAGE_TRANSLATIONS:
-            logger.warning(f"⚠️  No translations for page: {page}")
-            return False
-        
-        translations = PAGE_TRANSLATIONS[page].get(lang, PAGE_TRANSLATIONS[page]["en"])
+        translations = TRANSLATIONS.get(lang, TRANSLATIONS["en"])
         title = translations["title"]
         tagline = translations["tagline"]
         features = translations["features"]
         
         # Add text to image
-        img_with_text = add_text_to_image(img, title, tagline, features)
+        img_with_text = add_text_to_image(img, title, tagline, features, lang)
         
-        # Convert back to RGB
+        # Convert back to RGB for saving as PNG
         img_rgb = Image.new("RGB", img_with_text.size, (255, 255, 255))
-        img_rgb.paste(img_with_text, mask=img_with_text.split()[3])
+        img_rgb.paste(img_with_text, mask=img_with_text.split()[3])  # Use alpha channel as mask
         
         # Save image
         output_path_obj = Path(output_path)
@@ -232,61 +199,57 @@ def generate_page_og_image(page: str, lang: str, base_image_path: str, output_pa
         return True
         
     except Exception as e:
-        logger.error(f"❌ Error generating OG image for {page}-{lang}: {e}")
+        logger.error(f"❌ Error generating OG image for {lang}: {e}")
         import traceback
         traceback.print_exc()
         return False
 
 
-def generate_all_page_images():
-    """Generate OG images for all pages and languages."""
+def generate_all_og_images():
+    """Generate OG images for all supported languages."""
     
     assets_dir = Path("public/assets/social")
     base_image_path = assets_dir / "og-default.png"
     
     logger.info("="*70)
-    logger.info("📄 ShortlistAI - Page-Specific OG Image Generator")
+    logger.info("🌐 ShortlistAI - Multilingual OG Image Generator")
     logger.info("="*70)
     logger.info(f"📂 Base image: {base_image_path}")
     logger.info(f"📂 Output directory: {assets_dir}\n")
     
+    # Check if base image exists
     if not base_image_path.exists():
         logger.warning(f"⚠️  Base image not found: {base_image_path}")
         logger.info("💡 Using fallback gradient image\n")
     
-    # Generate images for each page and language
-    pages = ["about", "pricing", "features"]
+    # Generate images for each language
     languages = ["en", "pt", "fr", "es"]
     results = {}
     
-    for page in pages:
-        for lang in languages:
-            output_path = assets_dir / f"og-{page}-{lang}.png"
-            success = generate_page_og_image(page, lang, str(base_image_path), str(output_path))
-            results[f"{page}-{lang}"] = success
+    for lang in languages:
+        output_path = assets_dir / f"og-{lang}.png"
+        success = generate_og_image_for_language(lang, str(base_image_path), str(output_path))
+        results[lang] = success
     
     # Summary
     logger.info("="*70)
     logger.info("📊 Summary")
     logger.info("="*70)
     
-    for page in pages:
-        logger.info(f"\n📄 {page.upper()}:")
-        for lang in languages:
-            key = f"{page}-{lang}"
-            status = "✅" if results.get(key) else "❌"
-            logger.info(f"  {status} {lang.upper()}")
+    for lang, success in results.items():
+        status = "✅" if success else "❌"
+        logger.info(f"{status} {lang.upper()}: {results[lang]}")
     
     total = len(results)
     successful = sum(1 for s in results.values() if s)
     logger.info(f"\n✅ Success: {successful}/{total}")
     
     if successful == total:
-        logger.info("\n🎉 All page-specific OG images generated successfully!")
+        logger.info("\n🎉 All OG images generated successfully!")
     else:
         logger.warning(f"\n⚠️  {total - successful} image(s) failed to generate")
 
 
 if __name__ == "__main__":
-    generate_all_page_images()
+    generate_all_og_images()
 
