@@ -1545,6 +1545,9 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
         candidate_lookup = {info["cv_id"]: info for info in candidates_info}
         errors = []
         
+        # Maximum retry attempts for AI analysis (1 initial + 2 retries = 3 total)
+        max_attempts = 3
+        
         # Initialize progress
         session_service.update_session(
             session_id,
@@ -1667,7 +1670,6 @@ async def _run_analysis_background(session_id: UUID, session_service, job_postin
                     continue
 
                 # Run AI analysis with retry logic (up to 3 attempts total: 1 initial + 2 retries)
-                max_attempts = 3
                 ai_result = None
                 last_error = None
                 
