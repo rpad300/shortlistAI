@@ -29,7 +29,7 @@ interface ChatInterfaceProps {
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
-  sessionId,
+  sessionId: _sessionId, // Reserved for future use
   messages,
   onSendMessage,
   onFileUpload,

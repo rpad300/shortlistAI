@@ -39,7 +39,7 @@ const ChatbotPage: React.FC = () => {
   const [companyRisk, setCompanyRisk] = useState<any | null>(null);
   const [candidateRisk, setCandidateRisk] = useState<any | null>(null);
   const [riskLoading, setRiskLoading] = useState(false);
-  const [companyProfileId, setCompanyProfileId] = useState<string | null>(null);
+  const [_companyProfileId, setCompanyProfileId] = useState<string | null>(null);
   const [companyPositions, setCompanyPositions] = useState<any[]>([]);
   const [selectedCompanyRedFlags, setSelectedCompanyRedFlags] = useState<Record<number, boolean>>({});
   const [selectedCandidateRedFlags, setSelectedCandidateRedFlags] = useState<Record<number, boolean>>({});
@@ -203,7 +203,7 @@ const ChatbotPage: React.FC = () => {
       };
       setMessages(prev => [...prev, thinkingMessage]);
 
-      const response = await chatbotAPI.sendMessage(sessionId, message);
+      await chatbotAPI.sendMessage(sessionId, message);
       
       // Reload all messages to avoid duplicates and get proper IDs
       const messagesResponse = await chatbotAPI.getMessages(sessionId);
