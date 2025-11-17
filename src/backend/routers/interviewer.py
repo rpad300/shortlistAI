@@ -1033,6 +1033,9 @@ async def step4_weighting(data: WeightingInput):
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
         
+        if not session.get("data"):
+            raise HTTPException(status_code=400, detail="Session data is missing")
+        
         # Check if continuing existing report
         existing_report_id = session["data"].get("report_id")
         is_continuing = session["data"].get("is_continuing_report", False)
@@ -1045,7 +1048,14 @@ async def step4_weighting(data: WeightingInput):
                 detail="Job posting not found. Complete steps 2 and 3 first."
             )
         
-        job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
+        try:
+            job_posting = await job_posting_service.get_by_id(UUID(job_posting_id))
+        except (ValueError, TypeError) as e:
+            logger.error(f"Invalid job_posting_id format: {job_posting_id}, error: {e}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid job posting ID format: {job_posting_id}"
+            )
         
         # Update job posting with weights and hard blockers
         success = await job_posting_service.update_weights_and_blockers(
@@ -1083,22 +1093,35 @@ async def step4_weighting(data: WeightingInput):
         if not is_continuing:
             # Create new report
             interviewer_id = session["data"].get("interviewer_id")
+            if not interviewer_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Interviewer ID not found in session. Please restart from step 1."
+                )
+            
             company_id = session["data"].get("company_id")
             key_points = session["data"].get("key_points") or session["data"].get("suggested_key_points", "")
             structured_job_posting = session["data"].get("structured_job_posting")
             
-            report = await report_service.create(
-                interviewer_id=UUID(interviewer_id),
-                job_posting_id=UUID(job_posting_id),
-                weights=data.weights,
-                key_points=key_points,
-                company_id=UUID(company_id) if company_id else None,
-                hard_blockers=data.hard_blockers,
-                nice_to_have=data.nice_to_have,
-                structured_job_posting=structured_job_posting,
-                title=job_posting.get("raw_text", "")[:200] if job_posting else None,
-                language=data.language
-            )
+            try:
+                report = await report_service.create(
+                    interviewer_id=UUID(interviewer_id),
+                    job_posting_id=UUID(job_posting_id),
+                    weights=data.weights,
+                    key_points=key_points,
+                    company_id=UUID(company_id) if company_id else None,
+                    hard_blockers=data.hard_blockers,
+                    nice_to_have=data.nice_to_have,
+                    structured_job_posting=structured_job_posting,
+                    title=job_posting.get("raw_text", "")[:200] if job_posting else None,
+                    language=data.language
+                )
+            except (ValueError, TypeError) as e:
+                logger.error(f"Invalid UUID format in report creation: interviewer_id={interviewer_id}, company_id={company_id}, error: {e}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid ID format: {str(e)}"
+                )
             
             if report:
                 report_code = report["report_code"]
@@ -1146,10 +1169,16 @@ async def step4_weighting(data: WeightingInput):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in step4_weighting: {e}")
+        logger.error(f"Error in step4_weighting: {e}", exc_info=True)
+        error_detail = str(e)
+        # Provide more specific error message in development, generic in production
+        if "detail" in error_detail.lower() or len(error_detail) < 200:
+            detail_msg = f"Internal server error configuring weighting: {error_detail}"
+        else:
+            detail_msg = "Internal server error configuring weighting. Please check server logs."
         raise HTTPException(
             status_code=500,
-            detail="Internal server error configuring weighting"
+            detail=detail_msg
         )
 
 
