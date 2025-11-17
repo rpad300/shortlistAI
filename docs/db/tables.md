@@ -503,5 +503,401 @@ Audit or log
 
 ---
 
+## Table: chatbot_sessions
+
+### Purpose
+Stores conversation sessions for the Chatbot CV Preparation feature. Each session represents a complete conversational flow where a candidate is guided through CV optimization for a specific job opportunity.
+
+### Category
+Core business entity
+
+### Columns
+- `id` (uuid, not null, default uuid_generate_v4()) – Primary key
+- `candidate_id` (uuid, nullable, references candidates.id ON DELETE CASCADE) – Associated candidate if known
+- `current_step` (text, not null, default 'welcome') – Current step in the conversation flow
+- `status` (text, not null, default 'active') – Session status: active, completed, abandoned
+- `language` (text, not null, default 'en') – Language for conversation
+- `profile_data` (jsonb, default '{}') – Collected profile information
+- `cv_data` (jsonb, default '{}') – CV information and extracted data
+- `job_opportunity_data` (jsonb, default '{}') – Job opportunity information
+- `digital_footprint_data` (jsonb, default '{}') – Digital footprint analysis data
+- `additional_questions_data` (jsonb, default '{}') – Answers to adaptive questions
+- `generated_cv_data` (jsonb, default '{}') – Generated CV versions data
+- `interview_prep_data` (jsonb, default '{}') – Interview preparation materials
+- `consent_given` (boolean, not null, default false) – Whether consent was given
+- `consent_timestamp` (timestamptz, nullable) – When consent was given
+- `started_at` (timestamptz, not null, default now()) – Session start timestamp
+- `completed_at` (timestamptz, nullable) – Session completion timestamp
+- `created_at` (timestamptz, not null, default now()) – Record creation timestamp
+- `updated_at` (timestamptz, not null, default now()) – Last update timestamp
+
+### Keys and constraints
+- Primary key: id
+- Foreign key: candidate_id → candidates.id (ON DELETE CASCADE)
+
+### Indexes
+- `idx_chatbot_sessions_candidate_id`: (candidate_id). Links sessions to candidates.
+- `idx_chatbot_sessions_status`: (status). Filters by session status.
+- `idx_chatbot_sessions_current_step`: (current_step). Filters by conversation step.
+- `idx_chatbot_sessions_created_at`: (created_at DESC). Chronological queries.
+
+### Relationships
+- Each session may belong to one candidate (candidate_id → candidates.id)
+- Sessions have many messages through `chatbot_messages.session_id`
+- Sessions have many CV versions through `chatbot_cv_versions.session_id`
+- Sessions have one job opportunity through `chatbot_job_opportunities.session_id`
+- Sessions have one digital footprint through `chatbot_digital_footprint.session_id`
+- Sessions have one interview prep through `chatbot_interview_prep.session_id`
+- Sessions have one employability score through `chatbot_employability_scores.session_id`
+
+### RLS and security
+- RLS: Enabled
+- Policies:
+  - Admin can view all sessions
+  - Service role can manage all sessions (backend operations)
+- Notes: Contains personal data. RLS is mandatory. Backend handles access control.
+
+### Typical usage
+- Create new session when user starts chatbot flow
+- Update current_step as conversation progresses
+- Store collected data in JSONB fields
+- Mark as completed when flow finishes
+
+### Business rules
+- All consents must be given before session is created
+- current_step must be one of: welcome, profile_collection, cv_upload, job_opportunity, digital_footprint, adaptive_questions, cv_generation, interview_prep, score_and_recommendations, completed
+- status must be: active, completed, or abandoned
+- Sessions are automatically cleaned up when candidate is deleted (CASCADE)
+
+---
+
+## Table: chatbot_messages
+
+### Purpose
+Stores all messages in chatbot conversations, including both user messages and bot responses. Enables conversation history and context maintenance.
+
+### Category
+Audit or log
+
+### Columns
+- `id` (uuid, not null, default uuid_generate_v4()) – Primary key
+- `session_id` (uuid, not null, references chatbot_sessions.id ON DELETE CASCADE) – Parent session
+- `role` (text, not null) – Message role: user, bot, or system
+- `content` (text, not null) – Message content
+- `message_type` (text, not null, default 'text') – Type: text, file_upload, confirmation, summary, cv_preview, recommendation
+- `metadata` (jsonb, default '{}') – Additional metadata
+- `created_at` (timestamptz, not null, default now()) – Message timestamp
+
+### Keys and constraints
+- Primary key: id
+- Foreign key: session_id → chatbot_sessions.id (ON DELETE CASCADE)
+- Check: role IN ('user', 'bot', 'system')
+- Check: message_type IN ('text', 'file_upload', 'confirmation', 'summary', 'cv_preview', 'recommendation')
+
+### Indexes
+- `idx_chatbot_messages_session_id`: (session_id). Retrieves all messages for a session.
+- `idx_chatbot_messages_created_at`: (created_at). Chronological ordering.
+- `idx_chatbot_messages_role`: (role). Filters by message role.
+
+### Relationships
+- Each message belongs to one session (session_id → chatbot_sessions.id)
+
+### RLS and security
+- RLS: Enabled
+- Policies:
+  - Admin can view all messages
+  - Service role can manage all messages
+- Notes: Contains conversation content. RLS is mandatory.
+
+### Typical usage
+- Store user input messages
+- Store bot responses
+- Store system messages (status updates, errors)
+- Retrieve conversation history for context
+
+### Business rules
+- Messages cannot be updated or deleted (immutable for audit trail)
+- Messages cascade delete when session is deleted
+- role must be one of: user, bot, system
+
+---
+
+## Table: chatbot_cv_versions
+
+### Purpose
+Stores generated CV versions optimized for specific job opportunities. Supports both ATS-friendly and human-friendly versions.
+
+### Category
+Core business entity
+
+### Columns
+- `id` (uuid, not null, default uuid_generate_v4()) – Primary key
+- `session_id` (uuid, not null, references chatbot_sessions.id ON DELETE CASCADE) – Parent session
+- `version_type` (text, not null) – Type: ats_friendly, human_friendly, original
+- `cv_content` (text, not null) – Full CV content
+- `structured_data` (jsonb, nullable) – Structured CV data
+- `ats_score` (integer, nullable, check >= 0 AND <= 100) – ATS compatibility score
+- `keyword_match_score` (integer, nullable, check >= 0 AND <= 100) – Keyword matching score
+- `language` (text, not null, default 'en') – CV language
+- `created_at` (timestamptz, not null, default now()) – Creation timestamp
+- `updated_at` (timestamptz, not null, default now()) – Last update timestamp
+
+### Keys and constraints
+- Primary key: id
+- Foreign key: session_id → chatbot_sessions.id (ON DELETE CASCADE)
+- Check: version_type IN ('ats_friendly', 'human_friendly', 'original')
+- Check: ats_score >= 0 AND ats_score <= 100
+- Check: keyword_match_score >= 0 AND keyword_match_score <= 100
+
+### Indexes
+- `idx_chatbot_cv_versions_session_id`: (session_id). Retrieves all CV versions for a session.
+- `idx_chatbot_cv_versions_version_type`: (version_type). Filters by version type.
+
+### Relationships
+- Each CV version belongs to one session (session_id → chatbot_sessions.id)
+
+### RLS and security
+- RLS: Enabled
+- Policies:
+  - Admin can view all CV versions
+  - Service role can manage all CV versions
+- Notes: Contains candidate data. RLS is mandatory.
+
+### Typical usage
+- Store ATS-friendly CV version
+- Store human-friendly CV version
+- Store original CV for comparison
+- Retrieve best version for candidate
+
+### Business rules
+- version_type must be one of: ats_friendly, human_friendly, original
+- Scores must be between 0 and 100
+- Multiple versions can exist for same session (one per type)
+
+---
+
+## Table: chatbot_job_opportunities
+
+### Purpose
+Stores job opportunities analyzed in chatbot sessions. Includes structured extraction of requirements, skills, and risk assessment.
+
+### Category
+Core business entity
+
+### Columns
+- `id` (uuid, not null, default uuid_generate_v4()) – Primary key
+- `session_id` (uuid, not null, references chatbot_sessions.id ON DELETE CASCADE) – Parent session
+- `raw_text` (text, nullable) – Original job posting text
+- `structured_data` (jsonb, not null, default '{}') – Extracted structured data
+- `company_name` (text, nullable) – Company name
+- `company_website` (text, nullable) – Company website
+- `company_linkedin` (text, nullable) – Company LinkedIn URL
+- `job_title` (text, nullable) – Job title
+- `location` (text, nullable) – Job location
+- `contract_type` (text, nullable) – Contract type (full-time, part-time, etc.)
+- `requirements_obligatory` (jsonb, default '[]') – Obligatory requirements list
+- `requirements_preferred` (jsonb, default '[]') – Preferred requirements list
+- `hard_skills` (jsonb, default '[]') – Required hard skills
+- `soft_skills` (jsonb, default '[]') – Required soft skills
+- `culture_keywords` (jsonb, default '[]') – Culture and values keywords
+- `risk_assessment` (jsonb, default '{}') – Risk assessment analysis
+- `quality_score` (integer, nullable, check >= 0 AND <= 100) – Job quality score
+- `language` (text, not null, default 'en') – Job posting language
+- `created_at` (timestamptz, not null, default now()) – Creation timestamp
+- `updated_at` (timestamptz, not null, default now()) – Last update timestamp
+
+### Keys and constraints
+- Primary key: id
+- Foreign key: session_id → chatbot_sessions.id (ON DELETE CASCADE)
+- Check: quality_score >= 0 AND quality_score <= 100
+
+### Indexes
+- `idx_chatbot_job_opportunities_session_id`: (session_id). One opportunity per session.
+- `idx_chatbot_job_opportunities_company_name`: (company_name) WHERE company_name IS NOT NULL. Company search.
+
+### Relationships
+- Each job opportunity belongs to one session (session_id → chatbot_sessions.id)
+
+### RLS and security
+- RLS: Enabled
+- Policies:
+  - Admin can view all job opportunities
+  - Service role can manage all job opportunities
+- Notes: Contains business information. RLS enabled.
+
+### Typical usage
+- Store job posting after extraction
+- Analyze requirements for CV optimization
+- Assess job quality and risks
+- Extract company information
+
+### Business rules
+- One job opportunity per session
+- quality_score must be between 0 and 100
+- structured_data must always be an object (default '{}')
+
+---
+
+## Table: chatbot_digital_footprint
+
+### Purpose
+Stores analysis of candidate's digital footprint from LinkedIn, GitHub, portfolio, and other professional profiles. Identifies inconsistencies and provides recommendations.
+
+### Category
+Core business entity
+
+### Columns
+- `id` (uuid, not null, default uuid_generate_v4()) – Primary key
+- `session_id` (uuid, not null, references chatbot_sessions.id ON DELETE CASCADE) – Parent session
+- `linkedin_url` (text, nullable) – LinkedIn profile URL
+- `github_url` (text, nullable) – GitHub profile URL
+- `portfolio_url` (text, nullable) – Portfolio website URL
+- `other_links` (jsonb, default '[]') – Other professional links
+- `linkedin_analysis` (jsonb, default '{}') – LinkedIn profile analysis
+- `github_analysis` (jsonb, default '{}') – GitHub profile analysis
+- `portfolio_analysis` (jsonb, default '{}') – Portfolio analysis
+- `inconsistencies` (jsonb, default '[]') – Identified inconsistencies with CV
+- `recommendations` (jsonb, default '[]') – Recommendations for improvement
+- `analyzed_at` (timestamptz, nullable) – When analysis was performed
+- `created_at` (timestamptz, not null, default now()) – Creation timestamp
+- `updated_at` (timestamptz, not null, default now()) – Last update timestamp
+
+### Keys and constraints
+- Primary key: id
+- Foreign key: session_id → chatbot_sessions.id (ON DELETE CASCADE)
+
+### Indexes
+- `idx_chatbot_digital_footprint_session_id`: (session_id). One footprint per session.
+
+### Relationships
+- Each digital footprint belongs to one session (session_id → chatbot_sessions.id)
+
+### RLS and security
+- RLS: Enabled
+- Policies:
+  - Admin can view all digital footprints
+  - Service role can manage all digital footprints
+- Notes: Contains personal data from public profiles. RLS is mandatory.
+
+### Typical usage
+- Store links provided by candidate
+- Analyze public profiles (LinkedIn, GitHub, portfolio)
+- Compare with CV to find inconsistencies
+- Generate recommendations
+
+### Business rules
+- Only analyzes publicly available information
+- Requires explicit consent from candidate
+- Inconsistencies are suggestions, not facts
+
+---
+
+## Table: chatbot_interview_prep
+
+### Purpose
+Stores interview preparation materials generated for candidates, including likely questions, suggested answers, key stories, and preparation summary.
+
+### Category
+Core business entity
+
+### Columns
+- `id` (uuid, not null, default uuid_generate_v4()) – Primary key
+- `session_id` (uuid, not null, references chatbot_sessions.id ON DELETE CASCADE) – Parent session
+- `likely_questions` (jsonb, default '[]') – Predicted interview questions
+- `suggested_answers` (jsonb, default '[]') – Suggested answer templates
+- `key_stories` (jsonb, default '[]') – Key stories to prepare (STAR format)
+- `preparation_summary` (text, nullable) – Summary of preparation materials
+- `questions_to_ask` (jsonb, default '[]') – Questions candidate should ask
+- `language` (text, not null, default 'en') – Preparation language
+- `created_at` (timestamptz, not null, default now()) – Creation timestamp
+- `updated_at` (timestamptz, not null, default now()) – Last update timestamp
+
+### Keys and constraints
+- Primary key: id
+- Foreign key: session_id → chatbot_sessions.id (ON DELETE CASCADE)
+
+### Indexes
+- `idx_chatbot_interview_prep_session_id`: (session_id). One prep per session.
+
+### Relationships
+- Each interview prep belongs to one session (session_id → chatbot_sessions.id)
+
+### RLS and security
+- RLS: Enabled
+- Policies:
+  - Admin can view all interview prep
+  - Service role can manage all interview prep
+- Notes: Contains personal preparation data. RLS is mandatory.
+
+### Typical usage
+- Generate interview questions based on job and CV
+- Provide answer templates using candidate's experience
+- Identify key stories from candidate's background
+- Create preparation summary
+
+### Business rules
+- One interview prep per session
+- Questions and answers are suggestions, not guarantees
+- Based on job requirements and candidate's CV
+
+---
+
+## Table: chatbot_employability_scores
+
+### Purpose
+Stores employability scores and analysis for candidates based on job opportunity fit. Includes breakdown by technical skills, experience, and communication.
+
+### Category
+Core business entity
+
+### Columns
+- `id` (uuid, not null, default uuid_generate_v4()) – Primary key
+- `session_id` (uuid, not null, references chatbot_sessions.id ON DELETE CASCADE) – Parent session
+- `overall_score` (integer, not null, check >= 0 AND <= 100) – Overall fit score
+- `technical_skills_score` (integer, nullable, check >= 0 AND <= 100) – Technical skills match
+- `experience_score` (integer, nullable, check >= 0 AND <= 100) – Experience match
+- `communication_score` (integer, nullable, check >= 0 AND <= 100) – Communication/clarity score
+- `strengths` (jsonb, default '[]') – List of strengths
+- `weaknesses` (jsonb, default '[]') – List of weaknesses
+- `recommendations` (jsonb, default '[]') – Recommendations to improve score
+- `calculated_at` (timestamptz, not null, default now()) – When score was calculated
+- `created_at` (timestamptz, not null, default now()) – Creation timestamp
+
+### Keys and constraints
+- Primary key: id
+- Foreign key: session_id → chatbot_sessions.id (ON DELETE CASCADE)
+- Check: overall_score >= 0 AND overall_score <= 100
+- Check: technical_skills_score >= 0 AND technical_skills_score <= 100
+- Check: experience_score >= 0 AND experience_score <= 100
+- Check: communication_score >= 0 AND communication_score <= 100
+
+### Indexes
+- `idx_chatbot_employability_scores_session_id`: (session_id). One score per session.
+- `idx_chatbot_employability_scores_overall_score`: (overall_score DESC). Ranking queries.
+
+### Relationships
+- Each employability score belongs to one session (session_id → chatbot_sessions.id)
+
+### RLS and security
+- RLS: Enabled
+- Policies:
+  - Admin can view all employability scores
+  - Service role can manage all employability scores
+- Notes: Contains personal assessment data. RLS is mandatory.
+
+### Typical usage
+- Calculate fit score based on CV and job requirements
+- Provide breakdown by dimension
+- Identify areas for improvement
+- Track score over time (future)
+
+### Business rules
+- All scores must be between 0 and 100
+- overall_score is required
+- Other scores are optional but recommended
+- One score per session (can be updated)
+
+---
+
 (Additional tables will be documented as they are implemented: ai_providers, translations, legal_content, audit_logs, ai_usage_logs)
 

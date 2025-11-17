@@ -13,7 +13,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
  */
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 seconds for AI operations
+  timeout: 30000, // Default timeout (can be overridden per endpoint)
   headers: {
     'Content-Type': 'application/json',
   },
@@ -183,6 +183,104 @@ export const candidateAPI = {
     responseType: 'blob',
     timeout: 60000 // File download can take time
   }),
+};
+
+/**
+ * API endpoints for Chatbot CV Preparation flow.
+ * 
+ * Timeouts are synchronized with backend processing times:
+ * - Conversational messages: 180s (AI responses can take 60-120s, +50% margin)
+ * - File uploads: 180s (CV upload + PDF.co processing + AI extraction can take 60-120s)
+ * - Profile updates: 30s (just DB operations, no AI)
+ * - Session/messages retrieval: 30s (just DB queries)
+ */
+export const chatbotAPI = {
+  welcome: (data: {
+    language: string;
+    consent_read_cv: boolean;
+    consent_read_job_opportunity: boolean;
+    consent_analyze_links: boolean;
+    consent_store_data: boolean;
+  }) => api.post('/chatbot/welcome', data, {
+    timeout: 30000 // Just DB operations, no AI
+  }),
+  sendMessage: (sessionId: string, message: string, messageType: string = 'text') =>
+    api.post('/chatbot/message', {
+      session_id: sessionId,
+      message,
+      message_type: messageType
+    }, {
+      timeout: 180000 // 180s: AI responses can take 60-120s, allow extra margin
+    }),
+  updateProfile: (sessionId: string, data: {
+    name: string;
+    email: string;
+    phone?: string;
+    location?: string;
+    links?: Record<string, string>;
+  }) => api.post('/chatbot/profile', {
+    session_id: sessionId,
+    ...data
+  }, {
+    timeout: 30000 // Just DB operations, no AI
+  }),
+  uploadCV: (sessionId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('session_id', sessionId);
+    formData.append('file', file);
+    return api.post('/chatbot/cv/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 180000 // 180s: File upload + PDF.co processing + AI extraction can take 60-120s
+    });
+  },
+  getSession: (sessionId: string) =>
+    api.get(`/chatbot/session/${sessionId}`, {
+      timeout: 30000 // Just DB query
+    }),
+  getMessages: (sessionId: string, limit?: number) => {
+    const params = limit ? `?limit=${limit}` : '';
+    return api.get(`/chatbot/session/${sessionId}/messages${params}`, {
+      timeout: 30000 // Just DB query
+    });
+  },
+  recoverSession: (sessionId: string) =>
+    api.get(`/chatbot/session/${sessionId}`, {
+      timeout: 30000 // Just DB query
+    }),
+};
+
+/**
+ * API endpoints for Profiles (company & candidate) with risk filters.
+ */
+export const profilesAPI = {
+  listCompanies: (params: {
+    name?: string;
+    industry?: string;
+    min_risk_level?: "low" | "medium" | "high" | "critical";
+    limit?: number;
+  }) =>
+    api.get(`/profiles/company`, {
+      params,
+      timeout: 20000,
+    }),
+  getCompany: (profileId: string) =>
+    api.get(`/profiles/company/${profileId}`, { timeout: 20000 }),
+  listCompanyPositions: (profileId: string, status?: string, limit: number = 50) =>
+    api.get(`/profiles/company/${profileId}/positions`, {
+      params: { status, limit },
+      timeout: 20000,
+    }),
+  listCandidates: (params: {
+    candidate_name?: string;
+    min_risk_level?: "low" | "medium" | "high" | "critical";
+    limit?: number;
+  }) =>
+    api.get(`/profiles/candidate`, {
+      params,
+      timeout: 20000,
+    }),
+  getCandidate: (profileId: string) =>
+    api.get(`/profiles/candidate/${profileId}`, { timeout: 20000 }),
 };
 
 /**

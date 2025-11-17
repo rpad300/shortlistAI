@@ -39,6 +39,7 @@ import AdminAIUsage from '@pages/AdminAIUsage';
 import LegalTerms from '@pages/LegalTerms';
 import LegalPrivacy from '@pages/LegalPrivacy';
 import LegalCookies from '@pages/LegalCookies';
+import ChatbotPage from '@pages/ChatbotPage';
 import './App.css';
 
 function App() {
@@ -65,6 +66,7 @@ function App() {
           <Route path="/candidate/step4" element={<CandidateStep4 />} />
           <Route path="/candidate/step5" element={<CandidateStep5 />} />
           <Route path="/candidate/step6" element={<PlaceholderPage step="6 - Email Sent!" flow="candidate" />} />
+          <Route path="/chatbot" element={<ChatbotPage />} />
           <Route path="/legal/terms" element={<LegalTerms />} />
           <Route path="/legal/privacy" element={<LegalPrivacy />} />
           <Route path="/legal/cookies" element={<LegalCookies />} />
