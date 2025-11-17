@@ -12,6 +12,9 @@ from .job_posting_service import JobPostingService, get_job_posting_service
 from .cv_service import CVService, get_cv_service
 from .analysis_service import AnalysisService, get_analysis_service
 from .report_service import ReportService, get_report_service
+from .chatbot_service import ChatbotDatabaseService, get_chatbot_database_service
+from .company_profile_service import CompanyProfileService, get_company_profile_service
+from .candidate_profile_service import CandidateProfileService, get_candidate_profile_service
 
 __all__ = [
     "CandidateService",
@@ -30,4 +33,10 @@ __all__ = [
     "get_analysis_service",
     "ReportService",
     "get_report_service",
+    "ChatbotDatabaseService",
+    "get_chatbot_database_service",
+    "CompanyProfileService",
+    "get_company_profile_service",
+    "CandidateProfileService",
+    "get_candidate_profile_service",
 ]

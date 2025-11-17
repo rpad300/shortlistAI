@@ -152,11 +152,13 @@ async def health_check():
 
 
 # Import routers
-from routers import interviewer, candidate, admin, enrichment, prompts
+from routers import interviewer, candidate, admin, enrichment, prompts, chatbot, profiles
 
 # Register routers
 app.include_router(interviewer.router, prefix="/api")
 app.include_router(candidate.router, prefix="/api")
+app.include_router(chatbot.router, prefix="/api")  # Chatbot CV Preparation flow
+app.include_router(profiles.router, prefix="/api")
 app.include_router(enrichment.router)
 app.include_router(admin.router, prefix="/api")
 app.include_router(prompts.router)  # Admin prompts management

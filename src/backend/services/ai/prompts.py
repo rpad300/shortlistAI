@@ -477,6 +477,756 @@ Return ONLY valid JSON:
 Return ONLY the JSON in {language}."""
 
 
+# =============================================================================
+# CHATBOT-SPECIFIC PROMPTS
+# =============================================================================
+
+# Chatbot Profile Extraction Prompt
+CHATBOT_PROFILE_EXTRACTION_PROMPT = """You are an expert at extracting structured profile information from conversational text.
+
+IMPORTANT: You must respond in {language}. All extracted text must be in {language}.
+
+Extract profile information from the following user message. Return ONLY valid JSON with this structure:
+{{
+  "name": "Full name if mentioned, or null",
+  "email": "Email address if mentioned, or null",
+  "phone": "Phone number if mentioned, or null",
+  "location": "City and country if mentioned, or null",
+  "links": {{
+    "linkedin": "LinkedIn URL if mentioned, or null",
+    "github": "GitHub URL if mentioned, or null",
+    "portfolio": "Portfolio/website URL if mentioned, or null",
+    "behance": "Behance URL if mentioned, or null",
+    "dribbble": "Dribbble URL if mentioned, or null",
+    "facebook": "Facebook URL if mentioned, or null",
+    "instagram": "Instagram URL if mentioned, or null",
+    "twitter": "Twitter/X URL if mentioned, or null",
+    "telegram": "Telegram URL if mentioned, or null",
+    "whatsapp": "WhatsApp link if mentioned, or null"
+  }}
+}}
+
+User Message:
+{text}
+
+Return ONLY the JSON, no additional text or explanation. If information is missing, use null for that field."""
+
+# Chatbot Question Generation Prompt
+CHATBOT_QUESTION_GENERATION_PROMPT = """You are an expert recruiter helping a candidate prepare their CV for a specific job opportunity.
+
+IMPORTANT: You must respond in {language}. All questions must be in {language}.
+
+Based on the CV and job opportunity analysis, generate adaptive questions to gather missing information or strengthen the candidate's profile.
+
+CV Summary:
+{cv_summary}
+
+Job Opportunity Requirements:
+{job_requirements}
+
+Gaps Identified:
+{gaps}
+
+Generate 3-10 targeted questions (prioritize the most important gaps). Return ONLY valid JSON:
+{{
+  "questions": [
+    {{
+      "id": "unique_question_id",
+      "question": "Question text",
+      "category": "work_experience|skills|projects|education|other",
+      "priority": "high|medium|low",
+      "context": "Why this question is important for this job opportunity"
+    }}
+  ],
+  "total_questions": 5,
+  "focus_areas": ["area1", "area2"]
+}}
+
+Return ONLY the JSON, no additional text."""
+
+# Chatbot CV Generation Prompt (ATS Friendly)
+CHATBOT_CV_GENERATION_ATS_PROMPT = """You are a CV optimization expert specializing in ATS (Applicant Tracking System) compatibility.
+
+IMPORTANT: You must respond in {language}. The generated CV must be in {language}.
+
+Optimize the candidate's CV for ATS systems while keeping it relevant to the job opportunity. Focus on:
+- Keyword optimization matching job requirements
+- Clear section headers (Summary, Experience, Education, Skills)
+- Plain text format (avoid tables, images, complex formatting)
+- Chronological consistency
+- Standard date formats
+
+Original CV Data:
+{original_cv}
+
+Job Opportunity Requirements:
+{job_requirements}
+
+Target Language: {language}
+
+Generate an ATS-friendly CV. Return ONLY valid JSON:
+{{
+  "cv_content": "Full CV text in plain format",
+  "structured_data": {{
+    "summary": "Professional summary optimized for ATS",
+    "experience": [...],
+    "education": [...],
+    "skills": {...}
+  }},
+  "keyword_matches": ["keyword1", "keyword2"],
+  "changes_made": [
+    "Reorganized experience section",
+    "Added keyword X in summary",
+    "Clarified Y skill"
+  ]
+}}
+
+Return ONLY the JSON."""
+
+# Chatbot CV Generation Prompt (Human Friendly)
+CHATBOT_CV_GENERATION_HUMAN_PROMPT = """You are a CV optimization expert creating a human-readable, compelling CV.
+
+IMPORTANT: You must respond in {language}. The generated CV must be in {language}.
+
+Optimize the candidate's CV for human recruiters. Focus on:
+- Engaging professional summary
+- Clear achievements and impact
+- Storytelling approach (but factual)
+- Professional yet personable tone
+- Well-organized sections
+
+Original CV Data:
+{original_cv}
+
+Job Opportunity Requirements:
+{job_requirements}
+
+Target Language: {language}
+
+Generate a human-friendly CV. Return ONLY valid JSON:
+{{
+  "cv_content": "Full CV text with narrative elements",
+  "structured_data": {{
+    "summary": "Engaging professional summary",
+    "experience": [...],
+    "education": [...],
+    "skills": {...}
+  }},
+  "tone": "professional|marketing|neutral",
+  "changes_made": [
+    "Enhanced summary with impact statements",
+    "Reorganized experience by relevance",
+    "Added achievement-focused language"
+  ]
+}}
+
+Return ONLY the JSON."""
+
+# Chatbot Digital Footprint Analysis Prompt
+CHATBOT_DIGITAL_FOOTPRINT_ANALYSIS_PROMPT = """You are an expert at analyzing professional online profiles and identifying inconsistencies.
+
+IMPORTANT: You must respond in {language}. All analysis must be in {language}.
+
+Analyze the candidate's digital footprint from their CV and provided links. Identify:
+- Inconsistencies between CV and online profiles
+- Missing information that should be added
+- Recommendations for profile improvement
+
+CV Summary:
+{cv_summary}
+
+LinkedIn Profile (if available):
+{linkedin_data}
+
+GitHub Profile (if available):
+{github_data}
+
+Portfolio (if available):
+{portfolio_data}
+
+Return ONLY valid JSON:
+{{
+  "linkedin_analysis": {{
+    "headline_match": true|false,
+    "summary_match": true|false,
+    "experience_inconsistencies": ["inconsistency1", "inconsistency2"],
+    "skills_gaps": ["missing skill1", "missing skill2"],
+    "recommendations": ["recommendation1", "recommendation2"]
+  }},
+  "github_analysis": {{
+    "main_languages": ["Python", "JavaScript"],
+    "recent_activity": "Active|Inactive",
+    "projects_highlighted": true|false,
+    "cv_match": true|false,
+    "recommendations": ["recommendation1"]
+  }},
+  "inconsistencies": [
+    {{
+      "type": "experience|skills|dates|other",
+      "description": "What is inconsistent",
+      "cv_value": "Value in CV",
+      "profile_value": "Value in profile",
+      "recommendation": "What to fix"
+    }}
+  ],
+  "recommendations": [
+    "Update LinkedIn headline to match CV",
+    "Add missing project to CV",
+    "Synchronize dates"
+  ]
+}}
+
+Return ONLY the JSON."""
+
+# Chatbot Interview Preparation Prompt
+CHATBOT_INTERVIEW_PREP_PROMPT = """You are an expert interview coach preparing a candidate for a job interview.
+
+IMPORTANT: You must respond in {language}. All interview prep materials must be in {language}.
+
+Based on the CV and job opportunity, create comprehensive interview preparation materials.
+
+CV Summary:
+{cv_summary}
+
+Job Opportunity:
+{job_opportunity}
+
+Candidate's Experience Highlights:
+{experience_highlights}
+
+Return ONLY valid JSON:
+{{
+  "likely_questions": [
+    {{
+      "question": "Question text",
+      "category": "technical|behavioral|cultural|experience",
+      "importance": "high|medium|low",
+      "reasoning": "Why this question is likely"
+    }}
+  ],
+  "suggested_answers": [
+    {{
+      "question_id": "question_id",
+      "answer_template": "Answer using candidate's experience",
+      "key_points": ["point1", "point2"],
+      "example_story": "Specific story from candidate's background"
+    }}
+  ],
+  "key_stories": [
+    {{
+      "title": "Story title",
+      "context": "Situation/Context",
+      "action": "What candidate did",
+      "result": "Outcome and impact",
+      "skills_demonstrated": ["skill1", "skill2"],
+      "when_to_use": "Which questions this story answers"
+    }}
+  ],
+  "questions_to_ask": [
+    "Question candidate should ask about the role",
+    "Question about company culture",
+    "Question about team structure"
+  ],
+  "preparation_summary": "Overall preparation strategy and focus areas"
+}}
+
+Return ONLY the JSON."""
+
+# Chatbot Employability Score Prompt
+CHATBOT_EMPLOYABILITY_SCORE_PROMPT = """You are an expert recruiter evaluating a candidate's fit for a specific job opportunity.
+
+IMPORTANT: You must respond in {language}. All analysis must be in {language}.
+
+Evaluate the candidate's employability score based on CV and job requirements. Provide detailed breakdown.
+
+CV Summary:
+{cv_summary}
+
+Job Requirements:
+{job_requirements}
+
+Structured Analysis:
+{structured_analysis}
+
+Return ONLY valid JSON:
+{{
+  "overall_score": 75,
+  "technical_skills_score": 80,
+  "experience_score": 70,
+  "communication_score": 75,
+  "strengths": [
+    "Strong experience in X",
+    "Relevant certifications",
+    "Clear career progression"
+  ],
+  "weaknesses": [
+    "Missing skill Y",
+    "Limited experience in Z"
+  ],
+  "recommendations": [
+    "Add project showcasing skill Y",
+    "Highlight relevant experience in Z area",
+    "Update LinkedIn with keywords from job"
+  ],
+  "explanation": "Human-readable explanation of the score and reasoning"
+}}
+
+Scores must be between 0 and 100. Return ONLY the JSON."""
+
+# Structure Company Enrichment Prompt
+STRUCTURE_COMPANY_ENRICHMENT_PROMPT = """You are an expert data analyst structuring company enrichment data from Brave Search API results.
+
+IMPORTANT: You must respond in {language}. All extracted text must be in {language}.
+
+Based on the Brave Search enrichment data provided below, structure the information into a comprehensive JSON format matching the company_profiles database schema.
+
+Brave Search Enrichment Data:
+{brave_enrichment_data}
+
+Additional Context (if available):
+{additional_context}
+
+Extract and return ONLY valid JSON with this EXACT structure:
+{{
+  "basic_info": {{
+    "website": "..." or null,
+    "description": "..." or null,
+    "industry": "..." or null,
+    "sector": "..." or null,
+    "company_size": "..." or null, // e.g., "1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"
+    "founded_year": 2020 or null,
+    "headquarters": {{"city": "...", "country": "...", "address": "..."}} or null,
+    "employee_count": 150 or null,
+    "revenue": {{"currency": "EUR", "amount": 1000000, "period": "annual"}} or null,
+    "legal_status": "..." or null, // "LLC", "Corporation", "Startup", etc.
+    "funding": [] // Array of funding rounds if available
+  }},
+  "contact_info": {{
+    "website": "..." or null,
+    "email": "..." or null,
+    "phone": "..." or null,
+    "address": {{"street": "...", "city": "...", "country": "...", "postal_code": "..."}} or null,
+    "social_media": {{
+      "linkedin": "..." or null,
+      "twitter": "..." or null,
+      "facebook": "..." or null,
+      "github": "..." or null
+    }}
+  }},
+  "culture": {{
+    "values": [], // Array of company values if found
+    "mission": "..." or null,
+    "vision": "..." or null,
+    "culture_keywords": [], // Keywords describing company culture
+    "benefits": [], // Array of benefits/perks if mentioned
+    "work_environment": "..." or null, // "remote", "hybrid", "onsite"
+    "work_life_balance": "..." or null // AI assessment
+  }},
+  "technologies": {{
+    "tech_stack": [], // Technologies used
+    "tools": [], // Development tools, platforms
+    "methodologies": [], // Agile, Scrum, etc.
+    "cloud_providers": [] // AWS, Azure, GCP
+  }},
+  "recent_activity": [
+    {{
+      "type": "news" | "funding" | "acquisition" | "product_launch" | "hiring",
+      "title": "...",
+      "description": "...",
+      "url": "...",
+      "date": "...",
+      "source": "..."
+    }}
+  ],
+  "hiring_info": {{
+    "active_openings": 0 or null,
+    "recent_postings": [], // Array of job titles frequently posted
+    "hiring_team_size": 0 or null,
+    "average_time_to_hire": 0 or null, // days
+    "common_locations": [], // Locations where they hire
+    "remote_policy": "..." or null // "fully_remote", "hybrid", "onsite_only"
+  }},
+  "ai_insights": {{
+    "growth_trajectory": "..." or null, // "growing", "stable", "declining"
+    "reputation_score": 0-100 or null,
+    "key_strengths": [],
+    "potential_concerns": [],
+    "recommendation_notes": "..." or null
+  }},
+  "normalized_name": "..." // Normalized/standardized company name for deduplication
+}}
+
+Return ONLY the JSON, no additional text. Use null for missing fields, empty arrays [] for missing lists, and empty objects {{}} for missing nested objects."""
+
+# Structure Candidate Enrichment Prompt
+STRUCTURE_CANDIDATE_ENRICHMENT_PROMPT = """You are an expert data analyst structuring candidate enrichment data from CV and Brave Search API results.
+
+IMPORTANT: You must respond in {language}. All extracted text must be in {language}.
+
+Based on the CV data and Brave Search enrichment data provided below, structure the information into a comprehensive JSON format matching the candidate_profiles database schema.
+
+CV Data:
+{cv_data}
+
+Brave Search Enrichment Data:
+{brave_enrichment_data}
+
+Additional Context (if available):
+{additional_context}
+
+Extract and return ONLY valid JSON with this EXACT structure:
+{{
+  "basic_info": {{
+    "email": "..." or null,
+    "phone": "..." or null,
+    "location": {{"city": "...", "country": "...", "address": "..."}} or null,
+    "current_location": "..." or null,
+    "willing_to_relocate": true or false or null,
+    "preferred_locations": [], // Array of preferred locations
+    "nationality": "..." or null,
+    "languages": [
+      {{"language": "...", "level": "native" | "fluent" | "proficient" | "basic"}}
+    ], // Array of languages with proficiency levels
+    "date_of_birth": "..." or null // Only if available with consent
+  }},
+  "contact_info": {{
+    "email": "..." or null,
+    "phone": "..." or null,
+    "social_media": {{
+      "linkedin": "..." or null,
+      "github": "..." or null,
+      "portfolio": "..." or null,
+      "twitter": "..." or null
+    }},
+    "professional_websites": [] // Array of URLs
+  }},
+  "professional_summary_structured": {{
+    "current_role": "..." or null,
+    "years_experience": 0 or null,
+    "expertise_areas": [], // Main areas of expertise
+    "career_level": "..." or null, // "entry", "mid", "senior", "lead", "executive"
+    "summary_text": "..." // Full summary text
+  }},
+  "work_experience": [
+    {{
+      "company": "...",
+      "company_normalized": "..." or null,
+      "company_linkedin": "..." or null,
+      "position": "...",
+      "location": "..." or null,
+      "start_date": "...", // Format: "YYYY-MM" or "YYYY-MM-DD"
+      "end_date": "..." or null, // null if current, format: "YYYY-MM" or "YYYY-MM-DD"
+      "is_current": true or false,
+      "duration_months": 0,
+      "responsibilities": [],
+      "achievements": [],
+      "technologies_used": [],
+      "team_size": 0 or null,
+      "reports_to": "..." or null,
+      "enrichment": {{}} // Additional data from Brave Search about company/role
+    }}
+  ],
+  "education": [
+    {{
+      "institution": "...",
+      "degree": "..." or null,
+      "field_of_study": "..." or null,
+      "level": "..." or null, // "high_school", "bachelor", "master", "phd", "certification"
+      "start_date": "..." or null,
+      "end_date": "..." or null,
+      "grade": "..." or null,
+      "honors": []
+    }}
+  ],
+  "skills": {{
+    "hard_skills": [], // Technical skills
+    "soft_skills": [],
+    "languages": [], // Programming languages
+    "frameworks": [],
+    "tools": [],
+    "platforms": [], // Cloud platforms, etc.
+    "certifications": [
+      {{"name": "...", "issuer": "...", "date": "..."}}
+    ],
+    "skill_levels": {{}} // {{"skill_name": "expert" | "advanced" | "intermediate" | "beginner"}}
+  }},
+  "projects": [
+    {{
+      "name": "...",
+      "description": "...",
+      "url": "..." or null,
+      "technologies": [],
+      "date": "..." or null,
+      "role": "..." or null // Role in project
+    }}
+  ],
+  "publications": [
+    {{
+      "title": "...",
+      "type": "article" | "paper" | "blog_post" | "book" | "presentation",
+      "url": "..." or null,
+      "date": "..." or null,
+      "authors": [],
+      "venue": "..." or null
+    }}
+  ],
+  "awards": [
+    {{
+      "title": "...",
+      "issuer": "...",
+      "date": "..." or null,
+      "description": "..." or null,
+      "url": "..." or null
+    }}
+  ],
+  "career_preferences": {{
+    "target_roles": [], // Desired job titles
+    "target_industries": [],
+    "target_companies": [], // Companies interested in
+    "salary_expectations": {{"min": 0, "max": 0, "currency": "EUR"}} or null,
+    "work_environment": "..." or null, // "remote", "hybrid", "onsite"
+    "preferred_locations": [],
+    "availability": "..." or null // "immediately", "1_month", "3_months", "6_months", "open"
+  }},
+  "ai_insights": {{
+    "market_value": 0-100 or null, // Estimated market value score
+    "strengths": [],
+    "areas_for_improvement": [],
+    "recommendation_notes": "..." or null,
+    "matching_keywords": [], // Keywords for job matching
+    "unique_selling_points": []
+  }},
+  "normalized_name": "..." // Normalized/standardized name for deduplication
+}}
+
+Return ONLY the JSON, no additional text. Use null for missing fields, empty arrays [] for missing lists, and empty objects {{}} for missing nested objects."""
+
+# Social Media Risk Analysis Prompt (for Companies)
+ANALYZE_COMPANY_SOCIAL_MEDIA_RISK_PROMPT = """You are an expert risk analyst specializing in reputation and social media risk assessment for recruitment and headhunting.
+
+IMPORTANT: You must respond in {language}. All analysis must be in {language}.
+
+Based on the Brave Search enrichment data and company information provided below, analyze the company's social media presence and reputation for potential risks that could affect recruitment or candidate association.
+
+Company Information:
+{company_name}
+
+Brave Search Enrichment Data:
+{brave_enrichment_data}
+
+Recent News and Activities:
+{recent_news}
+
+Additional Context:
+{additional_context}
+
+Analyze and return ONLY valid JSON with this EXACT structure:
+{{
+  "overall_risk_score": 0-100, // 0 = no risk, 100 = high risk
+  "risk_level": "low" | "medium" | "high" | "critical",
+  "public_incidents": [
+    {{
+      "type": "scandal" | "lawsuit" | "controversy" | "negative_news" | "social_media_post",
+      "title": "...",
+      "description": "...",
+      "date": "...",
+      "source": "...",
+      "url": "...",
+      "severity": "low" | "medium" | "high",
+      "relevance": "..." // How relevant for recruitment (e.g., "Employee treatment", "Ethical concerns", "Financial stability")
+    }}
+  ],
+  "social_media_behavior": {{
+    "platform": "linkedin" | "twitter" | "facebook" | "instagram" | "other",
+    "tone_analysis": "...", // "professional", "casual", "controversial", "polarizing"
+    "post_frequency": "...", // "low", "moderate", "high"
+    "controversial_topics": [], // Topics that might be problematic
+    "engagement_pattern": "..." // Type of engagement with others
+  }},
+  "red_flags": [
+    {{
+      "type": "discrimination" | "harassment" | "unethical_behavior" | "legal_issues" | "reputation_damage",
+      "description": "...",
+      "evidence_urls": [],
+      "severity": "low" | "medium" | "high" | "critical",
+      "relevance_for_recruitment": "..." // Why this matters for candidates
+    }}
+  ],
+  "positive_indicators": [
+    {{
+      "type": "community_engagement" | "thought_leadership" | "awards" | "positive_coverage",
+      "description": "...",
+      "evidence_urls": []
+    }}
+  ],
+  "recommendations": "...", // AI-generated recommendations for hiring team (e.g., "Proceed with caution", "Monitor ongoing", "Low risk")
+  "last_analyzed": "..." // ISO timestamp
+}}
+
+Focus on risks that could:
+- Damage candidate's reputation if associated with company
+- Create legal/compliance issues
+- Reflect poor company culture or values
+- Indicate financial instability or business risks
+- Show discrimination or unethical behavior
+
+Return ONLY the JSON, no additional text."""
+
+# Social Media Risk Analysis Prompt (for Candidates)
+ANALYZE_CANDIDATE_SOCIAL_MEDIA_RISK_PROMPT = """You are an expert risk analyst specializing in social media and online behavior assessment for recruitment and headhunting.
+
+IMPORTANT: You must respond in {language}. All analysis must be in {language}.
+
+Based on the CV data and Brave Search enrichment data provided below, analyze the candidate's social media presence (both professional and personal) for potential risks that could affect their employability or company reputation.
+
+CV Data Summary:
+{cv_data}
+
+Brave Search Enrichment Data:
+{brave_enrichment_data}
+
+Social Media Links:
+{social_media_links}
+
+Additional Context:
+{additional_context}
+
+Analyze and return ONLY valid JSON with this EXACT structure:
+{{
+  "overall_risk_score": 0-100, // 0 = no risk, 100 = high risk
+  "risk_level": "low" | "medium" | "high" | "critical",
+  "professional_social_media": {{
+    "linkedin": {{
+      "risk_score": 0-100,
+      "tone_analysis": "...", // "professional", "casual", "controversial", "polarizing"
+      "post_frequency": "...", // "low", "moderate", "high"
+      "content_quality": "...", // "excellent", "good", "average", "poor"
+      "engagement_pattern": "...", // Type of engagement with others
+      "controversial_posts": [], // Array of concerning posts with URLs if available
+      "positive_indicators": [] // Professional achievements, thought leadership, positive engagement
+    }},
+    "github": {{
+      "risk_score": 0-100,
+      "activity_level": "...",
+      "contribution_quality": "...",
+      "community_interaction": "...",
+      "concerning_repositories": [], // Repos that might be problematic (e.g., controversial content, unethical projects)
+      "positive_indicators": [] // Open source contributions, well-maintained projects
+    }},
+    "portfolio_website": {{
+      "risk_score": 0-100,
+      "content_quality": "...",
+      "professionalism": "...",
+      "concerning_content": [], // Any concerning content found
+      "positive_indicators": []
+    }}
+  }},
+  "personal_social_media": {{
+    "twitter": {{
+      "risk_score": 0-100,
+      "visibility": "public" | "protected" | "private" | "unknown",
+      "tone_analysis": "...",
+      "controversial_topics": [], // Topics that might be problematic (politics, discrimination, etc.)
+      "red_flag_posts": [], // Posts that could be concerning for employers
+      "last_analyzed": "..."
+    }},
+    "facebook": {{
+      "risk_score": 0-100,
+      "visibility": "public" | "protected" | "private" | "unknown",
+      "public_activity": "...",
+      "concerning_content": [],
+      "last_analyzed": "..."
+    }},
+    "instagram": {{
+      "risk_score": 0-100,
+      "visibility": "public" | "protected" | "private" | "unknown",
+      "content_analysis": "...",
+      "concerning_content": [],
+      "last_analyzed": "..."
+    }}
+  }},
+  "public_incidents": [
+    {{
+      "type": "scandal" | "lawsuit" | "controversy" | "negative_news" | "social_media_post",
+      "platform": "...",
+      "title": "...",
+      "description": "...",
+      "date": "...",
+      "source": "...",
+      "url": "...",
+      "severity": "low" | "medium" | "high" | "critical",
+      "relevance": "..." // How relevant for employment/recruitment
+    }}
+  ],
+  "red_flags": [
+    {{
+      "type": "discrimination" | "harassment" | "unethical_behavior" | "legal_issues" | "reputation_damage" | "inappropriate_content",
+      "description": "...",
+      "platform": "...",
+      "evidence_urls": [],
+      "severity": "low" | "medium" | "high" | "critical",
+      "context": "..." // Additional context about the red flag
+    }}
+  ],
+  "positive_indicators": [
+    {{
+      "type": "community_engagement" | "thought_leadership" | "awards" | "positive_coverage" | "professional_achievements",
+      "description": "...",
+      "platform": "...",
+      "evidence_urls": [],
+      "impact": "..." // How positive this is for reputation
+    }}
+  ],
+  "recommendations": "...", // AI-generated recommendations for hiring team
+  "privacy_notes": "...", // Notes about privacy settings and visibility (e.g., "Most personal profiles are private")
+  "last_analyzed": "..." // ISO timestamp
+}}
+
+Focus on risks that could:
+- Damage company reputation if candidate is hired
+- Create legal/compliance issues
+- Indicate poor judgment or unprofessional behavior
+- Show discrimination, harassment, or unethical behavior
+- Conflict with company values or culture
+
+Return ONLY the JSON, no additional text."""
+
+# Chatbot Job Risk Assessment Prompt
+CHATBOT_JOB_RISK_ASSESSMENT_PROMPT = """You are an expert recruiter analyzing a job opportunity for quality and potential red flags.
+
+IMPORTANT: You must respond in {language}. All analysis must be in {language}.
+
+Analyze the job posting and company information to identify positive points and potential risks.
+
+Job Posting:
+{job_posting}
+
+Company Information:
+{company_info}
+
+Return ONLY valid JSON:
+{{
+  "quality_score": 85,
+  "positive_points": [
+    "Clear job responsibilities",
+    "Detailed benefits package",
+    "Well-defined company mission"
+  ],
+  "red_flags": [
+    "Many functions in one role",
+    "Unrealistic requirements for junior level"
+  ],
+  "questions_to_ask": [
+    "What is the team structure?",
+    "What are growth opportunities?",
+    "What is the work-life balance culture?"
+  ],
+  "company_summary": "Brief summary of what the company does, size, and culture"
+}}
+
+Scores must be between 0 and 100. Return ONLY the JSON."""
+
+
 async def get_prompt(prompt_type: str, language: str = "en") -> str:
     """
     Get prompt template by type from database.
@@ -516,7 +1266,23 @@ async def get_prompt(prompt_type: str, language: str = "en") -> str:
         "interviewer_analysis": INTERVIEWER_ANALYSIS_PROMPT,
         "candidate_analysis": CANDIDATE_ANALYSIS_PROMPT,
         "translation": TRANSLATION_PROMPT,
-        "executive_recommendation": EXECUTIVE_RECOMMENDATION_PROMPT
+        "executive_recommendation": EXECUTIVE_RECOMMENDATION_PROMPT,
+        # Chatbot prompts
+        "chatbot_profile_extraction": CHATBOT_PROFILE_EXTRACTION_PROMPT,
+        "chatbot_question_generation": CHATBOT_QUESTION_GENERATION_PROMPT,
+        "chatbot_cv_generation": CHATBOT_CV_GENERATION_ATS_PROMPT,  # Default to ATS
+        "chatbot_cv_generation_ats": CHATBOT_CV_GENERATION_ATS_PROMPT,
+        "chatbot_cv_generation_human": CHATBOT_CV_GENERATION_HUMAN_PROMPT,
+        "chatbot_digital_footprint_analysis": CHATBOT_DIGITAL_FOOTPRINT_ANALYSIS_PROMPT,
+        "chatbot_interview_prep": CHATBOT_INTERVIEW_PREP_PROMPT,
+        "chatbot_employability_score": CHATBOT_EMPLOYABILITY_SCORE_PROMPT,
+        "chatbot_job_risk_assessment": CHATBOT_JOB_RISK_ASSESSMENT_PROMPT,
+        # Enrichment structuring prompts
+        "structure_company_enrichment": STRUCTURE_COMPANY_ENRICHMENT_PROMPT,
+        "structure_candidate_enrichment": STRUCTURE_CANDIDATE_ENRICHMENT_PROMPT,
+        # Social media risk analysis prompts
+        "analyze_company_social_media_risk": ANALYZE_COMPANY_SOCIAL_MEDIA_RISK_PROMPT,
+        "analyze_candidate_social_media_risk": ANALYZE_CANDIDATE_SOCIAL_MEDIA_RISK_PROMPT
     }
     
     logger.info(f"Using default prompt for '{prompt_type}'")
@@ -545,7 +1311,23 @@ def get_prompt_sync(prompt_type: str) -> str:
         "interviewer_analysis": INTERVIEWER_ANALYSIS_PROMPT,
         "candidate_analysis": CANDIDATE_ANALYSIS_PROMPT,
         "translation": TRANSLATION_PROMPT,
-        "executive_recommendation": EXECUTIVE_RECOMMENDATION_PROMPT
+        "executive_recommendation": EXECUTIVE_RECOMMENDATION_PROMPT,
+        # Chatbot prompts
+        "chatbot_profile_extraction": CHATBOT_PROFILE_EXTRACTION_PROMPT,
+        "chatbot_question_generation": CHATBOT_QUESTION_GENERATION_PROMPT,
+        "chatbot_cv_generation": CHATBOT_CV_GENERATION_ATS_PROMPT,
+        "chatbot_cv_generation_ats": CHATBOT_CV_GENERATION_ATS_PROMPT,
+        "chatbot_cv_generation_human": CHATBOT_CV_GENERATION_HUMAN_PROMPT,
+        "chatbot_digital_footprint_analysis": CHATBOT_DIGITAL_FOOTPRINT_ANALYSIS_PROMPT,
+        "chatbot_interview_prep": CHATBOT_INTERVIEW_PREP_PROMPT,
+        "chatbot_employability_score": CHATBOT_EMPLOYABILITY_SCORE_PROMPT,
+        "chatbot_job_risk_assessment": CHATBOT_JOB_RISK_ASSESSMENT_PROMPT,
+        # Enrichment structuring prompts
+        "structure_company_enrichment": STRUCTURE_COMPANY_ENRICHMENT_PROMPT,
+        "structure_candidate_enrichment": STRUCTURE_CANDIDATE_ENRICHMENT_PROMPT,
+        # Social media risk analysis prompts
+        "analyze_company_social_media_risk": ANALYZE_COMPANY_SOCIAL_MEDIA_RISK_PROMPT,
+        "analyze_candidate_social_media_risk": ANALYZE_CANDIDATE_SOCIAL_MEDIA_RISK_PROMPT
     }
     
     return prompts.get(prompt_type, "")

@@ -22,6 +22,20 @@ class PromptType(str, Enum):
     EMAIL_SUMMARY_INTERVIEWER = "email_summary_interviewer"
     EMAIL_SUMMARY_CANDIDATE = "email_summary_candidate"
     TRANSLATION = "translation"
+    # Chatbot-specific prompts
+    CHATBOT_PROFILE_EXTRACTION = "chatbot_profile_extraction"
+    CHATBOT_QUESTION_GENERATION = "chatbot_question_generation"
+    CHATBOT_CV_GENERATION = "chatbot_cv_generation"
+    CHATBOT_DIGITAL_FOOTPRINT_ANALYSIS = "chatbot_digital_footprint_analysis"
+    CHATBOT_INTERVIEW_PREP = "chatbot_interview_prep"
+    CHATBOT_EMPLOYABILITY_SCORE = "chatbot_employability_score"
+    CHATBOT_JOB_RISK_ASSESSMENT = "chatbot_job_risk_assessment"
+    # Enrichment structuring prompts
+    STRUCTURE_COMPANY_ENRICHMENT = "structure_company_enrichment"
+    STRUCTURE_CANDIDATE_ENRICHMENT = "structure_candidate_enrichment"
+    # Social media risk analysis prompts
+    ANALYZE_COMPANY_SOCIAL_MEDIA_RISK = "analyze_company_social_media_risk"
+    ANALYZE_CANDIDATE_SOCIAL_MEDIA_RISK = "analyze_candidate_social_media_risk"
 
 
 class AIRequest(BaseModel):

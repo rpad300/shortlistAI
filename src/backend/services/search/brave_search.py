@@ -326,6 +326,185 @@ class BraveSearchService:
             logger.warning(f"Error getting AI summary: {str(e)}")
             return None
     
+    async def enrich_company_from_links(
+        self,
+        company_name: str,
+        website_url: Optional[str] = None,
+        linkedin_url: Optional[str] = None,
+        email: Optional[str] = None,
+    ) -> Optional[CompanyEnrichment]:
+        """
+        Enrich company information using direct links provided by user.
+        
+        Uses the provided links directly with site: operators for more targeted searches.
+        
+        Args:
+            company_name: Name of the company
+            website_url: Direct website URL (if provided)
+            linkedin_url: Direct LinkedIn company page URL (if provided)
+            email: Company email (if provided)
+        
+        Returns:
+            Enriched company data or None if search fails
+        """
+        if not self.enabled:
+            return None
+        
+        try:
+            enrichment = CompanyEnrichment(
+                company_name=company_name,
+                raw_results=[],
+            )
+            
+            # Store provided links directly
+            if website_url:
+                enrichment.website = website_url
+                
+                # Search for information specifically from the website
+                try:
+                    # Extract domain from URL
+                    from urllib.parse import urlparse
+                    parsed = urlparse(website_url)
+                    domain = parsed.netloc.replace("www.", "")
+                    
+                    # Search for company info on their own website
+                    site_query = f'site:{domain} "{company_name}" (about OR company OR overview OR "who we are")'
+                    site_results = await self.search_web(
+                        query=site_query,
+                        count=5,
+                        result_filter="web,infobox"
+                    )
+                    
+                    if site_results:
+                        enrichment.raw_results.extend(site_results)
+                        # Use first result as description if we don't have one
+                        if site_results[0].description and not enrichment.description:
+                            enrichment.description = site_results[0].description
+                        
+                        logger.info(f"Found {len(site_results)} results from company website {domain}")
+                
+                except Exception as e:
+                    logger.warning(f"Failed to search company website {website_url}: {e}")
+            
+            # Search LinkedIn company page if provided
+            if linkedin_url:
+                enrichment.social_media["linkedin"] = linkedin_url
+                
+                try:
+                    # Extract LinkedIn company slug from URL
+                    # URL format: https://www.linkedin.com/company/company-name/
+                    if "linkedin.com/company/" in linkedin_url:
+                        linkedin_slug = linkedin_url.split("linkedin.com/company/")[-1].strip("/")
+                        
+                        # Search for information about this LinkedIn company page
+                        linkedin_query = f'site:linkedin.com/company/{linkedin_slug} "{company_name}"'
+                        linkedin_results = await self.search_web(
+                            query=linkedin_query,
+                            count=5,
+                            result_filter="web"
+                        )
+                        
+                        if linkedin_results:
+                            enrichment.raw_results.extend(linkedin_results)
+                            logger.info(f"Found {len(linkedin_results)} results from LinkedIn company page")
+                
+                except Exception as e:
+                    logger.warning(f"Failed to search LinkedIn page {linkedin_url}: {e}")
+            
+            # If we have links, do a targeted search about the company using those links
+            if website_url or linkedin_url:
+                # Build targeted query using the provided links
+                targeted_query_parts = [company_name]
+                
+                if website_url:
+                    from urllib.parse import urlparse
+                    parsed = urlparse(website_url)
+                    domain = parsed.netloc.replace("www.", "")
+                    targeted_query_parts.append(f'site:{domain}')
+                
+                targeted_query = " ".join(targeted_query_parts)
+                targeted_query += " (about OR company OR overview OR services OR products OR technology)"
+                
+                try:
+                    targeted_results = await self.search_web(
+                        query=targeted_query,
+                        count=10,
+                        result_filter="web,infobox,discussions"
+                    )
+                    
+                    if targeted_results:
+                        enrichment.raw_results.extend(targeted_results)
+                        
+                        # Extract more structured data
+                        for result in targeted_results[:3]:
+                            url_lower = result.url.lower()
+                            
+                            # Try to extract industry/sector info
+                            if "about" in url_lower or "company" in url_lower:
+                                if result.description and not enrichment.description:
+                                    enrichment.description = result.description
+                        
+                        logger.info(f"Found {len(targeted_results)} targeted results using provided links")
+                
+                except Exception as e:
+                    logger.warning(f"Failed to do targeted search: {e}")
+            
+            # Search for recent news (this is still useful even with direct links)
+            try:
+                news_template = await get_prompt("brave_company_news", language="en")
+                news_query = news_template.format(company_name=company_name)
+            except Exception as e:
+                logger.warning(f"Failed to load news prompt template, using fallback: {e}")
+                news_query = f'"{company_name}" news'
+            
+            news_results = await self.search_news(
+                news_query, 
+                count=5, 
+                freshness="pw"  # Past week
+            )
+            
+            enrichment.recent_news = [
+                {
+                    "title": result.title,
+                    "url": result.url,
+                    "description": result.description or "",
+                }
+                for result in news_results
+            ]
+            
+            # Try to get AI summary using the provided links
+            try:
+                summary_context = f"Company: {company_name}"
+                if website_url:
+                    summary_context += f", Website: {website_url}"
+                if linkedin_url:
+                    summary_context += f", LinkedIn: {linkedin_url}"
+                
+                summary_query = f"Provide a brief summary about {summary_context} including industry, size, technologies used, and recent developments. Focus on information relevant for CV optimization."
+                ai_summary = await self.get_ai_summary(summary_query, use_grounding=True)
+                if ai_summary:
+                    enrichment.ai_summary = ai_summary
+            except Exception as e:
+                logger.debug(f"AI summary not available for company {company_name}: {e}")
+            
+            # Extract industry and size from description if available
+            if enrichment.description:
+                # Try to parse industry and size from description (simple extraction)
+                desc_lower = enrichment.description.lower()
+                # Common industry keywords
+                industries = ["technology", "finance", "healthcare", "energy", "consulting", "software", "data", "ai", "bi", "business intelligence"]
+                for industry in industries:
+                    if industry in desc_lower:
+                        enrichment.industry = industry.capitalize()
+                        break
+            
+            logger.info(f"Successfully enriched company '{company_name}' using provided links")
+            return enrichment
+            
+        except Exception as e:
+            logger.error(f"Error enriching company from links {company_name}: {str(e)}")
+            return None
+    
     async def enrich_company(
         self,
         company_name: str,
